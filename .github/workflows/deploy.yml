@@ -1,8 +1,7 @@
 name: Deploy
 
+# Solo manual: el deploy no se dispara con los push a main.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
