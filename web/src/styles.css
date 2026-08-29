@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+/* Paleta Vistta: azul noche con acento verde agua. */
+@theme {
+  --color-noche: #060e17;
+  --color-noche-2: #0a1622;
+  --color-panel: #0c1a24;
+  --color-borde: #1c3b44;
+  --color-acento: #34d399;
+  --color-acento-tenue: #7fd8bd;
+  --color-texto: #cfe3e0;
+  --color-texto-tenue: #6f8f93;
+  --font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-noche);
+  /* Halo suave detrás de la tarjeta, como en la referencia. */
+  background-image:
+    radial-gradient(70rem 40rem at 50% 38%, rgba(29, 78, 90, 0.45), transparent 70%),
+    radial-gradient(50rem 30rem at 15% 0%, rgba(16, 60, 72, 0.35), transparent 65%);
+  background-repeat: no-repeat;
+  color: var(--color-texto);
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.25);
+}

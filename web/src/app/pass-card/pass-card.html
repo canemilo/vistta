@@ -1,0 +1,63 @@
+<div
+  class="w-full max-w-[420px] overflow-hidden rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 shadow-[0_40px_120px_-25px_rgba(0,0,0,0.95)] backdrop-blur-sm"
+>
+  <!-- Cabecera: enlace + estado -->
+  <header class="flex items-center justify-between gap-4 border-b border-[#16303a] px-5 py-3.5">
+    <div class="flex min-w-0 items-center gap-2.5">
+      <span
+        class="h-2 w-2 shrink-0 rounded-full"
+        [class]="
+          activo()
+            ? 'bg-emerald-400 shadow-[0_0_10px_2px_rgba(52,211,153,0.55)]'
+            : 'bg-slate-500/70'
+        "
+      ></span>
+      <span class="truncate text-[13px] tracking-tight text-[#cfe3e0]">{{ enlace() }}</span>
+    </div>
+    <span
+      class="shrink-0 text-[11px] font-medium tracking-[0.22em]"
+      [class]="activo() ? 'text-emerald-400' : 'text-slate-500'"
+    >
+      {{ etiquetaEstado() }}
+    </span>
+  </header>
+
+  <!-- Mosaico de medios con marca de agua superpuesta -->
+  <div class="relative overflow-hidden p-4">
+    @if (medios().length) {
+      <div class="grid auto-rows-[84px] grid-cols-2 gap-3">
+        @for (medio of medios(); track $index) {
+          <figure
+            class="relative overflow-hidden rounded-lg"
+            [class.row-span-2]="destacado($index)"
+            [style.background-image]="degradado($index)"
+          >
+            @if (medio.url) {
+              <img
+                [src]="medio.url"
+                [alt]="medio.caption ?? ''"
+                class="h-full w-full object-cover"
+                draggable="false"
+                (error)="ocultar($event)"
+              />
+            }
+          </figure>
+        }
+      </div>
+    } @else {
+      <div class="flex h-[180px] items-center justify-center text-[12px] text-[#6f8f93]">
+        <ng-content select="[vacio]"></ng-content>
+      </div>
+    }
+
+    @if (marca()) {
+      <div
+        class="pointer-events-none absolute inset-0 flex select-none items-center justify-center"
+      >
+        <span class="-rotate-12 text-[11px] tracking-[0.3em] whitespace-nowrap text-white/20">
+          {{ marca() }}
+        </span>
+      </div>
+    }
+  </div>
+</div>

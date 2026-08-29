@@ -1,0 +1,85 @@
+<div
+  class="mx-auto w-full max-w-[420px] overflow-hidden rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 shadow-[0_40px_120px_-25px_rgba(0,0,0,0.95)] backdrop-blur-sm"
+>
+  <header class="flex items-center justify-between border-b border-[#16303a] px-5 py-3.5">
+    <span class="text-[13px] text-[#cfe3e0]">vistta · panel</span>
+    <span
+      class="text-[11px] tracking-[0.22em]"
+      [class]="sesion() ? 'text-emerald-400' : 'text-slate-500'"
+    >
+      {{ sesion() ? 'SESIÓN ABIERTA' : 'BLOQUEADO' }}
+    </span>
+  </header>
+
+  <div class="flex flex-col gap-4 p-5">
+    @if (!sesion()) {
+      <label class="text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase" for="pin">PIN</label>
+      <input
+        id="pin"
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        [(ngModel)]="pin"
+        (keyup.enter)="entrar()"
+        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 tracking-[0.4em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+      />
+      <button
+        type="button"
+        (click)="entrar()"
+        [disabled]="ocupado() || pin.length < 4"
+        class="rounded-lg bg-emerald-500/90 px-3 py-2.5 text-[12px] font-medium tracking-[0.2em] text-[#04140e] transition-colors hover:bg-emerald-400 disabled:opacity-40"
+      >
+        ENTRAR
+      </button>
+    } @else {
+      <label class="text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase" for="perfil">
+        Perfil a presentar
+      </label>
+      <select
+        id="perfil"
+        [value]="perfilId()"
+        (change)="perfilId.set($any($event.target).value)"
+        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 text-[13px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+      >
+        @for (p of perfiles(); track p.id) {
+          <option [value]="p.id">{{ p.displayName }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        (click)="generar()"
+        [disabled]="ocupado() || !perfilId()"
+        class="rounded-lg bg-emerald-500/90 px-3 py-2.5 text-[12px] font-medium tracking-[0.2em] text-[#04140e] transition-colors hover:bg-emerald-400 disabled:opacity-40"
+      >
+        GENERAR ENLACE DE UN SOLO USO
+      </button>
+
+      @if (enlace()) {
+        <div class="flex items-center gap-2 rounded-lg border border-[#1c3b44] bg-[#081420] p-3">
+          <a
+            [href]="enlace()"
+            target="_blank"
+            rel="noreferrer"
+            class="min-w-0 flex-1 truncate text-[12px] text-emerald-400 hover:underline"
+          >
+            {{ enlace() }}
+          </a>
+          <button
+            type="button"
+            (click)="copiar()"
+            class="shrink-0 text-[11px] tracking-[0.18em] text-[#6f8f93] hover:text-[#cfe3e0]"
+          >
+            {{ copiado() ? 'COPIADO' : 'COPIAR' }}
+          </button>
+        </div>
+        <p class="text-[11px] text-[#6f8f93]">
+          Caduca a los 15 minutos y se destruye en la primera apertura.
+        </p>
+      }
+    }
+
+    @if (error()) {
+      <p class="text-[12px] text-rose-400">{{ error() }}</p>
+    }
+  </div>
+</div>

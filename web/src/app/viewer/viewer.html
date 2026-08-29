@@ -1,0 +1,29 @@
+<div class="flex w-full flex-col items-center gap-5">
+  @if (titulo()) {
+    <p class="text-[12px] tracking-[0.25em] text-[#3f6570] uppercase">{{ titulo() }}</p>
+  }
+
+  <app-pass-card
+    class="w-full max-w-[420px]"
+    [enlace]="enlace()"
+    [estado]="estado()"
+    [medios]="medios()"
+    [marca]="marca()"
+  >
+    <span vacio>
+      @if (estado() === 'cargando') {
+        Abriendo el pase…
+      } @else {
+        Este enlace ya se usó o ha caducado.
+      }
+    </span>
+  </app-pass-card>
+
+  <p class="text-center text-[13px] text-[#6f8f93]">
+    @if (estado() === 'activo') {
+      Se abre una vez. Después, el enlace deja de existir.
+    } @else if (estado() === 'caducado') {
+      Pide un enlace nuevo a quien te lo envió.
+    }
+  </p>
+</div>
