@@ -1,0 +1,41 @@
+{
+  "name": "vistta-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:create": "wrangler d1 create vistta",
+    "db:migrate:local": "wrangler d1 migrations apply vistta --local",
+    "db:migrate:remote": "wrangler d1 migrations apply vistta --remote",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "db:seed:local": "wrangler d1 execute vistta --local --file=seed/demo.sql",
+    "dev:api": "wrangler dev",
+    "dev:web": "pnpm --dir web start",
+    "dev:all": "concurrently -n api,web -c green,cyan \"pnpm dev:api\" \"pnpm dev:web\"",
+    "setup:local": "pnpm db:migrate:local && pnpm db:seed:local"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.40",
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "~2.1.8",
+    "wrangler": "^3.95.0"
+  }
+}

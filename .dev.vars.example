@@ -1,0 +1,5 @@
+# Copia este archivo a .dev.vars (ignorado por git) y pon valores propios.
+# En producción se cargan con `wrangler secret put <NOMBRE>`.
+PANEL_TOKEN="cambia-esto-token-de-servicio"
+PANEL_PIN="123456"
+MEDIA_SIGNING_KEY="cambia-esto-clave-hmac-larga-y-aleatoria"

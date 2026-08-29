@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+dist/
+.angular/
+pnpm-lock.yaml
+web/dist/
+web/.angular/
