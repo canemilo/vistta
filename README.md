@@ -51,6 +51,18 @@ así que no hay CORS ni configuración de entorno en el frontend.
 
     pnpm check                     # typecheck + lint + tests del Worker
 
+`dev:all` libera antes los puertos 8787 y 4200, así que no hay que rematar
+procesos de un arranque anterior.
+
+### Desde IntelliJ IDEA
+
+Las configuraciones de ejecución van versionadas en `.idea/runConfigurations`,
+así que aparecen solas en el desplegable de Run:
+
+- **Vistta setup (primera vez)** — migra la BD local y carga los perfiles de demo.
+- **Vistta local ▶** — levanta API y viewer juntos. Es el botón del día a día.
+- **Vistta tests** — las pruebas del Worker.
+
 ## Probar a mano
 
     # 1. Abrir sesión en el panel con el PIN

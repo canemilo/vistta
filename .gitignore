@@ -9,4 +9,5 @@ dist/
 .env.*
 *.log
 .DS_Store
-.idea/
+.idea/*
+!.idea/runConfigurations/

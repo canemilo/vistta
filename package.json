@@ -18,8 +18,9 @@
     "db:seed:local": "wrangler d1 execute vistta --local --file=seed/demo.sql",
     "dev:api": "wrangler dev",
     "dev:web": "pnpm --dir web start",
-    "dev:all": "concurrently -n api,web -c green,cyan \"pnpm dev:api\" \"pnpm dev:web\"",
-    "setup:local": "pnpm db:migrate:local && pnpm db:seed:local"
+    "dev:all": "pnpm dev:free && concurrently -n api,web -c green,cyan --kill-others-on-fail \"pnpm dev:api\" \"pnpm dev:web\"",
+    "setup:local": "pnpm db:migrate:local && pnpm db:seed:local",
+    "dev:free": "lsof -ti:8787,4200 | xargs kill 2>/dev/null || true"
   },
   "dependencies": {
     "hono": "^4.6.14",
