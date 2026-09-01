@@ -34,6 +34,7 @@ class ApiFalsa {
   tope = 3;
   creados: string[] = [];
   borrados: { id: string; confirmacion: string }[] = [];
+  clavesPedidas: string[] = [];
   sesionesCerradas: string[] = [];
   /** Lo que devolverá el próximo `createProfile`, si es un fallo. */
   fallaAlCrear: { status: number } | null = null;
@@ -78,6 +79,14 @@ class ApiFalsa {
     this.borrados.push({ id, confirmacion });
     this.perfiles = this.perfiles.filter((p) => p.id !== id);
     return Promise.resolve({ ok: true });
+  };
+
+  claveOlvidada = (userId: string) => {
+    this.clavesPedidas.push(userId);
+    return Promise.resolve({
+      ok: true,
+      mensaje: 'Si esa cuenta existe, hemos avisado a quien la administra.',
+    });
   };
 
   logout = (token: string) => {
@@ -390,5 +399,86 @@ describe('Panel · borrar un perfil y quedarse sin ninguno', () => {
     const selector = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
     expect(selector.value).toBe('p_dos');
     expect(texto()).not.toContain('No tienes ningún perfil');
+  });
+});
+
+describe('Panel · he olvidado la contraseña', () => {
+  let fixture: ComponentFixture<Panel>;
+  let api: ApiFalsa;
+
+  const texto = () => fixture.nativeElement.textContent as string;
+  const boton = (t: string) =>
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]).find(
+      (b) => (b.textContent ?? '').trim().startsWith(t),
+    );
+
+  async function estabiliza(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    sessionStorage.clear();
+    api = new ApiFalsa();
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+  });
+
+  afterEach(() => sessionStorage.clear());
+
+  it('la ofrece desde la pantalla de entrada', async () => {
+    expect(boton('He olvidado la contraseña')).toBeDefined();
+  });
+
+  it('NO promete un correo, porque no se guarda el de nadie', async () => {
+    boton('He olvidado la contraseña')!.click();
+    await estabiliza();
+
+    // Prometer un correo que no llega nunca es la peor forma de fallar aquí.
+    expect(texto()).toContain('No se envía ningún correo');
+    expect(texto().toLowerCase()).not.toContain('revisa tu bandeja');
+    expect(texto().toLowerCase()).not.toContain('enlace de recuperación');
+  });
+
+  it('manda el usuario y enseña la respuesta del servidor', async () => {
+    boton('He olvidado la contraseña')!.click();
+    await estabiliza();
+
+    const campo = fixture.nativeElement.querySelector('#usuario-olvidado') as HTMLInputElement;
+    campo.value = 'marina';
+    campo.dispatchEvent(new Event('input'));
+    await estabiliza();
+
+    boton('PEDIRLA')!.click();
+    await estabiliza();
+
+    expect(api.clavesPedidas).toEqual(['marina']);
+    // El mensaje lo decide el SERVIDOR, y es el mismo exista la cuenta o no: si
+    // lo compusiera la pantalla, acabaría diciendo si el usuario existe.
+    expect(texto()).toContain('Si esa cuenta existe');
+  });
+
+  it('sin escribir el usuario no se puede pedir', async () => {
+    boton('He olvidado la contraseña')!.click();
+    await estabiliza();
+    expect(boton('PEDIRLA')!.disabled).toBeTrue();
+    expect(api.clavesPedidas).toEqual([]);
+  });
+
+  it('se puede cancelar y volver a la entrada', async () => {
+    boton('He olvidado la contraseña')!.click();
+    await estabiliza();
+    boton('CANCELAR')!.click();
+    await estabiliza();
+
+    expect(boton('He olvidado la contraseña')).toBeDefined();
+    expect(fixture.nativeElement.querySelector('#usuario-olvidado')).toBeNull();
   });
 });

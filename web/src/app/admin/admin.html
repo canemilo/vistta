@@ -298,6 +298,14 @@
                   @if (c.role === 'admin') {
                     <span class="text-emerald-400"> · admin</span>
                   }
+                  <!-- La petición se ve aquí y se atiende con el botón
+                       CONTRASEÑA de esta misma fila: una bandeja aparte
+                       obligaría a cruzar dos pantallas para una sola acción. -->
+                  @if (c.clavePedidaEl; as pedida) {
+                    <span class="mt-1 block text-amber-300">
+                      · pidió contraseña el {{ fecha(pedida) }}
+                    </span>
+                  }
                 </span>
               </td>
               <td class="border-b border-[#0f2630] py-3 pr-4">
@@ -338,6 +346,17 @@
                   >
                     CONTRASEÑA
                   </button>
+                  @if (c.clavePedidaEl) {
+                    <button
+                      type="button"
+                      (click)="descartarSolicitud(c)"
+                      [disabled]="ocupado()"
+                      [attr.aria-label]="'Descartar la solicitud de contraseña de ' + c.id"
+                      class="rounded border border-[#1c3b44] px-2 py-1 text-[10px] tracking-[0.1em] text-[#63848b] hover:border-amber-400/60 hover:text-amber-300 disabled:opacity-40"
+                    >
+                      DESCARTAR
+                    </button>
+                  }
                   <button
                     type="button"
                     (click)="alternarSuspension(c)"

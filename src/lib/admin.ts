@@ -30,7 +30,8 @@ export type AccionAdmin =
   | "reactivar"
   | "borrar_cuenta"
   | "cobrar_pago"
-  | "anular_pago";
+  | "anular_pago"
+  | "descartar_solicitud";
 
 /** Resumen de una cuenta para la tabla del panel. Sin una línea de contenido. */
 export interface CuentaAdmin {
@@ -45,6 +46,8 @@ export interface CuentaAdmin {
   perfilesCongelados: number;
   pasesAbiertos: number;
   bytesUsados: number;
+  /** Cuándo pidió una contraseña nueva, o null si no la ha pedido. */
+  clavePedidaEl: number | null;
 }
 
 export async function registrar(
@@ -82,6 +85,7 @@ export async function listarCuentas(db: Db, ahora = Date.now()): Promise<CuentaA
     perfiles_congelados: number;
     pases_abiertos: number;
     bytes_usados: number;
+    clave_pedida: number | null;
   }>(
     `SELECT u.id, u.display_name, u.plan, u.status, u.role, u.created_at, u.suspended_at,
        (SELECT count(*)::int FROM vistta.profiles p
@@ -94,7 +98,12 @@ export async function listarCuentas(db: Db, ahora = Date.now()): Promise<CuentaA
            AND ps.expires_at > $1)                            AS pases_abiertos,
        (SELECT COALESCE(SUM(m.bytes), 0)::bigint FROM vistta.media m
           JOIN vistta.profiles p ON p.id = m.profile_id
-         WHERE p.owner_id = u.id AND m.status <> 'failed')    AS bytes_usados
+         WHERE p.owner_id = u.id AND m.status <> 'failed')    AS bytes_usados,
+       -- Quién ha pedido contraseña nueva. Va en la misma consulta y no en una
+       -- lista aparte: el administrador ya mira esta tabla, y la petición se
+       -- atiende con el botón que ya está en esa fila.
+       (SELECT pr.created_at FROM vistta.password_requests pr
+         WHERE pr.user_id = u.id AND pr.status = 'pendiente')  AS clave_pedida
      FROM vistta.users u
      ORDER BY u.created_at DESC`,
     [ahora]
@@ -112,6 +121,7 @@ export async function listarCuentas(db: Db, ahora = Date.now()): Promise<CuentaA
     perfilesCongelados: r.perfiles_congelados,
     pasesAbiertos: r.pases_abiertos,
     bytesUsados: r.bytes_usados,
+    clavePedidaEl: r.clave_pedida,
   }));
 }
 

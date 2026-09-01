@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
-import { CambiarPasswordSchema, PanelLoginSchema } from "../schemas";
+import { CambiarPasswordSchema, ClaveOlvidadaSchema, PanelLoginSchema } from "../schemas";
+import { pedirClaveNueva } from "../lib/solicitudes";
 import {
   LOGIN_RULE,
   bearer,
@@ -102,6 +103,46 @@ export function panelRoutes({ db }: Deps) {
     // Cuántas sesiones se han cerrado: enterarse de que había tres abiertas es
     // justo lo que quiere saber quien cambia la contraseña porque sospecha algo.
     return c.json({ ok: true, sesionesCerradas: cerradas });
+  });
+
+  /**
+   * «He olvidado la contraseña»: deja constancia para que un administrador la
+   * reinicie.
+   *
+   * No manda ningún correo, y no puede: el sistema no almacena el correo de sus
+   * clientes. Lo que hace es poner una marca en la cuenta; después una persona
+   * comprueba quién eres por donde te dio el acceso y te genera una temporal.
+   *
+   * **Responde SIEMPRE lo mismo**, exista la cuenta o no. Si distinguiera, esta
+   * ruta pública sería un comprobador de usuarios: se prueban identificadores
+   * hasta que uno conteste distinto.
+   *
+   * Y va con límite por IP, que aquí es lo único que hay: no hay sesión, y
+   * limitar por la cuenta que te digan dejaría a cualquiera bloquear la
+   * solicitud de otro con solo escribir su identificador.
+   */
+  panel.post("/api/panel/password/olvidada", async (c) => {
+    const limite = await hitRateLimit(
+      db,
+      { scope: "clave-olvidada", max: 5, windowMs: 15 * 60_000, blockMs: 30 * 60_000 },
+      c.get("ip")
+    );
+    if (!limite.allowed) {
+      c.header("Retry-After", String(limite.retryAfterSeconds));
+      return c.json({ error: "demasiadas solicitudes; inténtalo más tarde" }, 429);
+    }
+
+    const parsed = ClaveOlvidadaSchema.safeParse(await c.req.json().catch(() => null));
+    // Incluso con la entrada mal formada se contesta igual: la forma del
+    // identificador tampoco tiene por qué filtrarse.
+    if (parsed.success) await pedirClaveNueva(db, parsed.data.userId.trim());
+
+    return c.json({
+      ok: true,
+      mensaje:
+        "Si esa cuenta existe, hemos avisado a quien la administra. " +
+        "Te dará una contraseña nueva por el mismo canal por el que te dio el acceso.",
+    });
   });
 
   return panel;

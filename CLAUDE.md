@@ -140,6 +140,12 @@ no se negocian:
 - **Suspender ≠ borrar.** Suspender es reversible (bloquea login, tira sesiones, cierra pases) y la
   purga se la lleva pasada la gracia. Borrar es inmediato, es para el art. 17 del RGPD, y exige
   teclear el identificador.
+- **No hay recuperación de contraseña por correo, y no es un olvido**: no se almacena el correo de
+  los clientes (no hay columna). «He olvidado la contraseña» deja una fila en `password_requests`,
+  el administrador la ve marcada en la fila de esa cuenta y la atiende con el reinicio que ya
+  existía; atenderla la cierra sola. La petición **no autoriza nada** —mismo criterio que el código
+  de pago— y la ruta pública responde igual exista la cuenta o no, para no ser un comprobador de
+  usuarios.
 - **Las contraseñas se generan, no se leen ni se teclean.** Temporal de un solo uso, alfabeto sin
   caracteres confundibles al dictar. Reiniciarla tira todas las sesiones de esa cuenta.
 - **Todo queda en `admin_audit`**, que no tiene claves ajenas: es historia, y no cambia porque

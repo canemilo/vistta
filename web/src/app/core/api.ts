@@ -51,6 +51,8 @@ export interface CuentaAdmin {
   perfilesCongelados: number;
   pasesAbiertos: number;
   bytesUsados: number;
+  /** Cuándo pidió una contraseña nueva, o null si no la ha pedido. */
+  clavePedidaEl: number | null;
 }
 
 export interface Pago {
@@ -204,6 +206,19 @@ export class Api {
         { actual, nueva },
         { headers: { authorization: `Bearer ${session}` } },
       ),
+    );
+  }
+
+  /**
+   * Pide que un administrador genere una contraseña nueva.
+   *
+   * No manda ningún correo: el sistema no guarda el de nadie. Deja una marca en
+   * la cuenta y responde SIEMPRE lo mismo, exista o no, para que esto no sirva
+   * de comprobador de usuarios.
+   */
+  claveOlvidada(userId: string): Promise<{ ok: boolean; mensaje: string }> {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; mensaje: string }>('/api/panel/password/olvidada', { userId }),
     );
   }
 
@@ -404,6 +419,15 @@ export class Api {
         {},
         { headers: { authorization: `Bearer ${session}` } },
       ),
+    );
+  }
+
+  /** Cierra la solicitud sin tocar la contraseña. */
+  adminDescartarSolicitud(session: string, id: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/admin/cuentas/${encodeURIComponent(id)}/solicitud`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
     );
   }
 

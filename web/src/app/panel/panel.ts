@@ -56,6 +56,11 @@ export class Panel {
   protected claveNueva = '';
   protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
 
+  // --- contraseña olvidada --------------------------------------------------
+  protected readonly pidiendoClave = signal(false);
+  protected readonly clavePedida = signal('');
+  protected usuarioOlvidado = '';
+
   // --- perfiles -------------------------------------------------------------
   /**
    * Crear perfiles.
@@ -182,6 +187,38 @@ export class Panel {
    * que no encaja es la pantalla. Y no revela nada, porque solo ocurre después
    * de que la sesión haya demostrado ser de administrador.
    */
+  /**
+   * Pide que un administrador genere una contraseña nueva.
+   *
+   * No hay recuperación por correo porque no se guarda el correo de nadie: es
+   * una propiedad declarada del sistema, no un olvido. Esto deja una marca en
+   * la cuenta y una persona comprueba quién eres por donde te dio el acceso.
+   *
+   * El mensaje que se enseña es el que manda el servidor, y es el mismo exista
+   * la cuenta o no: si la pantalla dijera «esa cuenta no existe», el formulario
+   * sería un comprobador de usuarios.
+   */
+  protected async pedirClaveNueva(): Promise<void> {
+    const usuario = this.usuarioOlvidado.trim();
+    if (!usuario) return;
+    this.ocupado.set(true);
+    this.error.set('');
+    try {
+      const { mensaje } = await this.api.claveOlvidada(usuario);
+      this.usuarioOlvidado = '';
+      this.clavePedida.set(mensaje);
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
+      this.error.set(
+        status === 429
+          ? 'Demasiadas solicitudes. Espera un rato antes de volver a probar.'
+          : 'No se pudo enviar la solicitud.',
+      );
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
   private async abrirPanel(token: string, user: Usuario): Promise<void> {
     if (user.role === 'admin') {
       void this.router.navigate(['/admin']);

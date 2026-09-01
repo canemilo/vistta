@@ -3,7 +3,7 @@
 > **Documento interno.** No se publica. Se mantiene actualizado y se entrega a la
 > autoridad de control (en España, la AEPD) si lo requiere.
 >
-> Última revisión: 2026-09-01. Se revisa **cada vez que se añade una columna, una
+> Última revisión: 2026-09-01 (se añade A.5 al crear `password_requests`). Se revisa **cada vez que se añade una columna, una
 > tabla o un subencargado**, no por calendario.
 
 Vistta actúa en **dos papeles distintos** y este registro los separa, porque las
@@ -88,7 +88,29 @@ escala de categorías especiales.
 > pasarela. El código viaja en el concepto de una transferencia que hace el
 > cliente por su cuenta.
 
-### A.5 Auditoría de administración
+### A.5 Solicitudes de contraseña nueva
+
+|                         |                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fin**                 | Que quien pierde el acceso pueda pedir que se lo restablezcan, y que la petición no se pierda por el camino.                                        |
+| **Base jurídica**       | Art. 6.1.b: ejecución del contrato (dar acceso al servicio contratado).                                                                             |
+| **Categorías de datos** | Identificador de la cuenta, fecha de la petición, y quién la atendió y cuándo.                                                                      |
+| **Conservación**        | Hasta que se atiende o se descarta; la fila se conserva cerrada como constancia de que se atendió. Se borra con la cuenta (clave ajena en cascada). |
+| **Destinatarios**       | Ninguno.                                                                                                                                            |
+
+> **No hay recuperación por correo, y es una consecuencia directa de A.1**: no se
+> almacena el correo de los clientes. Montarla obligaría a guardar contacto,
+> verificarlo y contratar un proveedor de envío —un subencargado más—, y a
+> rehacer este registro, el contrato del art. 28 y la política de privacidad. La
+> petición **no autoriza nada**: solo dice que alguien afirma haber perdido el
+> acceso. Quien comprueba la identidad es un administrador, fuera del sistema y
+> por el mismo canal por el que entregó la cuenta.
+>
+> A diferencia de `admin_audit`, esta tabla **sí** tiene clave ajena: es una
+> bandeja de trabajo, no historia. Lo que queda para la historia es el
+> `reiniciar_password` del registro de auditoría.
+
+### A.6 Auditoría de administración
 
 |                         |                                                                                                                                                                                                                                                         |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

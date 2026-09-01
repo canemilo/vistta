@@ -42,6 +42,11 @@ export const CambiarPasswordSchema = z.object({
  * el identificador. Un `DELETE` a secas se manda sin querer; escribir el nombre
  * de lo que se va a destruir, no.
  */
+/** Solo el identificador: no hay nada más que pedirle a quien no puede entrar. */
+export const ClaveOlvidadaSchema = z.object({
+  userId: z.string().min(1).max(64),
+});
+
 export const BorrarPerfilSchema = z.object({
   confirmacion: z.string().min(1).max(120),
 });

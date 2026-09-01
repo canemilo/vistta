@@ -104,12 +104,70 @@
           <p class="mt-4 font-mono text-[12px] text-rose-400" role="alert">{{ error() }}</p>
         }
 
-        <p
-          class="mt-6 border-t border-[#16303a] pt-4 text-center font-mono text-[10px] leading-[1.8] text-[#63848b]"
-        >
-          ¿Primera vez? Usa la contraseña temporal y cámbiala al entrar.<br />
-          No hay registro público: las cuentas las crea un administrador.
-        </p>
+        <!--
+          «He olvidado la contraseña».
+
+          No manda un correo, y no puede: el sistema no guarda el correo de sus
+          clientes. Deja una marca en la cuenta y un administrador comprueba
+          quién eres por el mismo canal por el que te dio el acceso. La pantalla
+          lo dice con esas palabras en vez de prometer un correo que no llega
+          nunca, que es la peor forma posible de fallar aquí.
+        -->
+        <div class="mt-6 border-t border-[#16303a] pt-4 text-center">
+          @if (clavePedida(); as aviso) {
+            <p class="font-mono text-[10px] leading-[1.8] text-emerald-400" role="status">
+              {{ aviso }}
+            </p>
+          } @else if (pidiendoClave()) {
+            <label
+              class="block text-left font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+              for="usuario-olvidado"
+            >
+              Tu usuario
+            </label>
+            <input
+              id="usuario-olvidado"
+              [(ngModel)]="usuarioOlvidado"
+              name="usuarioOlvidado"
+              autocomplete="username"
+              (keyup.enter)="pedirClaveNueva()"
+              class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+            />
+            <p class="mt-3 font-mono text-[10px] leading-[1.7] text-[#63848b]">
+              No se envía ningún correo: avisamos a quien administra tu cuenta y te dará una nueva
+              por donde te dio el acceso.
+            </p>
+            <div class="mt-3 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                (click)="pedirClaveNueva()"
+                [disabled]="ocupado() || !usuarioOlvidado.trim()"
+                class="rounded border border-emerald-400/60 px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+              >
+                PEDIRLA
+              </button>
+              <button
+                type="button"
+                (click)="pidiendoClave.set(false); error.set('')"
+                class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+              >
+                CANCELAR
+              </button>
+            </div>
+          } @else {
+            <button
+              type="button"
+              (click)="pidiendoClave.set(true); error.set('')"
+              class="font-mono text-[10px] tracking-[0.16em] text-[#8fb0b2] underline hover:text-emerald-400"
+            >
+              He olvidado la contraseña
+            </button>
+            <p class="mt-3 font-mono text-[10px] leading-[1.8] text-[#63848b]">
+              ¿Primera vez? Usa la contraseña temporal y cámbiala al entrar.<br />
+              No hay registro público: las cuentas las crea un administrador.
+            </p>
+          }
+        </div>
       </div>
 
       <p class="mt-6 text-center font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">

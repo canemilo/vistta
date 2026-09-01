@@ -14,6 +14,7 @@ import {
   reiniciarPassword,
   suspender,
 } from "../lib/admin";
+import { cerrarSolicitud } from "../lib/solicitudes";
 
 /**
  * Rutas de administración.
@@ -154,8 +155,26 @@ export function adminRoutes({ db, storage }: Deps) {
     if (!temporal) return c.json({ error: "cuenta no encontrada" }, 404);
 
     // En el registro va que se reinició, nunca la contraseña.
+    // Atender la petición ES cerrarla: un segundo clic que hay que recordar es
+    // un clic que se olvida, y la marca se quedaría puesta para siempre.
+    await cerrarSolicitud(db, c.req.param("id"), c.get("usuario").id, "resuelta");
     await registrar(db, c.get("usuario").id, "reiniciar_password", c.req.param("id"));
     return c.json({ password: temporal });
+  });
+
+  /**
+   * Descartar una solicitud sin tocar la contraseña.
+   *
+   * Hace falta porque no toda petición se atiende: alguien puede pedirla por
+   * error, o por la cuenta de otro. Sin esto, la única forma de quitar la marca
+   * sería reiniciar una contraseña que nadie ha pedido de verdad.
+   */
+  admin.delete("/api/admin/cuentas/:id/solicitud", async (c) => {
+    const objetivo = c.req.param("id");
+    const cerrada = await cerrarSolicitud(db, objetivo, c.get("usuario").id, "descartada");
+    if (!cerrada) return c.json({ error: "no encontrado" }, 404);
+    await registrar(db, c.get("usuario").id, "descartar_solicitud", objetivo);
+    return c.json({ ok: true });
   });
 
   admin.post("/api/admin/cuentas/:id/suspender", async (c) => {

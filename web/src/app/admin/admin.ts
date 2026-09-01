@@ -205,6 +205,20 @@ export class Admin {
     }, 'No se pudo reiniciar la contraseña.');
   }
 
+  /**
+   * Cierra la petición sin tocar la contraseña.
+   *
+   * Hace falta porque no toda petición se atiende: alguien puede pedirla por
+   * error, o por la cuenta de otro. Sin esto, la única forma de quitar la marca
+   * sería reiniciar una contraseña que nadie ha pedido de verdad.
+   */
+  protected async descartarSolicitud(cuenta: CuentaAdmin): Promise<void> {
+    await this.accion(
+      (sesion) => this.api.adminDescartarSolicitud(sesion, cuenta.id),
+      'No se pudo descartar la solicitud.',
+    );
+  }
+
   protected async alternarSuspension(cuenta: CuentaAdmin): Promise<void> {
     await this.accion(
       (sesion) => this.api.adminSuspension(sesion, cuenta.id, cuenta.status === 'activa'),
