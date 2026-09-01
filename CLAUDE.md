@@ -153,6 +153,25 @@ no se negocian:
 - A dónde se paga sale de la configuración (`BIZUM_TELEFONO`, `PAYPAL_DESTINO`), no del código. Sin
   ninguno de los dos, pedir plan devuelve 503 en vez de dar un código que no lleva a ningún sitio.
 
+## Frontend (desde G)
+
+- **Las proporciones salen de la BD, nunca de un ciclo fijo.** La rejilla del documento reparte cada
+  fila con el `width`/`height` que D midió de los bytes reales: cada foto ocupa un ancho proporcional
+  a su ratio, así que la fila cierra exacta y nada se recorta. Un ciclo de anchos por posición
+  («la foto 1 ocupa cuatro columnas») vuelve a recortar la primera vertical que entre.
+- **El viewer es el bundle que tiene que pesar poco**: lo abre alguien que no es cliente nuestro,
+  desde el móvil y una sola vez. La ampliación de foto es `<dialog>` nativo por eso —`showModal()`
+  atrapa el foco, cierra con Escape y devuelve el foco al origen, gratis—; no se mete el CDK.
+- **No hay alta pública ni «he olvidado mi contraseña»**, y es coherente con F: las cuentas las crea
+  un administrador y las contraseñas se generan. Lo que sí existe es que el cliente cambie la
+  temporal (`PUT /api/panel/password`), que exige la actual y cierra las demás sesiones.
+- **Nada se indexa, en tres sitios**: `robots.txt`, la etiqueta `robots` del HTML y la cabecera
+  `X-Robots-Tag` de la API. Por eso el SEO de Lighthouse marca 63 y **debe seguir marcándolo**: lo
+  único que falla es `is-crawlable`. Un buscador que abra un pase lo consume.
+- Accesibilidad medida sobre el BUILD DE PRODUCCIÓN, no sobre `ng serve` (allí el rendimiento no
+  significa nada): 100 de accesibilidad y 100 de buenas prácticas en el panel y en el documento.
+- Hay pruebas de frontend (Karma + Chrome de verdad) y van en `pnpm check` y en el CI.
+
 ## Cumplimiento
 
 - RGPD: usuario = responsable; Vistta = encargado (art. 28).

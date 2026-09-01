@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D, E y F.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F y G.** El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -31,7 +31,13 @@
   reversible, borrado inmediato para el RGPD y auditoría de todo.
 - **Facturación manual**: código VISTTA-XXXXXX, conciliación por un administrador, vencimiento de
   plan en la cola. Precios en `src/lib/planes.ts`, pendientes de decidir.
-- **123 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
+- **Cambio de contraseña por el propio cliente** (`PUT /api/panel/password`): exige la actual
+  aunque haya sesión, cierra las demás sesiones y conserva la de quien la cambia, con límite por
+  CUENTA. Sin ella, la temporal que entrega el administrador no se podía cambiar.
+- **Frontend cerrado**: rejilla justificada con las dimensiones reales de la BD, ampliación de foto
+  en el viewer, y accesibilidad medida (100 en el panel y en el documento).
+- **129 tests de backend** contra Postgres real y **6 de frontend** en Chrome de verdad (Karma), los
+  dos enganchados a `pnpm check` y al CI. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
 
@@ -83,14 +89,16 @@
       simultáneos y cuota aplicados en los tres puntos donde se crea algo; congelado reversible;
       purga en la cola de D, con las cifras del cliente ya aplicadas. Ver «Decisiones y desvíos en
       E», más abajo.
-- [~] **F — Facturación manual + administración**. Hecha la mitad de administración: `/api/admin/*`
-  completo (listar, crear, editar, cambiar plan, reiniciar contraseña, suspender, reactivar,
-  borrar), auditoría de todo y panel en `/admin`. Ver «Administración de cuentas», más abajo.
-  **Pendiente lo de cobrar**: código VISTTA-XXXX, conciliación de Bizum/PayPal y el aviso al
-  cliente de que su plan vence. Hoy el plan lo cambia una persona a mano desde el panel, que es
-  exactamente lo que pedía «facturación manual», pero sin rastro del pago.
-- [ ] **G — Frontend Angular**: viewer con CDK; bento pipe (dimensiones reales desde BD, que D provee);
-      vistas de login/register/reset, dashboard, /billing, /admin; accesibilidad + Lighthouse.
+- [x] **F — Facturación manual + administración** — cerrado el 2026-09-01. `/api/admin/*` completo
+      (listar, crear, editar, cambiar plan, reiniciar contraseña, suspender, reactivar, borrar) con
+      auditoría de todo y panel en `/admin`; y el cobro: código `VISTTA-XXXXXX`, conciliación a mano
+      de Bizum/PayPal y vencimiento del plan en la cola. Ver «Administración de cuentas» y
+      «Facturación manual», más abajo.
+- [x] **G — Frontend Angular** — cerrado el 2026-09-01. Rejilla justificada con las dimensiones
+      reales que guarda D; ampliación de foto en el viewer; cambio de contraseña por el cliente;
+      accesibilidad medida con Lighthouse sobre el build de producción (100 en el panel y en el
+      documento del pase); primera prueba de frontend y su arnés en el CI. Ver «Decisiones y desvíos
+      en G», más abajo.
 - [ ] **H — Producción/escalado**: Clean Architecture; VPS + Docker + Caddy + PostgreSQL; Cloudflare
       delante; R2 (nueva implementación del puerto `Storage`, no una reescritura); CI/CD, backups.
 - [ ] **I — Cumplimiento**: RGPD (art. 28, RAT, EIPD), AUP + notice-and-takedown.
@@ -214,6 +222,46 @@ precio del año pasado.
 **A dónde se paga sale de la configuración** (`BIZUM_TELEFONO`, `PAYPAL_DESTINO`), no del código.
 Sin ninguno de los dos, pedir plan devuelve 503 en vez de dar un código que no lleva a ninguna parte.
 
+## 2.5. Decisiones y desvíos en G
+
+**La rejilla se calcula, no se cicla.** El plan hablaba de un «bento pipe» y lo que había era un
+ciclo fijo: la foto 1 ocupa cuatro columnas y es 3/2, la 2 ocupa dos y es 3/4, y vuelta a empezar —
+con la proporción REAL superpuesta encima. Tres reglas peleándose por la misma caja: ganaba la
+última y una foto vertical acababa recortada dentro de un hueco apaisado. Ahora cada foto ocupa un
+ancho proporcional a lo apaisada que sea y la fila se reparte entre las que caben: como todas crecen
+en proporción a su ratio, acaban a la misma altura y la fila cierra exacta sin recortar ninguna.
+Todo en CSS, sin medir el contenedor ni escuchar el `resize`. **Esto solo es posible porque D mide
+`width`/`height` de los bytes reales al confirmar**; sin esas columnas no hay nada que calcular.
+
+**La ampliación de foto es `<dialog>` nativo, no CDK.** El plan decía «viewer con CDK».
+`showModal()` ya trae lo que se iba a buscar allí —atrapa el foco, cierra con Escape, tapa el fondo
+y devuelve el foco al botón de origen— y cuesta cero bytes. El viewer es el único bundle que abre
+alguien que no es cliente nuestro, probablemente desde el móvil: meterle el CDK entero por un
+lightbox no sale a cuenta. Se recorre el documento COMPLETO y no la sección de la que se salió, y no
+da la vuelta en los bordes: volver al principio sin avisar oculta que se ha llegado al final.
+
+**No hay registro ni recuperación de contraseña, y no es un olvido.** El plan pedía
+«login/register/reset». Desde F las cuentas las crea un administrador y las contraseñas se generan,
+nunca se teclean: un formulario de alta pública contradiría eso, y un «he olvidado mi contraseña»
+por correo exigiría un canal de correo que el MVP no tiene. Lo que sí faltaba —y ya está— es que el
+cliente pueda cambiar la temporal que le entregan: sin eso, «cámbiala al entrar» era una
+instrucción imposible de cumplir.
+
+**Se estrenó el arnés de pruebas del frontend.** Estaba configurado en `angular.json` desde el
+`ng new` y sin un solo test. Las seis primeras prueban la ampliación por el DOM en un Chrome de
+verdad, y van en `pnpm check` y en el CI: un arnés que no corre solo se pudre. Verificadas por
+mutación, como todo lo demás.
+
+**El SEO de Lighthouse se queda en 63 y ahí se queda.** Lo único que falla es `is-crawlable`, o sea
+el `noindex`, que está puesto a propósito y en tres sitios (`robots.txt`, la etiqueta del HTML y la
+cabecera de la API). Un buscador que encontrara un pase y lo abriera lo consumiría, y el cliente al
+que iba dirigido se encontraría un enlace muerto. Si alguien «arregla» ese 63, rompe el producto.
+
+**Un fallo real que salió al tocarlo**: en el panel, el pie de foto y el botón de quitar pasaban
+`$index` tanto como sección como como foto, así que editar una foto de la tercera sección tocaba la
+primera. Y el botón de quitar era `sr-only`: existía solo para un lector de pantalla y ni siquiera
+hacía lo que decía.
+
 ## 3. Fallos conocidos
 
 Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los
@@ -322,7 +370,9 @@ rómpelo a propósito y comprueba que se pone rojo.
       purga verificada por mutación (Bóveda no caduca ni topa pases, la gracia se respeta, un pase
       abierto protege sus medios). Cifras del cliente aplicadas; falta solo fijar
       `GRACIA_CONGELADO_MS`.
-- [~] Admin: hecho y con test (rol solo por script, 404 a los no-admin, sin acceso al contenido,
-  suspensión reversible, borrado confirmado, auditoría). Falta la facturación.
-- [ ] Frontend completo accesible. [ ] Legal (términos, AUP, RGPD) revisado.
+- [x] Admin: hecho y con test (rol solo por script, 404 a los no-admin, sin acceso al contenido,
+      suspensión reversible, borrado confirmado, auditoría), y la facturación manual con él.
+- [x] Frontend completo accesible: 100 de accesibilidad y 100 de buenas prácticas en Lighthouse,
+      medido sobre el build de producción, en el panel y en el documento del pase.
+- [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.
