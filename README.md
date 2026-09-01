@@ -35,9 +35,21 @@ y su **consumo atómico de un solo uso**.
     pnpm dev:all                   # API + frontend Angular a la vez
 
 `pnpm setup:local` hace de un tirón el `db:up`, el `db:migrate` y el contenido de
-demostración: cuatro cuentas (`nordeste`, `marina`, `costavega`, `rama`), todas con
-contraseña `demo-vistta-2026`. Son cuatro oficios distintos a propósito —fotografía,
-inmobiliaria y masaje terapéutico— para ver que la plantilla no está atada a un sector.
+demostración. Todas las cuentas comparten la contraseña `demo-vistta-2026`:
+
+| Cuenta                                    | Qué ves                                          |
+| ----------------------------------------- | ------------------------------------------------ |
+| `demo`                                    | **Los cuatro perfiles** en el selector del panel |
+| `nordeste`, `marina`, `costavega`, `rama` | Un oficio cada una, como sería en real           |
+
+Son cuatro oficios distintos a propósito —fotografía de arquitectura, retrato editorial,
+inmobiliaria y masaje terapéutico— para ver que la plantilla no está atada a un sector:
+la inmobiliaria es casi toda imagen y el masajista casi todo texto.
+
+La cuenta `demo` **no es un rol de administrador y no se salta nada**: posee copias de los
+cuatro perfiles, con `owner_id = 'demo'` y claves de medios propias, como cualquier otro
+dueño. Sigue sin ver los perfiles de las otras cuatro cuentas. Para mirarlos sin gastar
+pases, usa la vista previa del panel: no consume ninguno.
 
 ## Pruebas
 

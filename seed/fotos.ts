@@ -30,12 +30,24 @@ const storage = createSupabaseStorage({
  */
 const TODAS = ["01", "02", "03", "04", "05", "06", "07", "08"];
 
-const destinos: [string, string][] = [
-  ...TODAS.map((n) => [`${n}.jpg`, `u/p_nordeste/${n}.jpg`] as [string, string]),
-  ...["01", "02", "03"].map((n) => [`${n}.jpg`, `u/p_marina/${n}.jpg`] as [string, string]),
-  ...TODAS.map((n) => [`${n}.jpg`, `u/p_costavega/${n}.jpg`] as [string, string]),
-  ...["01", "02"].map((n) => [`${n}.jpg`, `u/p_rama/${n}.jpg`] as [string, string]),
+/** Cuántas fotos usa cada perfil, por su sufijo. */
+const POR_PERFIL: [string, string[]][] = [
+  ["nordeste", TODAS],
+  ["marina", ["01", "02", "03"]],
+  ["costavega", TODAS],
+  ["rama", ["01", "02"]],
 ];
+
+const destinos: [string, string][] = POR_PERFIL.flatMap(([oficio, fotos]) =>
+  fotos.flatMap((n) => [
+    // El perfil del oficio...
+    [`${n}.jpg`, `u/p_${oficio}/${n}.jpg`] as [string, string],
+    // ...y su copia en la cuenta escaparate, que tiene claves propias a
+    // propósito: una copia que apuntara a las claves del original estaría
+    // sirviendo medios de otro perfil.
+    [`${n}.jpg`, `u/p_demo_${oficio}/${n}.jpg`] as [string, string],
+  ])
+);
 
 console.log("Subiendo fotos de demostración:");
 for (const [archivo, key] of destinos) {
