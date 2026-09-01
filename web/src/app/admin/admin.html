@@ -1,41 +1,111 @@
 @if (!sesion()) {
-  <!-- Entrada. Deliberadamente sosa y sin decir que esto es administración:
-       quien no tenga el rol recibe el mismo mensaje que quien se equivoca. -->
-  <section class="mx-auto mt-32 max-w-sm px-6">
-    <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#63848b] uppercase">Vistta</h1>
-    <div class="mt-6 flex flex-col gap-3">
-      <input
-        [(ngModel)]="id"
-        name="id"
-        autocomplete="username"
-        placeholder="Usuario"
-        aria-label="Usuario"
-        (keyup.enter)="entrar()"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+  <!--
+    La puerta.
+
+    Sigue sin decir que esto es administración, y no es un descuido de copy: el
+    formulario responde lo mismo a unas credenciales incorrectas que a una
+    cuenta sin el rol, así que quien pruebe no averigua si existe alguien detrás.
+    Lo que cambia aquí es el REGISTRO, no lo que se cuenta.
+
+    La entrada del cliente es cálida y explica; esta es un instrumento: solo
+    monoespaciada, medida corta, esquinas marcadas y ni una palabra de más. Sin
+    el hilo azul→verde, que es el signo del pase y no pinta nada en una consola.
+
+    `main` y no `section`: es la única región de la pantalla, y sin ella el
+    enlace de «saltar al contenido» no lleva a ninguna parte.
+  -->
+  <main id="contenido" class="flex min-h-screen items-center justify-center px-6 py-12">
+    <div class="w-full max-w-[420px]">
+      <img
+        src="/vistta-logo.svg"
+        alt="Vistta"
+        width="410"
+        height="170"
+        class="h-9 w-auto opacity-90"
       />
-      <input
-        [(ngModel)]="password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="Contraseña"
-        aria-label="Contraseña"
-        (keyup.enter)="entrar()"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
-      />
-      <button
-        type="button"
-        (click)="entrar()"
-        [disabled]="ocupado()"
-        class="rounded-lg border border-[#1c3b44] px-4 py-2.5 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40"
-      >
-        ENTRAR
-      </button>
-      @if (error()) {
-        <p class="font-mono text-[11px] text-amber-300">{{ error() }}</p>
-      }
+
+      <!-- Esquinas marcadas: el panel se lee como un instrumento, no como una
+           tarjeta de producto. Es lo único decorativo, y va aquí y en ningún
+           otro sitio de la aplicación. -->
+      <div class="relative mt-7 border border-[#16303a] bg-[#0a1620]/80 p-6">
+        <span
+          class="pointer-events-none absolute -top-px -left-px h-3 w-3 border-t border-l border-emerald-400/50"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="pointer-events-none absolute -top-px -right-px h-3 w-3 border-t border-r border-emerald-400/50"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="pointer-events-none absolute -bottom-px -left-px h-3 w-3 border-b border-l border-emerald-400/50"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="pointer-events-none absolute -right-px -bottom-px h-3 w-3 border-r border-b border-emerald-400/50"
+          aria-hidden="true"
+        ></span>
+
+        <h1 class="font-mono text-[10px] tracking-[0.34em] text-[#8fb0b2] uppercase">
+          Acceso restringido
+        </h1>
+
+        <label
+          class="mt-7 block font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+          for="admin-usuario"
+        >
+          Usuario
+        </label>
+        <input
+          id="admin-usuario"
+          [(ngModel)]="id"
+          name="id"
+          autocomplete="username"
+          (keyup.enter)="entrar()"
+          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+        />
+
+        <label
+          class="mt-5 block font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+          for="admin-clave"
+        >
+          Contraseña
+        </label>
+        <input
+          id="admin-clave"
+          [(ngModel)]="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          (keyup.enter)="entrar()"
+          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+        />
+
+        <button
+          type="button"
+          (click)="entrar()"
+          [disabled]="ocupado()"
+          class="mt-7 w-full rounded border border-emerald-400/60 bg-emerald-400/10 px-4 py-2.5 font-mono text-[11px] tracking-[0.24em] text-emerald-300 transition-colors hover:bg-emerald-400/20 hover:text-emerald-200 disabled:opacity-40 disabled:hover:bg-emerald-400/10"
+        >
+          {{ ocupado() ? 'COMPROBANDO…' : 'ENTRAR' }}
+        </button>
+
+        @if (error()) {
+          <p class="mt-4 font-mono text-[11px] text-amber-300" role="alert">{{ error() }}</p>
+        }
+      </div>
+
+      <!--
+        Que todo queda registrado es VERDAD —`admin_audit` guarda cada acción— y
+        decirlo en la puerta es la mitad de para lo que sirve un registro. La
+        segunda línea evita el único camino de escalada que quedaría abierto:
+        que alguien pida por ahí que le concedan el rol.
+      -->
+      <p class="mt-6 font-mono text-[10px] leading-[1.8] tracking-[0.06em] text-[#5e848f]">
+        Cada acción queda registrada con su autor y su fecha.<br />
+        El rol se concede solo desde la máquina que tiene la base.
+      </p>
     </div>
-  </section>
+  </main>
 } @else {
   <main id="contenido" class="mx-auto max-w-6xl px-6 py-10">
     <header class="flex flex-wrap items-center justify-between gap-4">
