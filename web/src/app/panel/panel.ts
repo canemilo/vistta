@@ -54,6 +54,30 @@ export class Panel {
   protected claveNueva = '';
   protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
 
+  // --- perfiles -------------------------------------------------------------
+  /**
+   * Crear perfiles.
+   *
+   * El plan da 1, 3 o 10, y el backend lo aplica desde el bloque E; lo que
+   * faltaba era la forma de pedirlo. Sin esto, una cuenta Pro o Bóveda se
+   * quedaba con el único perfil que se crea al dar de alta la cuenta y el
+   * límite del plan no significaba nada para el cliente.
+   */
+  protected readonly creandoPerfil = signal(false);
+  protected readonly errorPerfil = signal('');
+  protected nombrePerfilNuevo = '';
+
+  /**
+   * Cuántos perfiles ACTIVOS admite el plan. `null` es «sin límite», nunca un
+   * número grande: el código se salta la comprobación entera.
+   */
+  protected readonly topePerfiles = computed(() => this.plan()?.limites?.perfiles ?? null);
+
+  protected readonly puedeCrearPerfil = computed(() => {
+    const tope = this.topePerfiles();
+    return tope === null || this.uso().perfilesActivos < tope;
+  });
+
   /** Los que están de camino a borrarse. Son los que el cliente debe ver primero. */
   protected readonly congelados = computed(() =>
     this.perfiles().filter((p) => p.status === 'congelado'),
@@ -207,6 +231,38 @@ export class Panel {
       await this.elegirPerfil(id);
     } catch {
       this.error.set('No se pudo activar ese perfil.');
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
+  /**
+   * Crea un perfil y se cambia a él: quien lo acaba de crear lo que quiere es
+   * empezar a montarlo, no volver a buscarlo en el desplegable.
+   *
+   * El 409 se traduce en vez de mostrarse crudo. Puede pasar aunque el botón
+   * estuviera activo: el recuento de esta pantalla puede haber envejecido —otra
+   * pestaña, o un cambio de plan— y quien manda es el servidor.
+   */
+  protected async crearPerfil(): Promise<void> {
+    const sesion = this.sesion();
+    const nombre = this.nombrePerfilNuevo.trim();
+    if (!sesion || !nombre) return;
+    this.ocupado.set(true);
+    this.errorPerfil.set('');
+    try {
+      const creado = await this.api.createProfile(sesion, nombre);
+      this.nombrePerfilNuevo = '';
+      this.creandoPerfil.set(false);
+      await this.recargarPerfiles(sesion);
+      await this.elegirPerfil(creado.id);
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
+      this.errorPerfil.set(
+        status === 409
+          ? `Tu plan da para ${this.topePerfiles()} ${this.topePerfiles() === 1 ? 'perfil' : 'perfiles'}. Cambia de plan o congela uno de los que tienes.`
+          : 'No se pudo crear el perfil.',
+      );
     } finally {
       this.ocupado.set(false);
     }

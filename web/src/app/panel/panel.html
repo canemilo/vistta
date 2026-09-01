@@ -91,10 +91,19 @@
           </button>
         </p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <!--
+          `ngModel` y no `[value]`: con `[value]`, un perfil recién creado se
+          selecciona en el componente pero el desplegable se queda enseñando el
+          anterior, porque su `<option>` todavía no existía cuando se escribió
+          el valor. El cliente veía el editor del perfil nuevo y el nombre del
+          viejo en la misma pantalla.
+        -->
         <select
-          [value]="perfilId()"
-          (change)="elegirPerfil($any($event.target).value)"
+          [ngModel]="perfilId()"
+          (ngModelChange)="elegirPerfil($event)"
+          name="perfilElegido"
+          aria-label="Perfil que se está editando"
           class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
         >
           @for (p of perfiles(); track p.id) {
@@ -103,6 +112,22 @@
             </option>
           }
         </select>
+
+        <!-- Crear un perfil. El plan da 1, 3 o 10; hasta ahora no había forma
+             de pedir el segundo y toda cuenta se quedaba en uno. -->
+        <button
+          type="button"
+          (click)="creandoPerfil.set(!creandoPerfil()); errorPerfil.set('')"
+          [disabled]="!puedeCrearPerfil()"
+          [attr.aria-expanded]="creandoPerfil()"
+          [title]="
+            puedeCrearPerfil() ? 'Crear un perfil nuevo' : 'Tu plan no da para más perfiles activos'
+          "
+          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+        >
+          + PERFIL
+        </button>
+
         <button
           type="button"
           (click)="vistaPrevia.set(true)"
@@ -110,8 +135,73 @@
         >
           VER COMO EL CLIENTE
         </button>
+
+        <!-- Salir. Faltaba: se podía entrar y no había forma de cerrar la
+             sesión, que en un ordenador compartido no es un detalle. -->
+        <button
+          type="button"
+          (click)="salir()"
+          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-rose-400/60 hover:text-rose-300"
+        >
+          SALIR
+        </button>
       </div>
     </header>
+
+    @if (creandoPerfil()) {
+      <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+          Nuevo perfil
+        </h2>
+        <p class="mt-2 max-w-[60ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+          Un perfil es un trabajo que se enseña por separado, con su propio contenido y sus propios
+          pases. Tu plan da para
+          {{ topePerfiles() === null ? 'los que quieras' : topePerfiles() }}
+          @if (topePerfiles() !== null) {
+            {{ topePerfiles() === 1 ? 'perfil activo' : 'perfiles activos' }}
+          }
+          y tienes {{ uso().perfilesActivos }}.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <input
+            [(ngModel)]="nombrePerfilNuevo"
+            name="nombrePerfilNuevo"
+            (keydown.enter)="crearPerfil()"
+            placeholder="Nombre del perfil"
+            aria-label="Nombre del perfil nuevo"
+            class="min-w-0 flex-1 rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          />
+          <button
+            type="button"
+            (click)="crearPerfil()"
+            [disabled]="ocupado() || !nombrePerfilNuevo.trim()"
+            class="rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+          >
+            CREAR
+          </button>
+          <button
+            type="button"
+            (click)="creandoPerfil.set(false)"
+            class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+          >
+            CANCELAR
+          </button>
+        </div>
+        @if (errorPerfil()) {
+          <p class="mt-3 font-mono text-[11px] text-rose-400" role="alert">{{ errorPerfil() }}</p>
+        }
+      </section>
+    }
+
+    <!-- Cuando el plan ya no da para más, se dice aquí en vez de dejar un botón
+         apagado sin explicación. -->
+    @if (!puedeCrearPerfil()) {
+      <p class="mt-4 font-mono text-[10px] text-[#63848b]">
+        Tienes {{ uso().perfilesActivos }} de {{ topePerfiles() }}
+        {{ topePerfiles() === 1 ? 'perfil' : 'perfiles' }} de tu plan. Para tener más, cambia de
+        plan; los que sobren al bajar se congelan, no se borran.
+      </p>
+    }
 
     <!--
       Cambiar la propia contraseña.
