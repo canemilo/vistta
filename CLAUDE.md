@@ -130,6 +130,13 @@ no se negocian:
 - **404, no 403**, a quien no es admin: un 403 ya confirma que el panel existe.
 - **El admin gestiona cuentas, no contenido.** No hay ni debe haber ruta que le enseñe perfiles,
   medios o pases de un cliente. Vistta es encargado del tratamiento, no espectador.
+- **Un administrador NO TIENE PERFILES**, y el panel se apoya en ello: `admin:create` borra el
+  perfil del alta, y **se niega a promover una cuenta que tenga contenido** —ese trabajo se quedaría
+  sin ninguna pantalla desde la que llegar a él—. Entrar por el panel de cliente con una sesión de
+  administrador **redirige** a `/admin`, que es el reverso de lo que ya hacía el panel de
+  administración con una sesión de cliente. Se redirige y no se da error: las credenciales son
+  correctas y el rol es real, lo que no encaja es la pantalla, y solo ocurre tras demostrar el rol,
+  así que no revela nada.
 - **Suspender ≠ borrar.** Suspender es reversible (bloquea login, tira sesiones, cierra pases) y la
   purga se la lleva pasada la gracia. Borrar es inmediato, es para el art. 17 del RGPD, y exige
   teclear el identificador.

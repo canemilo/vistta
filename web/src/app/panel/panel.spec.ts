@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { Panel } from './panel';
-import { Api, type EstadoDeCuenta, type ProfileRow } from '../core/api';
+import { Api, type EstadoDeCuenta, type ProfileRow, type Usuario } from '../core/api';
 
 /**
  * Crear perfiles y salir de la cuenta.
@@ -27,6 +28,8 @@ const LIMITES = (perfiles: number) => ({
 });
 
 class ApiFalsa {
+  /** El rol que devuelven `me` y `login`. Un administrador no pinta aquí. */
+  rol: Usuario['role'] = 'cliente';
   perfiles: ProfileRow[] = [PERFIL('p_uno', 'Primero')];
   tope = 3;
   creados: string[] = [];
@@ -34,7 +37,14 @@ class ApiFalsa {
   /** Lo que devolverá el próximo `createProfile`, si es un fallo. */
   fallaAlCrear: { status: number } | null = null;
 
-  me = () => Promise.resolve({ user: { id: 'marina', displayName: 'Marina', role: 'cliente' } });
+  me = () => Promise.resolve({ user: { id: 'marina', displayName: 'Marina', role: this.rol } });
+
+  login = (id: string) =>
+    Promise.resolve({
+      token: 'sesion-nueva',
+      expiresAt: Date.now() + 3_600_000,
+      user: { id, displayName: id, role: this.rol },
+    });
 
   profiles = (): Promise<EstadoDeCuenta> =>
     Promise.resolve({
@@ -97,7 +107,7 @@ describe('Panel · perfiles y cierre de sesión', () => {
     sessionStorage.setItem('vistta.sesion', 'sesion-de-prueba');
     await TestBed.configureTestingModule({
       imports: [Panel],
-      providers: [{ provide: Api, useValue: api }],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(Panel);
     await estabiliza();
@@ -184,5 +194,96 @@ describe('Panel · perfiles y cierre de sesión', () => {
     await estabiliza();
 
     expect(fixture.nativeElement.textContent).toContain('Tu plan da para 3 perfiles');
+  });
+});
+
+describe('Panel · una cuenta de administrador no se queda aquí', () => {
+  let fixture: ComponentFixture<Panel>;
+  let api: ApiFalsa;
+  let navegado: string[][];
+
+  async function estabiliza(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    api = new ApiFalsa();
+    api.rol = 'admin';
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    navegado = [];
+    spyOn(TestBed.inject(Router), 'navigate').and.callFake((ruta: unknown[]) => {
+      navegado.push(ruta as string[]);
+      return Promise.resolve(true);
+    });
+  });
+
+  afterEach(() => sessionStorage.clear());
+
+  it('al recuperar la sesión se le manda a su panel', async () => {
+    // Un administrador no tiene perfiles: `admin:create` le borra el del alta.
+    // Sin esto, el editor se montaba sin ningún perfil detrás y lo que
+    // escribiera no se guardaba en ninguna parte.
+    sessionStorage.setItem('vistta.sesion', 'sesion-de-admin');
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    expect(navegado).toEqual([['/admin']]);
+  });
+
+  it('no llega a pedir los perfiles: no son suyos y no los hay', async () => {
+    sessionStorage.setItem('vistta.sesion', 'sesion-de-admin');
+    let pedidos = 0;
+    api.profiles = () => {
+      pedidos++;
+      return Promise.resolve({
+        profiles: [],
+        plan: null,
+        uso: { perfilesActivos: 0, pasesAbiertos: 0 },
+      });
+    };
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    expect(pedidos).toBe(0);
+  });
+
+  it('entrando por el formulario también se le manda a su panel', async () => {
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    const usuario = fixture.nativeElement.querySelector('#usuario') as HTMLInputElement;
+    const clave = fixture.nativeElement.querySelector('input[type="password"]') as HTMLInputElement;
+    usuario.value = 'adminprueba';
+    usuario.dispatchEvent(new Event('input'));
+    clave.value = 'una-contrasena-larga';
+    clave.dispatchEvent(new Event('input'));
+    await estabiliza();
+
+    const entrar = (
+      Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
+    ).find((b) => (b.textContent ?? '').trim().startsWith('ENTRAR'));
+    entrar!.click();
+    await estabiliza();
+
+    // Redirigir, no dar error: las credenciales son correctas y el rol es real.
+    // Lo que no encaja es la pantalla.
+    expect(navegado).toEqual([['/admin']]);
+    expect(fixture.nativeElement.textContent).not.toContain('no son correctos');
+  });
+
+  it('a un cliente no se le redirige a ninguna parte', async () => {
+    api.rol = 'cliente';
+    sessionStorage.setItem('vistta.sesion', 'sesion-de-cliente');
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    expect(navegado).toEqual([]);
   });
 });

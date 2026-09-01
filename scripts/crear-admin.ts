@@ -47,6 +47,36 @@ try {
     if (existente.role === "admin") {
       console.log(`La cuenta ${id} ya era administradora. Nada que hacer.`);
     } else {
+      /*
+       * Una cuenta con perfiles no se promueve.
+       *
+       * Un administrador no tiene contenido —al crearlo se le borra el perfil
+       * del alta— y el panel se apoya en eso: si entra por el panel de cliente
+       * se le manda al de administración. Promover una cuenta con trabajo
+       * dentro dejaría ese trabajo sin ninguna pantalla desde la que llegar a
+       * él: seguiría en la base, invisible, y sus pases seguirían abriéndose.
+       *
+       * Falla en vez de borrarlo por su cuenta: lo que hay ahí es de alguien.
+       */
+      const conPerfiles = await db.one<{ n: string }>(
+        `SELECT count(*)::text AS n FROM vistta.profiles WHERE owner_id = $1`,
+        [id]
+      );
+      const cuantos = Number(conPerfiles?.n ?? 0);
+      if (cuantos > 0) {
+        console.error(
+          `La cuenta ${id} tiene ${cuantos} ${cuantos === 1 ? "perfil" : "perfiles"} y no se puede promover.\n` +
+            `\n` +
+            `Un administrador gestiona cuentas, no contenido, y el panel lo da por hecho:\n` +
+            `entrar con una cuenta de administrador lleva al panel de administración, así\n` +
+            `que ese contenido se quedaría sin ninguna pantalla desde la que llegar a él.\n` +
+            `\n` +
+            `Crea una cuenta aparte para administrar, que además separa los dos papeles:\n` +
+            `  pnpm admin:create ${id}-admin`
+        );
+        process.exit(1);
+      }
+
       await db.query(`UPDATE vistta.users SET role = 'admin' WHERE id = $1`, [id]);
       // Queda registrado como cualquier otra acción de administración, con el
       // propio script como autor: promover a alguien no puede ser lo único que

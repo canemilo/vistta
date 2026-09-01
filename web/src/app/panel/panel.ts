@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
   Api,
   type EditableSection,
@@ -26,6 +27,7 @@ import { PassDocument, type DocSection } from '../document/pass-document';
 })
 export class Panel {
   private readonly api = inject(Api);
+  private readonly router = inject(Router);
 
   /** La sesión sobrevive a un F5 dentro de la misma pestaña, no más allá. */
   private static readonly CLAVE_SESION = 'vistta.sesion';
@@ -160,7 +162,27 @@ export class Panel {
     }
   }
 
+  /**
+   * Monta el panel del cliente, o manda al administrador al suyo.
+   *
+   * Un administrador no tiene perfiles: `admin:create` le borra el que crea el
+   * alta, porque gestiona cuentas y no contenido. Sin esta comprobación, entrar
+   * aquí con una cuenta de administrador montaba el editor sin ningún perfil
+   * detrás: se veía la pantalla entera, se podía escribir, y no se guardaba
+   * nada. Un panel que acepta lo que escribes y lo tira es peor que uno que no
+   * te deja entrar.
+   *
+   * Se REDIRIGE en vez de dar error, y es el reverso exacto de lo que ya hacía
+   * el panel de administración con una sesión de cliente. Dar un error aquí
+   * sería además mentir: las credenciales son correctas y el rol es real; lo
+   * que no encaja es la pantalla. Y no revela nada, porque solo ocurre después
+   * de que la sesión haya demostrado ser de administrador.
+   */
   private async abrirPanel(token: string, user: Usuario): Promise<void> {
+    if (user.role === 'admin') {
+      void this.router.navigate(['/admin']);
+      return;
+    }
     this.sesion.set(token);
     this.usuario.set(user);
     await this.recargarPerfiles(token);
