@@ -57,7 +57,10 @@ export async function createPass(
   // Un perfil congelado no genera pases: está de camino a borrarse, y un enlace
   // que caduca antes de que lo abran es peor que no dar ninguno.
   const profile = await db.one<{ id: string; data: unknown }>(
-    `SELECT id, data FROM vistta.profiles WHERE id = $1 AND status = 'activo'`,
+    `SELECT p.id, p.data FROM vistta.profiles p
+     LEFT JOIN vistta.users u ON u.id = p.owner_id
+     WHERE p.id = $1 AND p.status = 'activo'
+       AND (p.owner_id IS NULL OR u.status = 'activa')`,
     [opts.profileId]
   );
   if (!profile) throw new ProfileNotFoundError(opts.profileId);
@@ -148,8 +151,11 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     brand_color: string | null;
     data: unknown;
   }>(
-    `SELECT id, display_name, brand_color, data FROM vistta.profiles
-     WHERE id = $1 AND status = 'activo'`,
+    `SELECT p.id, p.display_name, p.brand_color, p.data
+     FROM vistta.profiles p
+     LEFT JOIN vistta.users u ON u.id = p.owner_id
+     WHERE p.id = $1 AND p.status = 'activo'
+       AND (p.owner_id IS NULL OR u.status = 'activa')`,
     [claimed.profile_id]
   );
   if (!profile) return null;

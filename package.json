@@ -17,6 +17,7 @@
     "db:migrate": "tsx scripts/migrar.ts",
     "db:seed:local": "tsx scripts/sembrar.ts",
     "user:create": "tsx scripts/crear-usuario.ts",
+    "admin:create": "tsx scripts/crear-admin.ts",
     "setup:local": "pnpm db:up && pnpm db:migrate && pnpm db:seed:local",
     "dev:api": "tsx watch src/server.ts",
     "dev:web": "pnpm --dir web start",

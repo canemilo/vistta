@@ -54,10 +54,13 @@ const MANEJADORES: Record<string, Manejador> = {
     // Esto sí se registra siempre que borre algo, aunque sea una sola fila. Es
     // lo único del sistema que destruye trabajo de un cliente, y tiene que
     // quedar rastro de cuánto y cuándo. Cuántos, nunca de quién: sin PII.
-    if (resultado.mediosCaducados + resultado.perfilesBorrados > 0) {
+    const total =
+      resultado.mediosCaducados + resultado.perfilesBorrados + resultado.cuentasBorradas;
+    if (total > 0) {
       console.warn(
         `purga: ${resultado.mediosCaducados} medios caducados, ` +
-          `${resultado.perfilesBorrados} perfiles congelados borrados`
+          `${resultado.perfilesBorrados} perfiles congelados, ` +
+          `${resultado.cuentasBorradas} cuentas suspendidas`
       );
     }
     await encolar(db, TRABAJO_PURGA, {}, Date.now() + PERIODO_PURGA_MS);

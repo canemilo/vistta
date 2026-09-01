@@ -106,6 +106,25 @@ Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado 
 - La purga no toca un medio que esté en la instantánea de un pase todavía abrible, ni aplica una
   retención nueva a contenido anterior al plan actual (`users.plan_since`).
 
+## Administración (desde F)
+
+La única parte del sistema que **se salta el aislamiento entre inquilinos a propósito**. Reglas que
+no se negocian:
+
+- **El rol `admin` NO se concede por ninguna ruta HTTP**, ni siquiera a otro admin. Solo
+  `pnpm admin:create <id>`, desde la máquina que tiene la base. Un endpoint que otorgue admin
+  convierte cualquier fallo de autorización futuro en una toma de control completa.
+- **404, no 403**, a quien no es admin: un 403 ya confirma que el panel existe.
+- **El admin gestiona cuentas, no contenido.** No hay ni debe haber ruta que le enseñe perfiles,
+  medios o pases de un cliente. Vistta es encargado del tratamiento, no espectador.
+- **Suspender ≠ borrar.** Suspender es reversible (bloquea login, tira sesiones, cierra pases) y la
+  purga se la lleva pasada la gracia. Borrar es inmediato, es para el art. 17 del RGPD, y exige
+  teclear el identificador.
+- **Las contraseñas se generan, no se leen ni se teclean.** Temporal de un solo uso, alfabeto sin
+  caracteres confundibles al dictar. Reiniciarla tira todas las sesiones de esa cuenta.
+- **Todo queda en `admin_audit`**, que no tiene claves ajenas: es historia, y no cambia porque
+  después se borre la cuenta a la que se refiere.
+
 ## Cumplimiento
 
 - RGPD: usuario = responsable; Vistta = encargado (art. 28).

@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D y E.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D, E y la administración de cuentas de F.** El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -27,7 +27,9 @@
 - **Cola `vistta.jobs`** con `FOR UPDATE SKIP LOCKED` y reaper de huérfanos, en el mismo proceso.
 - **Planes** (`prueba`/`pro`/`boveda`) con sus límites en `src/lib/planes.ts`, congelado reversible
   de los perfiles que sobran y purga por antigüedad sobre la cola de D.
-- **87 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
+- **Administración de cuentas**: rol `admin` (solo por script), panel en `/admin`, suspensión
+  reversible, borrado inmediato para el RGPD y auditoría de todo.
+- **106 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
 
@@ -79,7 +81,12 @@
       simultáneos y cuota aplicados en los tres puntos donde se crea algo; congelado reversible;
       purga en la cola de D, con las cifras del cliente ya aplicadas. Ver «Decisiones y desvíos en
       E», más abajo.
-- [ ] **F — Facturación manual (Bizum/PayPal)**: código VISTTA-XXXX, /api/admin/activate-plan, auditoría.
+- [~] **F — Facturación manual + administración**. Hecha la mitad de administración: `/api/admin/*`
+  completo (listar, crear, editar, cambiar plan, reiniciar contraseña, suspender, reactivar,
+  borrar), auditoría de todo y panel en `/admin`. Ver «Administración de cuentas», más abajo.
+  **Pendiente lo de cobrar**: código VISTTA-XXXX, conciliación de Bizum/PayPal y el aviso al
+  cliente de que su plan vence. Hoy el plan lo cambia una persona a mano desde el panel, que es
+  exactamente lo que pedía «facturación manual», pero sin rastro del pago.
 - [ ] **G — Frontend Angular**: viewer con CDK; bento pipe (dimensiones reales desde BD, que D provee);
       vistas de login/register/reset, dashboard, /billing, /admin; accesibilidad + Lighthouse.
 - [ ] **H — Producción/escalado**: Clean Architecture; VPS + Docker + Caddy + PostgreSQL; Cloudflare
@@ -139,6 +146,40 @@ instantánea de un pase todavía abrible (ese enlace ya salió y tiene que segui
 prometía), y no aplica una retención nueva a contenido anterior al plan actual (`plan_since`), para
 que bajar de Bóveda no evapore el archivo esa misma noche. Las dos tienen test y las dos se han
 verificado por mutación.
+
+## 2.3. Administración de cuentas
+
+Es la primera pieza que **rompe el aislamiento entre inquilinos a propósito**. Todo lo demás está
+construido sobre que ninguna cuenta ve la de al lado; un administrador sí. Lo que sostiene que eso
+sea aceptable:
+
+**El rol no se concede por ninguna ruta HTTP.** Ni siquiera para otro administrador. Se da con
+`pnpm admin:create <id>`, desde la máquina que tiene la base. Un endpoint que otorgue admin
+convierte cualquier fallo de autorización futuro en una toma de control completa.
+
+**A quien no es admin se le responde 404, no 403.** Un 403 confirma que el panel existe y dónde.
+
+**El admin gestiona cuentas, no contenido.** No hay ninguna ruta que le deje ver perfiles, medios ni
+pases de un cliente, y el test lo comprueba sobre la respuesta real. Vistta es encargado del
+tratamiento (RGPD art. 28), no espectador.
+
+**Suspender y borrar son cosas distintas.** Suspender es reversible: bloquea el login, tira las
+sesiones abiertas y cierra los pases vivos, pero no borra nada; pasada la misma gracia que los
+perfiles congelados, la purga se lleva la cuenta. Borrar es inmediato e irreversible, existe para la
+supresión del art. 17 del RGPD, y exige teclear el identificador de la cuenta.
+
+**Las contraseñas no se leen: se generan.** Al crear una cuenta o reiniciarla, el servidor genera
+una temporal y la enseña UNA vez. Usa un alfabeto sin caracteres que se confundan al dictarla por
+teléfono (sin `l`/`1`/`i`, sin `o`/`0`, todo minúscula) y va en grupos de cuatro. Reiniciarla tira
+todas las sesiones de esa cuenta: si se reinicia porque está comprometida, dejar viva la sesión del
+que entró no arregla nada.
+
+**Un administrador no puede suspenderse ni borrarse a sí mismo**: dejaría el sistema sin quien lo
+administre y sin forma de arreglarlo desde el panel.
+
+**`admin_audit` no tiene claves ajenas, y no es un descuido.** Es un registro de lo que PASÓ, y lo
+que pasó no cambia porque después se borre una cuenta. Con una clave ajena habría que elegir entre
+que CASCADE borrase el registro de un borrado justo al borrar, o que SET NULL perdiese quién lo hizo.
 
 ## 3. Fallos conocidos
 
@@ -230,6 +271,7 @@ rómpelo a propósito y comprueba que se pone rojo.
       purga verificada por mutación (Bóveda no caduca ni topa pases, la gracia se respeta, un pase
       abierto protege sus medios). Cifras del cliente aplicadas; falta solo fijar
       `GRACIA_CONGELADO_MS`.
-- [ ] Facturación + admin.
+- [~] Admin: hecho y con test (rol solo por script, 404 a los no-admin, sin acceso al contenido,
+  suspensión reversible, borrado confirmado, auditoría). Falta la facturación.
 - [ ] Frontend completo accesible. [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.

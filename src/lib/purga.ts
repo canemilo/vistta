@@ -29,6 +29,7 @@ import { GRACIA_CONGELADO_MS, PLANES, type Plan } from "./planes";
 export interface ResultadoPurga {
   mediosCaducados: number;
   perfilesBorrados: number;
+  cuentasBorradas: number;
 }
 
 interface FilaMedio {
@@ -44,7 +45,42 @@ export async function purgar(
   return {
     mediosCaducados: await purgarMediosCaducados(db, storage, ahora),
     perfilesBorrados: await purgarCongelados(db, storage, ahora),
+    cuentasBorradas: await purgarSuspendidas(db, storage, ahora),
   };
+}
+
+/**
+ * Cuentas suspendidas que han agotado la gracia entera.
+ *
+ * Mismo criterio que los perfiles congelados y con el mismo plazo: suspender es
+ * reversible hasta el último día. Lo que hace irreversible una suspensión es el
+ * tiempo, no la decisión de suspender.
+ *
+ * El borrado inmediato del panel de administración es otra cosa y vive en
+ * `lib/admin.ts`: existe para la supresión del art. 17 del RGPD, donde el plazo
+ * no es de treinta días sino de ahora.
+ */
+async function purgarSuspendidas(db: Db, storage: Storage, ahora: number): Promise<number> {
+  const { rows: cuentas } = await db.query<{ id: string }>(
+    `SELECT id FROM vistta.users
+     WHERE status = 'suspendida' AND suspended_at < $1`,
+    [ahora - GRACIA_CONGELADO_MS]
+  );
+  if (cuentas.length === 0) return 0;
+
+  const ids = cuentas.map((c) => c.id);
+  // Los objetos antes que las filas: el CASCADE se lleva perfiles y medios, pero
+  // el almacenamiento no sabe nada de claves ajenas.
+  const { rows: medios } = await db.query<FilaMedio>(
+    `SELECT m.id, m.storage_key FROM vistta.media m
+     JOIN vistta.profiles p ON p.id = m.profile_id
+     WHERE p.owner_id = ANY($1::text[])`,
+    [ids]
+  );
+  await borrarMedios(db, storage, medios);
+
+  const res = await db.query(`DELETE FROM vistta.users WHERE id = ANY($1::text[])`, [ids]);
+  return res.rowCount;
 }
 
 /**

@@ -15,6 +15,8 @@ export const LOGIN_RULE = {
 export interface Usuario {
   id: string;
   displayName: string;
+  /** 'admin' solo se concede por script; ninguna ruta lo otorga. Ver lib/admin.ts. */
+  role: "cliente" | "admin";
 }
 
 /** Crea la cuenta y su perfil vacío. Devuelve null si el id ya existe. */
@@ -43,7 +45,7 @@ export async function crearUsuario(
       [`p_${datos.id}`, datos.displayName, JSON.stringify({ sections: [] }), ahora, datos.id]
     );
 
-    return { id: datos.id, displayName: datos.displayName };
+    return { id: datos.id, displayName: datos.displayName, role: "cliente" };
   });
 }
 
@@ -53,14 +55,28 @@ export async function verificarCredenciales(
   id: string,
   password: string
 ): Promise<Usuario | null> {
-  const fila = await db.one<{ id: string; display_name: string; password_hash: string }>(
-    `SELECT id, display_name, password_hash FROM vistta.users WHERE id = $1`,
-    [id]
-  );
+  const fila = await db.one<{
+    id: string;
+    display_name: string;
+    password_hash: string;
+    role: "cliente" | "admin";
+    status: string;
+  }>(`SELECT id, display_name, password_hash, role, status FROM vistta.users WHERE id = $1`, [id]);
   if (!fila) return null;
 
   const ok = await verificarPassword(password, fila.password_hash);
-  return ok ? { id: fila.id, displayName: fila.display_name } : null;
+  if (!ok) return null;
+
+  /*
+   * Una cuenta suspendida no entra, y se entera con el mismo mensaje que quien
+   * se equivoca de contraseña. Podría decírsele —«tu cuenta está suspendida»—
+   * pero la comprobación se hace DESPUÉS de verificar la contraseña a
+   * propósito: si respondiera antes, cualquiera podría averiguar qué cuentas
+   * existen y cuáles están suspendidas sin saber ninguna contraseña.
+   */
+  if (fila.status !== "activa") return null;
+
+  return { id: fila.id, displayName: fila.display_name, role: fila.role };
 }
 
 /** Abre sesión para un usuario y devuelve el token en claro (solo se ve aquí). */
@@ -85,14 +101,17 @@ export async function usuarioDeLaSesion(db: Db, token: string | null): Promise<U
   if (!token) return null;
 
   const tokenHash = await hashToken(token);
-  const fila = await db.one<{ id: string; display_name: string }>(
-    `SELECT u.id, u.display_name
+  // El estado se comprueba aquí y no solo al entrar: suspender una cuenta borra
+  // sus sesiones, pero si alguna vez se suspendiera por otra vía, un token vivo
+  // no puede seguir sirviendo.
+  const fila = await db.one<{ id: string; display_name: string; role: "cliente" | "admin" }>(
+    `SELECT u.id, u.display_name, u.role
      FROM vistta.panel_sessions s JOIN vistta.users u ON u.id = s.user_id
-     WHERE s.token_hash = $1 AND s.expires_at > $2`,
+     WHERE s.token_hash = $1 AND s.expires_at > $2 AND u.status = 'activa'`,
     [tokenHash, Date.now()]
   );
 
-  return fila ? { id: fila.id, displayName: fila.display_name } : null;
+  return fila ? { id: fila.id, displayName: fila.display_name, role: fila.role } : null;
 }
 
 /** Cierra la sesión que trae ese token. */

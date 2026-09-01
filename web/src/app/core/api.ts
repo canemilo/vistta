@@ -35,6 +35,31 @@ export interface PassView {
 export interface Usuario {
   id: string;
   displayName: string;
+  role: 'cliente' | 'admin';
+}
+
+/** Una cuenta vista desde administración. Sin una línea de contenido del cliente. */
+export interface CuentaAdmin {
+  id: string;
+  displayName: string;
+  plan: 'prueba' | 'pro' | 'boveda';
+  status: 'activa' | 'suspendida';
+  role: 'cliente' | 'admin';
+  createdAt: number;
+  suspendedAt: number | null;
+  perfilesActivos: number;
+  perfilesCongelados: number;
+  pasesAbiertos: number;
+  bytesUsados: number;
+}
+
+export interface RegistroAuditoria {
+  id: string;
+  adminId: string;
+  accion: string;
+  objetivo: string | null;
+  detalle: Record<string, unknown>;
+  createdAt: number;
 }
 
 export interface Sesion {
@@ -232,6 +257,91 @@ export class Api {
   }
 
   private readonly previews = new Map<string, string>();
+
+  // --- administración ------------------------------------------------------
+  //
+  // Estas llamadas solo existen para una sesión con rol admin. A cualquier otra
+  // el servidor le responde 404: desde fuera, este bloque de la API no existe.
+
+  adminCuentas(session: string): Promise<{ cuentas: CuentaAdmin[]; planes: string[] }> {
+    return firstValueFrom(
+      this.http.get<{ cuentas: CuentaAdmin[]; planes: string[] }>('/api/admin/cuentas', {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  adminCrearCuenta(
+    session: string,
+    body: { id: string; displayName: string; plan?: string },
+  ): Promise<{ id: string; displayName: string; password: string }> {
+    return firstValueFrom(
+      this.http.post<{ id: string; displayName: string; password: string }>(
+        '/api/admin/cuentas',
+        body,
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  adminEditarCuenta(session: string, id: string, displayName: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.patch<{ ok: boolean }>(
+        `/api/admin/cuentas/${encodeURIComponent(id)}`,
+        { displayName },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  adminPlan(session: string, id: string, plan: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.put<{ ok: boolean }>(
+        `/api/admin/cuentas/${encodeURIComponent(id)}/plan`,
+        { plan },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  adminPassword(session: string, id: string): Promise<{ password: string }> {
+    return firstValueFrom(
+      this.http.post<{ password: string }>(
+        `/api/admin/cuentas/${encodeURIComponent(id)}/password`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  adminSuspension(session: string, id: string, suspender: boolean): Promise<{ ok: boolean }> {
+    const accion = suspender ? 'suspender' : 'reactivar';
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `/api/admin/cuentas/${encodeURIComponent(id)}/${accion}`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  /** Borrado inmediato e irreversible. `confirmacion` debe ser el id tecleado. */
+  adminBorrarCuenta(session: string, id: string, confirmacion: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/admin/cuentas/${encodeURIComponent(id)}`, {
+        headers: { authorization: `Bearer ${session}` },
+        body: { confirmacion },
+      }),
+    );
+  }
+
+  adminAuditoria(session: string): Promise<{ registros: RegistroAuditoria[] }> {
+    return firstValueFrom(
+      this.http.get<{ registros: RegistroAuditoria[] }>('/api/admin/auditoria', {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
 
   createPass(session: string, profileId: string): Promise<{ url: string; expiresAt: number }> {
     return firstValueFrom(

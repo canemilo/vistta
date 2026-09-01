@@ -90,7 +90,7 @@ export async function resetDb(): Promise<void> {
   await db.query(
     `TRUNCATE vistta.passes, vistta.profiles, vistta.rate_limits,
               vistta.panel_sessions, vistta.users, vistta.media,
-              vistta.pass_media, vistta.jobs CASCADE`
+              vistta.pass_media, vistta.jobs, vistta.admin_audit CASCADE`
   );
 }
 
@@ -153,4 +153,14 @@ export async function subirMedio(
 /** Una galería de un solo medio, en la forma que guarda el perfil. */
 export function galeriaCon(mediaId: string, caption?: string) {
   return { sections: [{ type: "galeria", title: "Selección", items: [{ mediaId, caption }] }] };
+}
+
+/** Crea una cuenta y la promueve a administradora, como hace el script. */
+export async function crearAdmin(id = "soporte", displayName = "Soporte"): Promise<string> {
+  await crearUsuario(db, { id, password: CLAVE, displayName }, COSTE_DE_PRUEBAS);
+  await db.query(`UPDATE vistta.users SET role = 'admin' WHERE id = $1`, [id]);
+  // Un administrador no gestiona contenido: el perfil vacío que crea la cuenta
+  // sobra, igual que lo quita el script de creación.
+  await db.query(`DELETE FROM vistta.profiles WHERE owner_id = $1`, [id]);
+  return id;
 }
