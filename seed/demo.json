@@ -1,0 +1,111 @@
+{
+  "nordeste": {
+    "displayName": "Estudio Nordeste",
+    "brandColor": "#34d399",
+    "data": {
+      "tagline": "Fotografía de arquitectura y espacio construido.",
+      "intro": "Esta es la selección que preparé para vuestra reunión del jueves. Va ordenada como la contaría en persona: primero el encargo, después la serie completa de la casa y al final una selección de trabajo reciente que creo que encaja con lo que buscáis.",
+      "sections": [
+        {
+          "type": "texto",
+          "title": "El encargo",
+          "body": "Dos semanas de rodaje entre septiembre y octubre, con luz de mañana en las fachadas norte y de tarde en el patio.\n\nTodo está fotografiado con la casa habitada: quería que se viera el uso y no solo el volumen. Si preferís una segunda sesión con la casa vacía, se puede plantear para primavera."
+        },
+        {
+          "type": "proyecto",
+          "title": "Casa Vltava",
+          "body": "La serie completa, en el orden en que se recorre la casa: acceso, patio, planta baja y la escalera que articula las dos alas.",
+          "items": [
+            {
+              "key": "u/p_nordeste/01.jpg",
+              "type": "image",
+              "caption": "Acceso desde el camino norte"
+            },
+            {
+              "key": "u/p_nordeste/02.jpg",
+              "type": "image",
+              "caption": "Patio interior, media tarde"
+            },
+            {
+              "key": "u/p_nordeste/03.jpg",
+              "type": "image",
+              "caption": "Estar principal"
+            },
+            {
+              "key": "u/p_nordeste/04.jpg",
+              "type": "image",
+              "caption": "Escalera, luz cenital"
+            }
+          ]
+        },
+        {
+          "type": "galeria",
+          "title": "Trabajo reciente",
+          "items": [
+            {
+              "key": "u/p_nordeste/05.jpg",
+              "type": "image",
+              "caption": "Nave Lidice"
+            },
+            {
+              "key": "u/p_nordeste/06.jpg",
+              "type": "image",
+              "caption": "Rehabilitación Karlín"
+            },
+            {
+              "key": "u/p_nordeste/07.jpg",
+              "type": "image",
+              "caption": "Pabellón Stromovka"
+            },
+            {
+              "key": "u/p_nordeste/08.jpg",
+              "type": "image",
+              "caption": "Estudio Holešovice"
+            }
+          ]
+        },
+        {
+          "type": "texto",
+          "title": "Cómo seguimos",
+          "body": "Si os encaja, os paso el presupuesto cerrado por serie y las condiciones de cesión de uso.\n\nLas fotos de esta página son de baja resolución y llevan marca por visita: los archivos finales se entregan aparte."
+        }
+      ]
+    }
+  },
+  "marina": {
+    "displayName": "Marina Ruiz",
+    "brandColor": "#5b87b0",
+    "data": {
+      "tagline": "Retrato editorial y reportaje de estudio.",
+      "intro": "Una selección corta, pensada para que la veas de una sentada.",
+      "sections": [
+        {
+          "type": "galeria",
+          "title": "Selección 2026",
+          "items": [
+            {
+              "key": "u/p_marina/01.jpg",
+              "type": "image",
+              "caption": "Serie taller I"
+            },
+            {
+              "key": "u/p_marina/02.jpg",
+              "type": "image",
+              "caption": "Serie taller II"
+            },
+            {
+              "key": "u/p_marina/03.jpg",
+              "type": "image",
+              "caption": "Retrato en planta"
+            }
+          ]
+        },
+        {
+          "type": "texto",
+          "title": "Disponibilidad",
+          "body": "Tengo hueco a partir de la segunda semana de marzo. Media jornada en estudio o jornada completa en localización."
+        }
+      ]
+    }
+  }
+}

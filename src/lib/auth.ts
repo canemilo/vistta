@@ -1,6 +1,6 @@
-import type { Env } from "../env";
+import type { Db } from "../db";
 import { generateToken, hashToken } from "./token";
-import { ITERACIONES_POR_DEFECTO, hashPassword, verificarPassword } from "./password";
+import { COSTE_POR_DEFECTO, hashPassword, verificarPassword, type CosteArgon2 } from "./password";
 
 export const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 h de trabajo en el panel
 
@@ -17,115 +17,94 @@ export interface Usuario {
   displayName: string;
 }
 
-interface FilaUsuario {
-  id: string;
-  display_name: string;
-  password_hash: string;
-  salt: string;
-  iterations: number;
-}
-
 /** Crea la cuenta y su perfil vacío. Devuelve null si el id ya existe. */
 export async function crearUsuario(
-  env: Env,
-  datos: { id: string; password: string; displayName: string; iterations?: number }
+  db: Db,
+  datos: { id: string; password: string; displayName: string },
+  coste: CosteArgon2 = COSTE_POR_DEFECTO
 ): Promise<Usuario | null> {
-  const existe = await env.DB.prepare(`SELECT id FROM users WHERE id = ?1`)
-    .bind(datos.id)
-    .first<{ id: string }>();
-  if (existe) return null;
-
-  const iteraciones =
-    datos.iterations ?? (Number(env.PBKDF2_ITERATIONS) || ITERACIONES_POR_DEFECTO);
-  const { hash, salt, iterations } = await hashPassword(datos.password, iteraciones);
+  const hash = await hashPassword(datos.password, coste);
   const ahora = Date.now();
 
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO users (id, display_name, password_hash, salt, iterations, created_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
-    ).bind(datos.id, datos.displayName, hash, salt, iterations, ahora),
-    env.DB.prepare(
-      `INSERT INTO profiles (id, display_name, brand_color, data, created_at, owner_id)
-       VALUES (?1, ?2, NULL, '{"sections":[]}', ?3, ?4)`
-    ).bind(`p_${datos.id}`, datos.displayName, ahora, datos.id),
-  ]);
+  // Cuenta y perfil van juntos o no van: una cuenta sin perfil no puede hacer
+  // nada, y un perfil sin dueño no lo puede reclamar nadie.
+  return db.tx(async (tx) => {
+    const insertado = await tx.query(
+      `INSERT INTO vistta.users (id, display_name, password_hash, created_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [datos.id, datos.displayName, hash, ahora]
+    );
+    if (insertado.rowCount === 0) return null; // el id ya estaba cogido
 
-  return { id: datos.id, displayName: datos.displayName };
+    await tx.query(
+      `INSERT INTO vistta.profiles (id, display_name, brand_color, data, created_at, owner_id)
+       VALUES ($1, $2, NULL, $3::jsonb, $4, $5)`,
+      [`p_${datos.id}`, datos.displayName, JSON.stringify({ sections: [] }), ahora, datos.id]
+    );
+
+    return { id: datos.id, displayName: datos.displayName };
+  });
 }
 
 /** Comprueba id + contraseña. Devuelve el usuario o null, sin decir cuál falló. */
 export async function verificarCredenciales(
-  env: Env,
+  db: Db,
   id: string,
   password: string
 ): Promise<Usuario | null> {
-  const fila = await env.DB.prepare(
-    `SELECT id, display_name, password_hash, salt, iterations FROM users WHERE id = ?1`
-  )
-    .bind(id)
-    .first<FilaUsuario>();
+  const fila = await db.one<{ id: string; display_name: string; password_hash: string }>(
+    `SELECT id, display_name, password_hash FROM vistta.users WHERE id = $1`,
+    [id]
+  );
   if (!fila) return null;
 
-  const ok = await verificarPassword(password, {
-    hash: fila.password_hash,
-    salt: fila.salt,
-    iterations: fila.iterations,
-  });
+  const ok = await verificarPassword(password, fila.password_hash);
   return ok ? { id: fila.id, displayName: fila.display_name } : null;
 }
 
 /** Abre sesión para un usuario y devuelve el token en claro (solo se ve aquí). */
 export async function createSession(
-  env: Env,
+  db: Db,
   userId: string
 ): Promise<{ token: string; expiresAt: number }> {
   const token = generateToken();
   const tokenHash = await hashToken(token);
   const now = Date.now();
   const expiresAt = now + SESSION_TTL_MS;
-  await env.DB.prepare(
-    `INSERT INTO panel_sessions (id, token_hash, created_at, expires_at, user_id)
-     VALUES (?1, ?2, ?3, ?4, ?5)`
-  )
-    .bind(crypto.randomUUID(), tokenHash, now, expiresAt, userId)
-    .run();
+  await db.query(
+    `INSERT INTO vistta.panel_sessions (id, token_hash, user_id, created_at, expires_at)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [crypto.randomUUID(), tokenHash, userId, now, expiresAt]
+  );
   return { token, expiresAt };
 }
 
-/** Lo mínimo que necesita esta capa de una petición: sirve para cualquier ruta. */
-interface Peticion {
-  req: { header(nombre: string): string | undefined };
-  env: Env;
-}
+/** Usuario dueño de una sesión, o null si el token no vale o ya caducó. */
+export async function usuarioDeLaSesion(db: Db, token: string | null): Promise<Usuario | null> {
+  if (!token) return null;
 
-function bearer(c: Peticion): string | null {
-  const header = c.req.header("Authorization") ?? "";
-  return header.startsWith("Bearer ") ? header.slice(7) : null;
-}
-
-/** Usuario dueño de la sesión que trae la petición, o null si no hay sesión válida. */
-export async function usuarioDeLaSesion(c: Peticion): Promise<Usuario | null> {
-  const presentado = bearer(c);
-  if (!presentado) return null;
-
-  const tokenHash = await hashToken(presentado);
-  const fila = await c.env.DB.prepare(
+  const tokenHash = await hashToken(token);
+  const fila = await db.one<{ id: string; display_name: string }>(
     `SELECT u.id, u.display_name
-     FROM panel_sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token_hash = ?1 AND s.expires_at > ?2`
-  )
-    .bind(tokenHash, Date.now())
-    .first<{ id: string; display_name: string }>();
+     FROM vistta.panel_sessions s JOIN vistta.users u ON u.id = s.user_id
+     WHERE s.token_hash = $1 AND s.expires_at > $2`,
+    [tokenHash, Date.now()]
+  );
 
   return fila ? { id: fila.id, displayName: fila.display_name } : null;
 }
 
-/** Cierra la sesión actual. */
-export async function cerrarSesion(c: Peticion): Promise<void> {
-  const presentado = bearer(c);
-  if (!presentado) return;
-  await c.env.DB.prepare(`DELETE FROM panel_sessions WHERE token_hash = ?1`)
-    .bind(await hashToken(presentado))
-    .run();
+/** Cierra la sesión que trae ese token. */
+export async function cerrarSesion(db: Db, token: string | null): Promise<void> {
+  if (!token) return;
+  await db.query(`DELETE FROM vistta.panel_sessions WHERE token_hash = $1`, [
+    await hashToken(token),
+  ]);
+}
+
+/** Extrae el token de una cabecera Authorization: Bearer. */
+export function bearer(header: string | undefined): string | null {
+  const valor = header ?? "";
+  return valor.startsWith("Bearer ") ? valor.slice(7) : null;
 }

@@ -1,58 +1,54 @@
-import { timingSafeEqual, toHex } from "./crypto";
+import { Algorithm, hash, verify } from "@node-rs/argon2";
 
 /**
- * Coste por defecto de PBKDF2. Se guarda por usuario, así que subirlo solo
- * afecta a las contraseñas nuevas. Ojo: el plan gratuito de Workers limita la
- * CPU por petición; si el login se corta, baja PBKDF2_ITERATIONS.
+ * Contraseñas del panel con Argon2id.
+ *
+ * Sustituye a PBKDF2, que era lo único que cabía en Workers. Argon2id es duro
+ * en memoria, así que una GPU no lo acelera como aceleraba a PBKDF2.
+ *
+ * El hash resultante es una cadena PHC (`$argon2id$v=19$m=...,t=...,p=...$salt$hash`)
+ * que ya lleva dentro el salt y el coste: subir los parámetros no invalida las
+ * contraseñas antiguas, porque cada una se verifica con los suyos.
  */
-export const ITERACIONES_POR_DEFECTO = 100_000;
 
-export interface PasswordHash {
-  hash: string;
-  salt: string;
-  iterations: number;
+/** Perfil de coste. Los valores por defecto siguen la recomendación de OWASP. */
+export interface CosteArgon2 {
+  /** Memoria en KiB. */
+  memoryCost: number;
+  /** Número de pasadas. */
+  timeCost: number;
+  parallelism: number;
 }
 
-export function generarSalt(): string {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return toHex(bytes);
+export const COSTE_POR_DEFECTO: CosteArgon2 = {
+  memoryCost: 19_456, // 19 MiB
+  timeCost: 2,
+  parallelism: 1,
+};
+
+/**
+ * Coste mínimo, SOLO para las pruebas: el arnés crea decenas de cuentas y no
+ * debe pagar el coste real. Nunca se usa fuera de test/.
+ */
+export const COSTE_DE_PRUEBAS: CosteArgon2 = {
+  memoryCost: 512,
+  timeCost: 1,
+  parallelism: 1,
+};
+
+export function hashPassword(password: string, coste = COSTE_POR_DEFECTO): Promise<string> {
+  return hash(password, { algorithm: Algorithm.Argon2id, ...coste });
 }
 
-export async function derivar(password: string, salt: string, iterations: number): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: hexABytes(salt), iterations },
-    key,
-    256
-  );
-  return toHex(new Uint8Array(bits));
-}
-
-export async function hashPassword(
-  password: string,
-  iterations = ITERACIONES_POR_DEFECTO
-): Promise<PasswordHash> {
-  const salt = generarSalt();
-  return { hash: await derivar(password, salt, iterations), salt, iterations };
-}
-
-export async function verificarPassword(
-  password: string,
-  guardado: PasswordHash
-): Promise<boolean> {
-  const calculado = await derivar(password, guardado.salt, guardado.iterations);
-  return timingSafeEqual(calculado, guardado.hash);
-}
-
-function hexABytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  return bytes;
+/**
+ * Verifica contra el hash guardado. Devuelve false ante un hash corrupto o de
+ * otro formato en vez de lanzar: por esta puerta pasa el login, y una excepción
+ * ahí sería un 500 que distingue "usuario raro" de "contraseña mala".
+ */
+export async function verificarPassword(password: string, phc: string): Promise<boolean> {
+  try {
+    return await verify(phc, password);
+  } catch {
+    return false;
+  }
 }

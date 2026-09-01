@@ -1,7 +1,15 @@
-import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
-import { call, callAs, crearCuenta, panelSession, resetDb, seedProfile } from "./helpers";
+import {
+  call,
+  callAs,
+  crearCuenta,
+  db,
+  panelSession,
+  resetDb,
+  seedProfile,
+  storage,
+} from "./helpers";
 
 beforeEach(resetDb);
 
@@ -43,12 +51,12 @@ describe("contenido del perfil", () => {
 
     expect((await guardar(sesion, profileId, CONTENIDO)).status).toBe(200);
 
-    const { token } = await createPass(env, { profileId });
+    const { token } = await createPass(db, { profileId });
     const res = await callAs("198.51.100.21", "/api/open/" + token);
-    const body = await res.json<{
+    const body = (await res.json()) as {
       profile: { tagline: string; intro: string };
       sections: { type: string; title?: string; body?: string; items: { url: string }[] }[];
-    }>();
+    };
 
     expect(body.profile.tagline).toBe("Fotografía de arquitectura");
     expect(body.sections.map((s) => s.type)).toEqual(["texto", "proyecto", "galeria"]);
@@ -90,7 +98,7 @@ describe("contenido del perfil", () => {
 
     // No aparece en su listado...
     const lista = await callAs("198.51.100.30", "/api/profiles", { headers: auth });
-    const { profiles } = await lista.json<{ profiles: { id: string }[] }>();
+    const { profiles } = (await lista.json()) as { profiles: { id: string }[] };
     expect(profiles.map((p) => p.id)).not.toContain(ajeno);
 
     // ...ni se puede leer ni escribir: 404, no 403, para no confirmar que existe.
@@ -109,7 +117,7 @@ describe("contenido del perfil", () => {
     const res = await callAs("198.51.100.22", `/api/profiles/${profileId}`, {
       headers: { authorization: `Bearer ${sesion}` },
     });
-    const body = await res.json<{ data: { sections: { type: string }[] } }>();
+    const body = (await res.json()) as { data: { sections: { type: string }[] } };
     expect(body.data.sections).toHaveLength(3);
   });
 
@@ -122,10 +130,11 @@ describe("contenido del perfil", () => {
       },
       await crearCuenta()
     );
-    const { token } = await createPass(env, { profileId });
-    const body = await (
-      await callAs("198.51.100.23", "/api/open/" + token)
-    ).json<{ profile: { intro: string }; sections: { type: string }[] }>();
+    const { token } = await createPass(db, { profileId });
+    const body = (await (await callAs("198.51.100.23", "/api/open/" + token)).json()) as {
+      profile: { intro: string };
+      sections: { type: string }[];
+    };
     expect(body.profile.intro).toBe("texto antiguo");
     expect(body.sections).toEqual([expect.objectContaining({ type: "galeria" })]);
   });
@@ -149,9 +158,10 @@ describe("subida de fotos", () => {
     const sesion = await panelSession(userId);
     const res = await subir(sesion, "image/jpeg");
     expect(res.status).toBe(201);
-    const { key } = await res.json<{ key: string }>();
+    const { key } = (await res.json()) as { key: string };
     expect(key).toMatch(/^u\/pro_1\/[0-9a-f-]{36}\.jpg$/);
-    expect(await (await env.MEDIA.get(key))?.text()).toBe("foto");
+    const guardado = await storage.get(key);
+    expect(new TextDecoder().decode(guardado?.bytes)).toBe("foto");
   });
 
   it("rechaza formatos que no son imagen admitida", async () => {

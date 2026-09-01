@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { CLAVE, call, callAs, crearCuenta, resetDb } from "./helpers";
+import { CLAVE, call, callAs, crearCuenta, db, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 
@@ -69,7 +69,7 @@ describe("sesión del panel", () => {
       body: JSON.stringify({ userId: "marina", password: CLAVE }),
     });
     expect(res.status).toBe(201);
-    const { token, expiresAt } = await res.json<{ token: string; expiresAt: number }>();
+    const { token, expiresAt } = (await res.json()) as { token: string; expiresAt: number };
     expect(expiresAt).toBeGreaterThan(Date.now());
 
     const created = await callAs("198.51.100.4", "/api/passes", {
@@ -82,17 +82,14 @@ describe("sesión del panel", () => {
   });
 
   it("una sesión caducada deja de autorizar", async () => {
-    const { env } = await import("cloudflare:test");
     await crearCuenta();
     const res = await callAs("198.51.100.5", "/api/panel/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ userId: "marina", password: CLAVE }),
     });
-    const { token } = await res.json<{ token: string }>();
-    await env.DB.prepare("UPDATE panel_sessions SET expires_at = ?")
-      .bind(Date.now() - 1)
-      .run();
+    const { token } = (await res.json()) as { token: string };
+    await db.query("UPDATE vistta.panel_sessions SET expires_at = $1", [Date.now() - 1]);
 
     const created = await callAs("198.51.100.5", "/api/passes", {
       method: "POST",

@@ -16,8 +16,10 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
   cliente no vale nada: se valida contra los bytes reales al confirmar la subida.
 - Validación: Zod. Pruebas: Vitest contra **Postgres real** (servicio de contenedor en CI, Docker en
   local). **pg-mem queda descartado**: es monohilo y sin MVCC, así que el test del consumo atómico del
-  pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante del producto. Deploy MVP: host Node sin tarjeta
-  (p. ej. Render) o VPS; frontend en Cloudflare Pages.
+  pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante del producto.
+  **Un motor real no basta**: el test tiene que provocar la carrera de verdad. Dos peticiones
+  simultáneas no la provocan (se comprobó: un consumo mal hecho las pasaba). Hace falta una ráfaga.
+  Deploy MVP: host Node sin tarjeta (p. ej. Render) o VPS; frontend en Cloudflare Pages.
 
 > Nota de decisión: se descarta D1 para el MVP. D1 es gratis y sin tarjeta, pero el proyecto va a Postgres
 > en producción; usar Supabase/Postgres desde el inicio evita la migración D1→Postgres. El peaje de tarjeta
@@ -28,7 +30,7 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
 El pase se consume UNA sola vez y el consumo es ATÓMICO con un único UPDATE condicional:
 
 ```sql
-UPDATE passes SET status='consumed', consumed_at=$1
+UPDATE vistta.passes SET status='consumed', consumed_at=$1
 WHERE token_hash=$2 AND status='pending' AND expires_at > $1;
 ```
 
@@ -51,6 +53,17 @@ Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado 
 
 - RGPD: usuario = responsable; Vistta = encargado (art. 28).
 - AUP con notice-and-takedown; **tolerancia cero** a CSAM y a contenido no consentido.
+
+## Estructura del backend (desde D0)
+
+- `src/server.ts` es lo único que habla con `process.env` y abre sockets; `src/app.ts` expone
+  `createApp(deps)`. **En Node `c.env` NO son bindings**: las dependencias se inyectan al construir.
+- Todo lo que toca la base recibe un `Db` (`src/db.ts`), no un pool: transacción y pool son
+  intercambiables y las pruebas van contra Postgres real sin dobles.
+- Los medios pasan por el puerto `Storage` (`src/storage/port.ts`). Cambiar a R2 en el bloque H es
+  escribir otro adaptador, no reescribir rutas.
+- El esquema es `vistta`, nunca `public`: `public` es lo que Supabase expone por PostgREST.
+- Las tablas se nombran cualificadas (`vistta.passes`) en todas las consultas.
 
 ## Cómo trabajar aquí
 

@@ -1,13 +1,10 @@
-import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
-import { call, callAs, crearCuenta, resetDb, seedProfile } from "./helpers";
+import { call, callAs, crearCuenta, db, resetDb, seedProfile, storage } from "./helpers";
 
 beforeEach(async () => {
   await resetDb();
-  await env.MEDIA.put("obras/foto.jpg", "bytes-de-la-foto", {
-    httpMetadata: { contentType: "image/jpeg" },
-  });
+  await storage.put("obras/foto.jpg", new TextEncoder().encode("bytes-de-la-foto"), "image/jpeg");
 });
 
 async function openPassWithMedia(ip: string) {
@@ -26,9 +23,9 @@ async function openPassWithMedia(ip: string) {
     },
     propietario
   );
-  const { token } = await createPass(env, { profileId });
+  const { token } = await createPass(db, { profileId });
   const res = await callAs(ip, "/api/open/" + token);
-  const body = await res.json<{ sections: { items: { url: string; type: string }[] }[] }>();
+  const body = (await res.json()) as { sections: { items: { url: string; type: string }[] }[] };
   return { media: body.sections.flatMap((s) => s.items) };
 }
 

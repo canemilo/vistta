@@ -1,0 +1,25 @@
+# Postgres para desarrollo y pruebas en local.
+#   pnpm db:up      levanta la base
+#   pnpm db:down    la para
+#
+# El puerto es 5433, no 5432, para no chocar con un Postgres ya instalado en la
+# máquina. Los datos van a un volumen: `docker compose down -v` los borra.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vistta
+      POSTGRES_PASSWORD: vistta
+      POSTGRES_DB: vistta_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - vistta-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vistta -d vistta_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  vistta-pgdata:

@@ -8,6 +8,28 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+
+    # Postgres de verdad, no un doble: los invariantes del producto (el consumo
+    # atómico del pase) son de concurrencia y un motor monohilo los daría por
+    # buenos aunque estuvieran mal. GitHub lo da como servicio, gratis.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vistta
+          POSTGRES_PASSWORD: vistta
+          POSTGRES_DB: vistta_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U vistta -d vistta_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      TEST_DATABASE_URL: postgresql://vistta:vistta@localhost:5433/vistta_test
+
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
