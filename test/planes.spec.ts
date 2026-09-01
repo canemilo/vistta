@@ -6,6 +6,7 @@ import { reservarMedio, CuotaExcedidaError } from "../src/lib/media-store";
 import { GRACIA_CONGELADO_MS, PLANES } from "../src/lib/planes";
 import { LIMITE_POR_TIPO } from "../src/lib/sniff";
 import {
+  calentarPool,
   callAs,
   crearCuenta,
   db,
@@ -70,6 +71,7 @@ describe("límites del plan", () => {
      * por el mismo motivo: con dos peticiones el fallo no aparece. Verificado
      * por mutación quitando el `FOR UPDATE` de la fila de la cuenta.
      */
+    await calentarPool();
     const intentos = await Promise.allSettled(
       Array.from({ length: 16 }, () => createPass(db, { profileId: perfilId }))
     );
@@ -116,6 +118,7 @@ describe("límites del plan", () => {
         body: JSON.stringify({ displayName: "Nuevo" }),
       });
 
+    await calentarPool();
     const respuestas = await Promise.all(Array.from({ length: 16 }, crear));
     const creados = respuestas.filter((r) => r.status === 201);
     // Ya tenía uno (el que crea la cuenta), así que solo caben los que faltan.

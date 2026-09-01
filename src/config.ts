@@ -48,6 +48,18 @@ const ConfigSchema = z.object({
   /** Salta RLS: nunca sale del proceso Node, nunca a un log, nunca al navegador. */
   SUPABASE_SECRET_KEY: z.string().min(1).optional(),
   SUPABASE_MEDIA_BUCKET: z.string().min(1).default("vistta-media"),
+
+  /*
+   * Datos de cobro. No hay pasarela: el cliente paga por Bizum o PayPal y una
+   * persona concilia. Estos dos van en la configuración y no en el código
+   * porque son datos de contacto del negocio, cambian sin que cambie el
+   * software, y en un despliegue de otro no tienen por qué ser los mismos.
+   *
+   * Se los enseña el backend al cliente que pide mejorar de plan, así que son
+   * públicos por definición: no son un secreto, son un número de teléfono.
+   */
+  BIZUM_TELEFONO: z.string().min(1).optional(),
+  PAYPAL_DESTINO: z.string().min(1).optional(),
 });
 
 export type Config = Readonly<z.infer<typeof ConfigSchema>>;

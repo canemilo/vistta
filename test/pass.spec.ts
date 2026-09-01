@@ -1,6 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { consumePass, createPass, ProfileNotFoundError } from "../src/lib/pass";
-import { call, callAs, crearCuenta, db, panelSession, resetDb, seedProfile } from "./helpers";
+import {
+  calentarPool,
+  call,
+  callAs,
+  crearCuenta,
+  db,
+  panelSession,
+  resetDb,
+  seedProfile,
+} from "./helpers";
 
 beforeEach(resetDb);
 
@@ -46,6 +55,10 @@ describe("ciclo del pase", () => {
     const profileId = await seedProfile();
     const { token } = await createPass(db, { profileId, ttlSeconds: 900 });
 
+    // Ver `calentarPool`: con el pool frío, la primera petición termina su
+    // transacción mientras las otras quince siguen conectándose, y la carrera
+    // que este test existe para provocar no llega a ocurrir.
+    await calentarPool();
     const intentos = await Promise.all(Array.from({ length: 16 }, () => consumePass(db, token)));
 
     expect(intentos.filter((v) => v !== null)).toHaveLength(1);

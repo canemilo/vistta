@@ -53,6 +53,39 @@ export interface CuentaAdmin {
   bytesUsados: number;
 }
 
+export interface Pago {
+  id: string;
+  code: string;
+  userId: string;
+  plan: 'prueba' | 'pro' | 'boveda';
+  periodo: 'mensual' | 'anual';
+  /** En céntimos y entero: un importe en coma flotante acaba cobrando 11,999999. */
+  importe: number;
+  moneda: string;
+  status: 'pendiente' | 'cobrado' | 'anulado';
+  expiresAt: number;
+  createdAt: number;
+  confirmedAt: number | null;
+  confirmedBy: string | null;
+  metodo: string | null;
+  nota: string | null;
+}
+
+export interface EstadoFacturacion {
+  plan: 'prueba' | 'pro' | 'boveda' | null;
+  /** null = sin caducidad. */
+  planHasta: number | null;
+  porVencer: boolean;
+  pendiente: Pago | null;
+  catalogo: {
+    planes: string[];
+    periodos: string[];
+    precios: Record<string, Record<string, number>>;
+    moneda: string;
+  };
+  pago: { bizum: string | null; paypal: string | null };
+}
+
 export interface RegistroAuditoria {
   id: string;
   adminId: string;
@@ -258,6 +291,31 @@ export class Api {
 
   private readonly previews = new Map<string, string>();
 
+  // --- facturación (cliente) -----------------------------------------------
+
+  facturacion(session: string): Promise<EstadoFacturacion> {
+    return firstValueFrom(
+      this.http.get<EstadoFacturacion>('/api/billing', {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  /** Pide un plan y devuelve el código que hay que poner en el concepto del pago. */
+  solicitarPlan(
+    session: string,
+    plan: string,
+    periodo: string,
+  ): Promise<{ pago: Pago; pago_a: { bizum: string | null; paypal: string | null } }> {
+    return firstValueFrom(
+      this.http.post<{ pago: Pago; pago_a: { bizum: string | null; paypal: string | null } }>(
+        '/api/billing/solicitar',
+        { plan, periodo },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
   // --- administración ------------------------------------------------------
   //
   // Estas llamadas solo existen para una sesión con rol admin. A cualquier otra
@@ -332,6 +390,39 @@ export class Api {
         headers: { authorization: `Bearer ${session}` },
         body: { confirmacion },
       }),
+    );
+  }
+
+  adminPagos(session: string): Promise<{ pagos: Pago[] }> {
+    return firstValueFrom(
+      this.http.get<{ pagos: Pago[] }>('/api/admin/pagos', {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  adminConfirmarPago(
+    session: string,
+    code: string,
+    metodo: string,
+    nota?: string,
+  ): Promise<{ pago: Pago; planHasta: number }> {
+    return firstValueFrom(
+      this.http.post<{ pago: Pago; planHasta: number }>(
+        `/api/admin/pagos/${encodeURIComponent(code)}/confirmar`,
+        { metodo, nota },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  adminAnularPago(session: string, code: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `/api/admin/pagos/${encodeURIComponent(code)}/anular`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
     );
   }
 

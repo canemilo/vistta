@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D, E y la administración de cuentas de F.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D, E y F.** El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -29,7 +29,9 @@
   de los perfiles que sobran y purga por antigüedad sobre la cola de D.
 - **Administración de cuentas**: rol `admin` (solo por script), panel en `/admin`, suspensión
   reversible, borrado inmediato para el RGPD y auditoría de todo.
-- **106 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
+- **Facturación manual**: código VISTTA-XXXXXX, conciliación por un administrador, vencimiento de
+  plan en la cola. Precios en `src/lib/planes.ts`, pendientes de decidir.
+- **123 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
 
@@ -181,6 +183,37 @@ administre y sin forma de arreglarlo desde el panel.
 que pasó no cambia porque después se borre una cuenta. Con una clave ajena habría que elegir entre
 que CASCADE borrase el registro de un borrado justo al borrar, o que SET NULL perdiese quién lo hizo.
 
+## 2.4. Facturación manual
+
+> **PRECIOS PENDIENTES DE DECIDIR.** Están en `src/lib/planes.ts` (`PRECIOS`), en céntimos, junto al
+> resto de cifras. Hoy: Pro 12 €/mes o 120 €/año, Bóveda 29 €/mes o 290 €/año. Cambiarlos no altera
+> lo ya pedido: el importe se congela en la fila del pago al generar el código.
+
+No hay pasarela. El cliente pide un plan, recibe un código `VISTTA-XXXXXX`, lo escribe en el
+concepto de un Bizum o un PayPal, y una persona coteja el extracto y lo da por cobrado. Lo que
+sostiene que eso no sea un coladero:
+
+**El código no autoriza nada.** Viaja en el concepto de una transferencia: lo ve el banco y puede
+acabar en una captura. Confirmar es una acción de administrador; el código solo dice a qué cuenta
+corresponde un ingreso que ya se ha visto. Hay un test que comprueba que un cliente con su propio
+código en la mano recibe 404.
+
+**El importe se congela al pedirlo.** Si mañana suben los precios, quien pidió el código ayer paga
+lo que se le dijo. Por eso `payments.importe` es una columna y no una consulta a la tabla de precios.
+
+**Los periodos se encadenan.** Renovar antes de tiempo suma al periodo que quedaba, no lo reinicia:
+adelantarse no puede costarle días al que paga. Cambiar de plan sí empieza de cero, porque es otro
+producto.
+
+**Vencer no borra nada.** El trabajo de la cola baja la cuenta a `prueba` y deja que el bloque E
+congele los perfiles que sobren, que se recuperan pagando. Lo irreversible sigue siendo el tiempo.
+
+**Los códigos sin pagar caducan a los 14 días.** Si no, alguien podría pagar dentro de un año a
+precio del año pasado.
+
+**A dónde se paga sale de la configuración** (`BIZUM_TELEFONO`, `PAYPAL_DESTINO`), no del código.
+Sin ninguno de los dos, pedir plan devuelve 503 en vez de dar un código que no lleva a ninguna parte.
+
 ## 3. Fallos conocidos
 
 Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los
@@ -218,6 +251,24 @@ empeoraba, y tres en D.
 **Aviso para el bloque H**: la marca usa texto SVG, que en una imagen de contenedor mínima sin
 fontconfig saldría vacío. Por eso la capa lleva también una banda opaca: si faltan las fuentes, algo
 queda incrustado igual. Aun así, la imagen de producción tiene que traer fuentes.
+
+### Aprendizaje de F — el verde falso que ninguna mutación detectaba
+
+El test del doble cobro pasaba **incluso quitándole las DOS protecciones** que lo impiden. No era el
+motivo conocido de D0 —dos peticiones no se solapan—: era el pool de conexiones **frío**. La primera
+llamada corría con la única conexión ya abierta y terminaba su transacción entera mientras las otras
+quince seguían haciendo el saludo TCP con Postgres. Nunca coincidían, así que la carrera no ocurría
+por mucho que el código estuviera mal.
+
+La corrección es `calentarPool()` en `test/helpers.ts`, y va **antes de toda ráfaga**. El efecto se
+midió: con las protecciones quitadas, el doble cobro pasa de 1 de 16 a 10 de 16. Se añadió también a
+las cuatro ráfagas que ya existían y las cuatro pasaron a fallar más fuerte bajo mutación (el consumo
+del pase, de 13 de 16 a 16 de 16; la cola, de 7 a 14; la cuota, de 12 a 10 de 10 posibles).
+
+Y un matiz sobre cómo se leen estas mutaciones: el doble cobro tiene DOS defensas independientes
+—el `SELECT … FOR UPDATE` y el `UPDATE … WHERE status = 'pendiente'`— y quitar una sola no rompe
+nada, porque la otra tapa el hueco. Eso está bien en el código y es una trampa al verificar: si
+quitas una defensa y el test sigue verde, no significa que el test sea malo. Hay que quitarlas todas.
 
 ### Aprendizaje de E
 

@@ -4,6 +4,7 @@ import type { AppEnv, Deps } from "../deps";
 import { bearer, crearUsuario, usuarioDeLaSesion } from "../lib/auth";
 import { hitRateLimit } from "../lib/ratelimit";
 import { PLANES_VALIDOS } from "../lib/planes";
+import { anularPago, confirmarPago, listarPagos } from "../lib/facturacion";
 import {
   asignarPlan,
   borrarCuenta,
@@ -56,6 +57,12 @@ const PlanSchema = z.object({ plan: z.enum(["prueba", "pro", "boveda"]) });
 
 /** Borrar exige teclear el id de la cuenta: un clic de más no basta. */
 const BorrarSchema = z.object({ confirmacion: z.string() });
+
+const ConfirmarPagoSchema = z.object({
+  metodo: z.enum(["bizum", "paypal", "transferencia", "otro"]),
+  /** Para anotar el número de operación del extracto. No es obligatorio. */
+  nota: z.string().max(280).optional(),
+});
 
 export function adminRoutes({ db, storage }: Deps) {
   const admin = new Hono<AppEnv>();
@@ -196,6 +203,47 @@ export function adminRoutes({ db, storage }: Deps) {
     if (!(await borrarCuenta(db, storage, objetivo))) {
       return c.json({ error: "cuenta no encontrada" }, 404);
     }
+    return c.json({ ok: true });
+  });
+
+  /*
+   * Conciliación de pagos.
+   *
+   * Esto es lo que convierte "el plan cambió" en "el plan cambió porque entró
+   * este dinero". Confirmar es una acción de administrador y NO de quien conoce
+   * el código: el código viaja en el concepto de un Bizum y no es un secreto.
+   */
+  admin.get("/api/admin/pagos", async (c) => {
+    return c.json({ pagos: await listarPagos(db) });
+  });
+
+  admin.post("/api/admin/pagos/:code/confirmar", async (c) => {
+    const parsed = ConfirmarPagoSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "falta el método de pago" }, 400);
+
+    const code = c.req.param("code");
+    const resultado = await confirmarPago(db, code, c.get("usuario").id, {
+      metodo: parsed.data.metodo,
+      nota: parsed.data.nota,
+    });
+    if (!resultado) return c.json({ error: "código no encontrado o ya resuelto" }, 404);
+
+    await registrar(db, c.get("usuario").id, "cobrar_pago", resultado.pago.userId, {
+      code,
+      plan: resultado.pago.plan,
+      periodo: resultado.pago.periodo,
+      importe: resultado.pago.importe,
+      metodo: parsed.data.metodo,
+    });
+    return c.json({ pago: resultado.pago, planHasta: resultado.planHasta });
+  });
+
+  admin.post("/api/admin/pagos/:code/anular", async (c) => {
+    const code = c.req.param("code");
+    if (!(await anularPago(db, code))) {
+      return c.json({ error: "código no encontrado o ya resuelto" }, 404);
+    }
+    await registrar(db, c.get("usuario").id, "anular_pago", null, { code });
     return c.json({ ok: true });
   });
 

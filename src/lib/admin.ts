@@ -28,7 +28,9 @@ export type AccionAdmin =
   | "reiniciar_password"
   | "suspender"
   | "reactivar"
-  | "borrar_cuenta";
+  | "borrar_cuenta"
+  | "cobrar_pago"
+  | "anular_pago";
 
 /** Resumen de una cuenta para la tabla del panel. Sin una línea de contenido. */
 export interface CuentaAdmin {

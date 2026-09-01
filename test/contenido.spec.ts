@@ -9,6 +9,7 @@ import {
   reservarMedio,
 } from "../src/lib/media-store";
 import {
+  calentarPool,
   call,
   callAs,
   crearCuenta,
@@ -311,6 +312,7 @@ describe("subida de medios", () => {
      * Comprobado por mutación: quitando el `FOR UPDATE` de la fila del perfil,
      * las dieciséis ven la misma suma y pasan casi todas.
      */
+    await calentarPool();
     const trozo = LIMITE_POR_TIPO.video;
     const caben = Math.floor(PLANES.prueba.cuotaPorPerfil / trozo);
     const intentos = await Promise.allSettled(

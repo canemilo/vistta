@@ -125,6 +125,71 @@
       </p>
     </div>
 
+    <!-- Pagos por conciliar.
+         Va antes que las cuentas porque es lo único aquí que tiene una cola de
+         trabajo: alguien ha pagado y está esperando a que se le active. -->
+    <div class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">
+        Pagos por cotejar
+        @if (pendientes().length) {
+          <span class="text-emerald-400">· {{ pendientes().length }}</span>
+        }
+      </p>
+      @if (pendientes().length) {
+        <ul class="mt-4 flex flex-col gap-3">
+          @for (p of pendientes(); track p.code) {
+            <li
+              class="flex flex-wrap items-center gap-3 rounded-lg border border-[#16303a] bg-[#0b1a24] px-4 py-3"
+            >
+              <span class="font-mono text-[13px] tracking-[0.1em] text-[#cfe3e0] select-all">
+                {{ p.code }}
+              </span>
+              <span class="font-mono text-[12px] text-[#8fb0b2]">
+                {{ p.userId }} · {{ p.plan }} {{ p.periodo }} ·
+                <span class="text-[#cfe3e0]">{{ euros(p.importe) }}</span>
+              </span>
+              <span class="font-mono text-[10px] text-[#5c7d84]">
+                pedido el {{ fecha(p.createdAt) }}
+              </span>
+              <select
+                [(ngModel)]="metodos[p.code]"
+                [name]="'metodo-' + p.code"
+                class="ml-auto rounded border border-[#1c3b44] bg-[#081420] px-2 py-1 font-mono text-[11px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+              >
+                <option value="">¿por dónde llegó?</option>
+                <option value="bizum">bizum</option>
+                <option value="paypal">paypal</option>
+                <option value="transferencia">transferencia</option>
+                <option value="otro">otro</option>
+              </select>
+              <button
+                type="button"
+                (click)="cobrar(p)"
+                [disabled]="ocupado()"
+                class="rounded border border-emerald-500/50 px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-emerald-300 hover:border-emerald-400 disabled:opacity-40"
+              >
+                COBRADO
+              </button>
+              <button
+                type="button"
+                (click)="anular(p)"
+                [disabled]="ocupado()"
+                class="rounded border border-[#1c3b44] px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] hover:border-amber-400/60 disabled:opacity-40"
+              >
+                ANULAR
+              </button>
+            </li>
+          }
+        </ul>
+        <p class="mt-3 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-[#5c7d84]">
+          Comprueba el código en el concepto del ingreso antes de darlo por cobrado. El código no
+          demuestra nada por sí solo: viaja en el concepto de un Bizum y lo puede ver cualquiera.
+        </p>
+      } @else {
+        <p class="mt-3 font-mono text-[11px] text-[#3f6570]">Nada pendiente de cobrar.</p>
+      }
+    </div>
+
     <!-- Cuentas -->
     <div class="mt-8 overflow-x-auto">
       <table class="w-full min-w-[880px] border-collapse text-left">

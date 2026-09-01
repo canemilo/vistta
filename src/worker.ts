@@ -3,6 +3,7 @@ import type { Storage } from "./storage/port";
 import { completar, encolar, fallar, tomarTrabajo, type Trabajo } from "./lib/jobs";
 import { pasarReaper } from "./lib/reaper";
 import { purgar } from "./lib/purga";
+import { aplicarVencimientos, caducarCodigos } from "./lib/facturacion";
 
 /**
  * El trabajador de la cola. Vive en el mismo proceso que la API en el MVP, y
@@ -12,6 +13,7 @@ import { purgar } from "./lib/purga";
 
 export const TRABAJO_REAPER = "reaper";
 export const TRABAJO_PURGA = "purga";
+export const TRABAJO_VENCIMIENTOS = "vencimientos";
 
 /** Cada cuánto se vuelve a encolar la limpieza de huérfanos. */
 export const PERIODO_REAPER_MS = 15 * 60 * 1000;
@@ -24,6 +26,15 @@ export const PERIODO_REAPER_MS = 15 * 60 * 1000;
  * fallo se lleve algo por delante.
  */
 export const PERIODO_PURGA_MS = 60 * 60 * 1000;
+
+/**
+ * Cada cuánto se revisan los vencimientos de plan.
+ *
+ * Una vez por hora. Los periodos se miden en meses, así que apurar al minuto no
+ * aporta nada, y bajar de plan a alguien es algo que conviene hacer despacio y
+ * pocas veces.
+ */
+export const PERIODO_VENCIMIENTOS_MS = 60 * 60 * 1000;
 
 export interface DepsDelTrabajador {
   db: Db;
@@ -65,6 +76,24 @@ const MANEJADORES: Record<string, Manejador> = {
     }
     await encolar(db, TRABAJO_PURGA, {}, Date.now() + PERIODO_PURGA_MS);
   },
+
+  /**
+   * Vencimientos de plan. NO borra nada: baja a `prueba` y deja que el bloque E
+   * congele lo que sobre, que sigue ahí y se recupera pagando.
+   */
+  async [TRABAJO_VENCIMIENTOS]({ db }) {
+    const vencidas = await aplicarVencimientos(db);
+    const caducados = await caducarCodigos(db);
+    if (vencidas.length + caducados > 0) {
+      // Cuántas, nunca quiénes: este log no es sitio para una lista de clientes
+      // que han dejado de pagar.
+      console.warn(
+        `vencimientos: ${vencidas.length} cuentas bajadas de plan, ` +
+          `${caducados} códigos de pago caducados`
+      );
+    }
+    await encolar(db, TRABAJO_VENCIMIENTOS, {}, Date.now() + PERIODO_VENCIMIENTOS_MS);
+  },
 };
 
 /**
@@ -94,7 +123,7 @@ export async function procesarUno(deps: DepsDelTrabajador): Promise<boolean> {
 
 /** Deja encolados los trabajos periódicos, si no hay ya uno esperando. */
 export async function asegurarPeriodicos(db: Db): Promise<void> {
-  for (const kind of [TRABAJO_REAPER, TRABAJO_PURGA]) {
+  for (const kind of [TRABAJO_REAPER, TRABAJO_PURGA, TRABAJO_VENCIMIENTOS]) {
     const pendiente = await db.one<{ id: string }>(
       `SELECT id FROM vistta.jobs WHERE kind = $1 AND status IN ('pending', 'running') LIMIT 1`,
       [kind]

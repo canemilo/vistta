@@ -105,3 +105,58 @@ export function limitesDe(plan: Plan): LimitesDePlan {
 export function planDe(valor: unknown): Plan {
   return PLANES_VALIDOS.includes(valor as Plan) ? (valor as Plan) : PLAN_POR_DEFECTO;
 }
+
+// ---------------------------------------------------------------------------
+// Facturación manual (bloque F)
+// ---------------------------------------------------------------------------
+
+export type Periodo = "mensual" | "anual";
+
+export const PERIODOS: readonly Periodo[] = ["mensual", "anual"] as const;
+
+/** Cuánto dura cada periodo. Un mes son 30 días: no se factura por calendario. */
+export const DURACION_PERIODO_MS: Readonly<Record<Periodo, number>> = Object.freeze({
+  mensual: 30 * DIA,
+  anual: 365 * DIA,
+});
+
+/**
+ * PRECIOS EN CÉNTIMOS — PENDIENTES DE DECIDIR.
+ *
+ * Están puestos para que el circuito se pueda probar de punta a punta, no como
+ * decisión comercial. Cámbialos aquí y ya está: el importe de un pago se
+ * congela al generar el código, así que tocar esta tabla no altera lo que ya se
+ * pidió cobrar.
+ *
+ * En céntimos y enteros a propósito: un importe en coma flotante acaba
+ * cobrando 11,999999 €.
+ *
+ * `prueba` vale 0 porque no se vende: es donde cae una cuenta cuando su plan
+ * vence. Aparece en la tabla para que no haya un plan sin precio, no para que
+ * alguien lo compre.
+ */
+export const PRECIOS: Readonly<Record<Plan, Record<Periodo, number>>> = Object.freeze({
+  prueba: { mensual: 0, anual: 0 },
+  pro: { mensual: 1200, anual: 12000 },
+  boveda: { mensual: 2900, anual: 29000 },
+});
+
+/** Los planes que se pueden comprar. El de prueba no se vende. */
+export const PLANES_DE_PAGO: readonly Plan[] = ["pro", "boveda"] as const;
+
+/** Cuánto vale un código de pago sin usar. Pasado el plazo se anula solo. */
+export const CADUCIDAD_CODIGO_MS = 14 * DIA;
+
+/** Con cuánta antelación se avisa al cliente de que su plan vence. */
+export const AVISO_VENCIMIENTO_MS = 7 * DIA;
+
+/** A dónde cae una cuenta cuando su plan vence. No se borra nada: baja de plan. */
+export const PLAN_AL_VENCER: Plan = "prueba";
+
+export function precioDe(plan: Plan, periodo: Periodo): number {
+  return PRECIOS[plan][periodo];
+}
+
+export function esPlanDePago(plan: Plan): boolean {
+  return PLANES_DE_PAGO.includes(plan);
+}

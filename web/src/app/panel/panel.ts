@@ -4,6 +4,7 @@ import {
   Api,
   type EditableSection,
   type EstadoDeCuenta,
+  type EstadoFacturacion,
   type MediaRef,
   type ProfileContent,
   type ProfileRow,
@@ -35,6 +36,10 @@ export class Panel {
   protected readonly usuario = signal<Usuario | null>(null);
   protected readonly perfiles = signal<ProfileRow[]>([]);
   protected readonly plan = signal<EstadoDeCuenta['plan']>(null);
+  protected readonly facturacion = signal<EstadoFacturacion | null>(null);
+  /** Abre el bloque de mejora de plan. Cerrado por defecto: no es lo que vienen a hacer. */
+  protected readonly viendoPlanes = signal(false);
+  protected periodoElegido = 'mensual';
   protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
 
   /** Los que están de camino a borrarse. Son los que el cliente debe ver primero. */
@@ -132,6 +137,47 @@ export class Panel {
     this.perfiles.set(estado.profiles);
     this.plan.set(estado.plan);
     this.uso.set(estado.uso);
+    // La facturación se pide aparte y no bloquea el panel: si fallara, el
+    // cliente tiene que poder seguir trabajando igual.
+    this.api
+      .facturacion(token)
+      .then((f) => this.facturacion.set(f))
+      .catch(() => undefined);
+  }
+
+  /** Pide un plan y deja a la vista el código que va en el concepto del pago. */
+  protected async pedirPlan(plan: string): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion) return;
+    this.ocupado.set(true);
+    this.error.set('');
+    try {
+      await this.api.solicitarPlan(sesion, plan, this.periodoElegido);
+      this.facturacion.set(await this.api.facturacion(sesion));
+      this.viendoPlanes.set(false);
+    } catch (err: unknown) {
+      const motivo = (err as { error?: { error?: string } }).error?.error;
+      this.error.set(motivo ?? 'No se pudo generar el código de pago.');
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
+  /** Céntimos a euros. El servidor manda enteros para no perder por el camino. */
+  protected euros(centimos: number): string {
+    return (centimos / 100).toFixed(2).replace('.', ',') + ' €';
+  }
+
+  protected precio(plan: string, periodo: string): number {
+    return this.facturacion()?.catalogo.precios[plan]?.[periodo] ?? 0;
+  }
+
+  protected fechaCorta(ms: number): string {
+    return new Date(ms).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   }
 
   /**
@@ -161,6 +207,7 @@ export class Panel {
     this.usuario.set(null);
     this.perfiles.set([]);
     this.plan.set(null);
+    this.facturacion.set(null);
     this.contenido.set({ sections: [] });
     this.enlace.set('');
     if (token) await this.api.logout(token).catch(() => undefined);

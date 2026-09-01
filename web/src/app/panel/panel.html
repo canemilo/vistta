@@ -142,6 +142,105 @@
       </section>
     }
 
+    <!-- Facturación.
+         El código de pago va antes que el catálogo: si hay uno pendiente, lo
+         que el cliente necesita es ese código, no volver a elegir plan. -->
+    @if (facturacion(); as f) {
+      @if (f.pendiente; as pago) {
+        <section class="mt-6 rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-5">
+          <p class="font-mono text-[11px] tracking-[0.22em] text-emerald-300 uppercase">
+            Pago pendiente · {{ pago.plan }} {{ pago.periodo }}
+          </p>
+          <p class="mt-3 font-mono text-[22px] tracking-[0.14em] text-[#cfe3e0] select-all">
+            {{ pago.code }}
+          </p>
+          <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+            Envía <strong>{{ euros(pago.importe) }}</strong> poniendo
+            <strong>{{ pago.code }}</strong> en el concepto. Sin ese código no se puede saber que el
+            ingreso es tuyo.
+          </p>
+          <ul class="mt-3 flex flex-col gap-1 font-mono text-[12px] text-[#8fb0b2]">
+            @if (f.pago.bizum) {
+              <li>
+                Bizum: <span class="text-[#cfe3e0] select-all">{{ f.pago.bizum }}</span>
+              </li>
+            }
+            @if (f.pago.paypal) {
+              <li>
+                PayPal: <span class="text-[#cfe3e0] select-all">{{ f.pago.paypal }}</span>
+              </li>
+            }
+          </ul>
+          <p class="mt-3 font-mono text-[10px] text-[#5c7d84]">
+            El plan se activa cuando comprobemos el ingreso, a mano. El código caduca el
+            {{ fechaCorta(pago.expiresAt) }}.
+          </p>
+        </section>
+      } @else if (f.porVencer && f.planHasta !== null) {
+        <section class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5" role="alert">
+          <p class="font-mono text-[11px] tracking-[0.22em] text-amber-300 uppercase">
+            Tu plan vence pronto
+          </p>
+          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+            El plan {{ f.plan }} termina el {{ fechaCorta(f.planHasta) }}. Cuando venza pasarás al
+            plan de prueba: no se borra nada, pero los perfiles que sobren quedarán congelados hasta
+            que renueves.
+          </p>
+          <button
+            type="button"
+            (click)="viendoPlanes.set(true)"
+            class="mt-4 rounded-lg border border-amber-500/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-amber-300 hover:border-amber-400"
+          >
+            RENOVAR
+          </button>
+        </section>
+      }
+
+      @if (viendoPlanes()) {
+        <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">
+              Elegir plan
+            </p>
+            <select
+              [(ngModel)]="periodoElegido"
+              name="periodo"
+              class="rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-1.5 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+            >
+              @for (p of f.catalogo.periodos; track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-3">
+            @for (p of f.catalogo.planes; track p) {
+              <button
+                type="button"
+                (click)="pedirPlan(p)"
+                [disabled]="ocupado()"
+                class="rounded-lg border border-[#1c3b44] px-4 py-3 text-left hover:border-emerald-400/60 disabled:opacity-40"
+              >
+                <span class="block font-mono text-[13px] text-[#cfe3e0]">{{ p }}</span>
+                <span class="block font-mono text-[11px] text-[#8fb0b2]">
+                  {{ euros(precio(p, periodoElegido)) }} / {{ periodoElegido }}
+                </span>
+              </button>
+            }
+          </div>
+          <p class="mt-3 font-mono text-[10px] text-[#5c7d84]">
+            Se paga por Bizum o PayPal y lo comprobamos a mano: no hay tarjeta ni cobro automático.
+          </p>
+          <button
+            type="button"
+            (click)="viendoPlanes.set(false)"
+            class="mt-3 font-mono text-[10px] tracking-[0.16em] text-[#5c7d84] hover:text-[#8fb0b2]"
+          >
+            CERRAR
+          </button>
+        </section>
+      }
+    }
+
     <!-- Lo que el plan permite y lo que va gastado. Sin esto, el cliente solo
          descubre sus límites al chocar con ellos. -->
     @if (plan(); as p) {
@@ -152,6 +251,19 @@
           el contenido no caduca
         } @else {
           el contenido se borra a los {{ dias(p.limites.retencionMs) }} días
+        }
+        @if (facturacion()?.planHasta; as hasta) {
+          · hasta el {{ fechaCorta(hasta) }}
+        }
+        @if (!viendoPlanes() && !facturacion()?.pendiente) {
+          ·
+          <button
+            type="button"
+            (click)="viendoPlanes.set(true)"
+            class="underline hover:text-emerald-400"
+          >
+            cambiar de plan
+          </button>
         }
       </p>
     }

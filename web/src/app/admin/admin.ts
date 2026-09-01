@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import {
   Api,
   type CuentaAdmin,
+  type Pago,
   type RegistroAuditoria,
   type Sesion,
   type Usuario,
@@ -41,6 +42,15 @@ export class Admin {
   protected readonly usuario = signal<Usuario | null>(null);
   protected readonly cuentas = signal<CuentaAdmin[]>([]);
   protected readonly auditoria = signal<RegistroAuditoria[]>([]);
+  protected readonly pagos = signal<Pago[]>([]);
+
+  /** Lo que hay que cotejar con el extracto. Es lo primero que se mira. */
+  protected readonly pendientes = computed(() =>
+    this.pagos().filter((p) => p.status === 'pendiente'),
+  );
+
+  /** Método de cobro elegido por código, para no obligar a uno por defecto. */
+  protected metodos: Record<string, string> = {};
   protected readonly planes = signal<string[]>([]);
   protected readonly ocupado = signal(false);
   protected readonly error = signal('');
@@ -123,13 +133,15 @@ export class Admin {
   private async cargar(): Promise<void> {
     const sesion = this.sesion();
     if (!sesion) return;
-    const [lista, registro] = await Promise.all([
+    const [lista, registro, pagos] = await Promise.all([
       this.api.adminCuentas(sesion),
       this.api.adminAuditoria(sesion),
+      this.api.adminPagos(sesion),
     ]);
     this.cuentas.set(lista.cuentas);
     this.planes.set(lista.planes);
     this.auditoria.set(registro.registros);
+    this.pagos.set(pagos.pagos);
   }
 
   /** Envuelve una acción: ocupa la pantalla, recarga y traduce el error. */
@@ -217,6 +229,34 @@ export class Admin {
       await this.api.adminBorrarCuenta(sesion, id, this.confirmacion.trim());
       this.cancelarBorrado();
     }, 'No se pudo borrar la cuenta.');
+  }
+
+  /**
+   * Da un pago por cobrado. Exige elegir el método —Bizum, PayPal— porque es lo
+   * que ata este apunte al extracto donde se ha visto el ingreso: sin eso, la
+   * auditoría diría que alguien activó un plan, no por qué.
+   */
+  protected async cobrar(pago: Pago): Promise<void> {
+    const metodo = this.metodos[pago.code];
+    if (!metodo) {
+      this.error.set('Elige por dónde llegó el dinero antes de darlo por cobrado.');
+      return;
+    }
+    await this.accion(async (sesion) => {
+      await this.api.adminConfirmarPago(sesion, pago.code, metodo);
+      delete this.metodos[pago.code];
+    }, 'No se pudo confirmar el pago.');
+  }
+
+  protected async anular(pago: Pago): Promise<void> {
+    await this.accion(
+      (sesion) => this.api.adminAnularPago(sesion, pago.code),
+      'No se pudo anular el código.',
+    );
+  }
+
+  protected euros(centimos: number): string {
+    return (centimos / 100).toFixed(2).replace('.', ',') + ' €';
   }
 
   protected megas(bytes: number): string {

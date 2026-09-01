@@ -30,9 +30,19 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
 
 ## Invariantes de concurrencia — se prueban con RÁFAGA, siempre
 
-Ya son cinco, y **todos los que se han buscado han aparecido**. Todos fallan igual: dos peticiones
+Ya son seis, y **todos los que se han buscado han aparecido**. Todos fallan igual: dos peticiones
 simultáneas casi nunca se solapan, así que un test de dos pasa aunque el código esté mal. Hacen
 falta ~16 y romper el código a propósito para ver el test en rojo antes de darlo por bueno.
+
+**Y `await calentarPool()` antes de la ráfaga, sin excepción.** Con el pool de conexiones frío, la
+primera petición corre con la única conexión abierta y termina su transacción entera mientras las
+demás siguen haciendo el saludo TCP: no coinciden, y el test es un verde falso aunque el código esté
+roto. Se descubrió en F, donde el test del doble cobro pasaba habiéndole quitado las DOS
+protecciones. Medido: sin ellas, el doble cobro pasa de 1 de 16 a 10 de 16.
+
+**Al verificar por mutación, quita TODAS las defensas.** Varios de estos invariantes tienen dos
+independientes; quitar una y ver el test verde no dice que el test sea malo, dice que la otra tapó
+el hueco.
 
 1. **Consumo del pase**: un único UPDATE condicional (abajo).
 2. **Reserva de cuota**: la fila del perfil bloqueada con `SELECT … FOR UPDATE` dentro de la
@@ -41,6 +51,9 @@ falta ~16 y romper el código a propósito para ver el test en rojo antes de dar
    luego marcar", 7 de 16 trabajadores se llevan el mismo trabajo.
 4. **Pases simultáneos** y 5. **perfiles del plan**: la fila de la CUENTA bloqueada. Sin eso, 10 de
    16 y 9 de 16 se cuelan.
+5. **Confirmación de un pago**: `SELECT … FOR UPDATE` sobre la fila del pago Y `UPDATE … WHERE
+status = 'pendiente'`. Sin las dos, 10 de 16 confirmaciones cobran el mismo código y suman el
+   periodo diez veces. Esto es dinero.
 
 La regla, a estas alturas, va al revés: si añades un contador con un tope, da por hecho que tiene
 carrera. Escribe el `FOR UPDATE` y el test de ráfaga desde el principio.
@@ -124,6 +137,21 @@ no se negocian:
   caracteres confundibles al dictar. Reiniciarla tira todas las sesiones de esa cuenta.
 - **Todo queda en `admin_audit`**, que no tiene claves ajenas: es historia, y no cambia porque
   después se borre la cuenta a la que se refiere.
+
+## Facturación manual (desde F)
+
+- **Los PRECIOS viven en `src/lib/planes.ts`**, en céntimos y enteros, con el resto de cifras. Hoy
+  son provisionales. El importe se **congela** en la fila del pago al generar el código: cambiar la
+  tabla no altera lo que ya se pidió cobrar.
+- No hay pasarela. El cliente pide plan → recibe `VISTTA-XXXXXX` → lo pone en el concepto de un
+  Bizum o PayPal → un administrador coteja el extracto y lo da por cobrado.
+- **El código NO es un secreto ni autoriza nada**: viaja en el concepto de una transferencia.
+  Confirmar es una acción de administrador; el código solo dice de quién es un ingreso ya visto.
+- **Renovar antes de tiempo encadena** el periodo, no lo reinicia. Cambiar de plan sí empieza de
+  cero: es otro producto.
+- **Vencer no borra nada**: baja a `prueba` y el bloque E congela lo que sobre, recuperable pagando.
+- A dónde se paga sale de la configuración (`BIZUM_TELEFONO`, `PAYPAL_DESTINO`), no del código. Sin
+  ninguno de los dos, pedir plan devuelve 503 en vez de dar un código que no lleva a ningún sitio.
 
 ## Cumplimiento
 

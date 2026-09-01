@@ -29,6 +29,8 @@ const CONFIG_DE_PRUEBAS: Config = Object.freeze({
   SUPABASE_URL: undefined,
   SUPABASE_SECRET_KEY: undefined,
   SUPABASE_MEDIA_BUCKET: "vistta-media",
+  BIZUM_TELEFONO: "600000000",
+  PAYPAL_DESTINO: "pagos@vistta.test",
 });
 
 const pool = createPool(TEST_DATABASE_URL);
@@ -90,7 +92,8 @@ export async function resetDb(): Promise<void> {
   await db.query(
     `TRUNCATE vistta.passes, vistta.profiles, vistta.rate_limits,
               vistta.panel_sessions, vistta.users, vistta.media,
-              vistta.pass_media, vistta.jobs, vistta.admin_audit CASCADE`
+              vistta.pass_media, vistta.jobs, vistta.admin_audit,
+              vistta.payments CASCADE`
   );
 }
 
@@ -163,4 +166,19 @@ export async function crearAdmin(id = "soporte", displayName = "Soporte"): Promi
   // sobra, igual que lo quita el script de creación.
   await db.query(`DELETE FROM vistta.profiles WHERE owner_id = $1`, [id]);
   return id;
+}
+
+/**
+ * Abre las conexiones del pool ANTES de medir una ráfaga.
+ *
+ * Sin esto, un test de concurrencia puede ser un verde falso y no por el motivo
+ * conocido —dos peticiones no se solapan— sino por uno más tonto: el pool está
+ * frío, la primera petición usa la única conexión caliente y termina su
+ * transacción entera mientras las otras quince siguen haciendo el saludo TCP.
+ * Nunca llegan a coincidir, así que el fallo no aparece aunque el código esté
+ * mal. Se descubrió en el bloque F: el test del doble cobro pasaba incluso
+ * habiéndole quitado las DOS protecciones que lo impiden.
+ */
+export async function calentarPool(conexiones = 10): Promise<void> {
+  await Promise.all(Array.from({ length: conexiones }, () => db.query("SELECT 1")));
 }
