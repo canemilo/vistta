@@ -244,6 +244,21 @@ export class Api {
     );
   }
 
+  /**
+   * Borra un perfil. Inmediato e irreversible.
+   *
+   * `confirmacion` es el nombre del perfil tecleado por el cliente; el servidor
+   * lo compara con el que tiene guardado y rechaza si no coincide.
+   */
+  borrarPerfil(session: string, id: string, confirmacion: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/profiles/${encodeURIComponent(id)}`, {
+        headers: { authorization: `Bearer ${session}` },
+        body: { confirmacion },
+      }),
+    );
+  }
+
   getProfile(session: string, id: string): Promise<ProfileDetail> {
     return firstValueFrom(
       this.http.get<ProfileDetail>(`/api/profiles/${encodeURIComponent(id)}`, {

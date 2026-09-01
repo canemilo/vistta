@@ -75,6 +75,10 @@ export class Panel {
    */
   protected readonly topePerfiles = computed(() => this.plan()?.limites?.perfiles ?? null);
 
+  /** Perfil cuyo borrado se está confirmando, con lo que lleva tecleado. */
+  protected readonly borrandoPerfil = signal(false);
+  protected confirmacionPerfil = '';
+
   protected readonly puedeCrearPerfil = computed(() => {
     const tope = this.topePerfiles();
     return tope === null || this.uso().perfilesActivos < tope;
@@ -285,6 +289,42 @@ export class Panel {
           ? `Tu plan da para ${this.topePerfiles()} ${this.topePerfiles() === 1 ? 'perfil' : 'perfiles'}. Cambia de plan o congela uno de los que tienes.`
           : 'No se pudo crear el perfil.',
       );
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
+  /**
+   * Borra el perfil abierto y se pasa al siguiente que quede.
+   *
+   * Sin esto, crear un perfil era un callejón sin salida: el límite del plan
+   * cuenta perfiles ACTIVOS, así que uno creado por error ocupaba una plaza
+   * para siempre, y con el plan Prueba —que da uno— dejaba la cuenta encerrada.
+   *
+   * Congelarlo no habría servido: la purga se lleva un congelado pasada la
+   * gracia, así que ofrecer «congelar para liberar la plaza» sería programar su
+   * destrucción sin decirlo.
+   */
+  protected async borrarPerfilActual(): Promise<void> {
+    const sesion = this.sesion();
+    const id = this.perfilId();
+    if (!sesion || !id) return;
+    this.ocupado.set(true);
+    this.errorPerfil.set('');
+    try {
+      await this.api.borrarPerfil(sesion, id, this.confirmacionPerfil.trim());
+      this.confirmacionPerfil = '';
+      this.borrandoPerfil.set(false);
+      this.perfilId.set('');
+      this.enlace.set('');
+      await this.recargarPerfiles(sesion);
+      // Al siguiente que quede; si no queda ninguno, la pantalla lo dice y
+      // ofrece crear uno, en vez de montar un editor sin nada detrás.
+      const siguiente = this.perfiles().find((p) => p.status === 'activo') ?? this.perfiles()[0];
+      if (siguiente) await this.elegirPerfil(siguiente.id);
+    } catch (err: unknown) {
+      const motivo = (err as { error?: { error?: string } }).error?.error;
+      this.errorPerfil.set(motivo ?? 'No se pudo borrar el perfil.');
     } finally {
       this.ocupado.set(false);
     }

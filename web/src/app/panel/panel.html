@@ -453,157 +453,186 @@
     }
 
     <!-- Cabecera de la página del cliente -->
-    <section class="mt-8 grid gap-4">
-      <label class="font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase" for="nombre">
-        Nombre que aparece arriba
-      </label>
-      <input
-        id="nombre"
-        [value]="nombre()"
-        (input)="nombre.set($any($event.target).value); aviso.set('')"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[15px] text-[#e6f4f1] outline-none focus:border-emerald-400/60"
-      />
+    <!--
+      Sin ningún perfil no se monta el editor.
 
-      <label
-        class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
-        for="tagline"
-      >
-        Una línea sobre lo que haces
-      </label>
-      <input
-        id="tagline"
-        [value]="contenido().tagline ?? ''"
-        (input)="actualizar({ tagline: $any($event.target).value })"
-        placeholder="Fotografía de arquitectura y espacio construido."
-        aria-label="Frase de presentación del perfil"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
-      />
-
-      <label
-        class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
-        for="intro"
-      >
-        Presentación
-      </label>
-      <textarea
-        id="intro"
-        rows="3"
-        [value]="contenido().intro ?? ''"
-        (input)="actualizar({ intro: $any($event.target).value })"
-        placeholder="A quién va dirigido este pase y qué va a encontrar."
-        aria-label="Introducción del pase"
-        class="resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
-      ></textarea>
-    </section>
-
-    <!-- Bloques -->
-    @for (seccion of contenido().sections; track $index; let si = $index) {
-      <section class="mt-6 rounded-xl border border-[#16303a] bg-[#0a1620]/60 p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <span class="font-mono text-[10px] tracking-[0.24em] text-emerald-400/80 uppercase">
-            {{
-              seccion.type === 'texto'
-                ? 'Texto'
-                : seccion.type === 'galeria'
-                  ? 'Galería'
-                  : 'Proyecto'
-            }}
-          </span>
-          <div class="flex items-center gap-3 font-mono text-[11px] text-[#63848d]">
-            <button
-              type="button"
-              (click)="moverSeccion(si, -1)"
-              [disabled]="$first"
-              class="hover:text-[#cfe3e0] disabled:opacity-30"
-            >
-              SUBIR
-            </button>
-            <button
-              type="button"
-              (click)="moverSeccion(si, 1)"
-              [disabled]="$last"
-              class="hover:text-[#cfe3e0] disabled:opacity-30"
-            >
-              BAJAR
-            </button>
-            <button type="button" (click)="quitarSeccion(si)" class="hover:text-rose-400">
-              QUITAR
-            </button>
-          </div>
-        </div>
-
+      Antes se montaba igual, con `perfilId()` vacío: se veía la pantalla
+      entera, se podía escribir y no se guardaba nada. Era lo que veía una
+      cuenta de administrador, y ahora también podría verlo un cliente que
+      borrase el último que le quedaba.
+    -->
+    @if (!perfilId()) {
+      <section class="mt-10 rounded-xl border border-[#1c3b44] bg-[#081420] p-6">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+          No tienes ningún perfil
+        </h2>
+        <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+          Un perfil es un trabajo que se enseña por separado, con su propio contenido y sus propios
+          pases. Crea uno para empezar.
+        </p>
+        <button
+          type="button"
+          (click)="creandoPerfil.set(true); errorPerfil.set('')"
+          class="mt-5 rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10"
+        >
+          CREAR UN PERFIL
+        </button>
+      </section>
+    } @else {
+      <section class="mt-8 grid gap-4">
+        <label
+          class="font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+          for="nombre"
+        >
+          Nombre que aparece arriba
+        </label>
         <input
-          [value]="seccion.title ?? ''"
-          (input)="editarSeccion(si, { title: $any($event.target).value })"
-          placeholder="Título del bloque"
-          [attr.aria-label]="'Título del bloque ' + (si + 1)"
-          class="mt-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-[#cfe3e0] uppercase outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          id="nombre"
+          [value]="nombre()"
+          (input)="nombre.set($any($event.target).value); aviso.set('')"
+          class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[15px] text-[#e6f4f1] outline-none focus:border-emerald-400/60"
         />
 
-        @if (seccion.type !== 'galeria') {
-          <textarea
-            rows="4"
-            [value]="$any(seccion).body ?? ''"
-            (input)="editarSeccion(si, $any({ body: $any($event.target).value }))"
-            placeholder="Escribe aquí. Una línea en blanco separa párrafos."
-            [attr.aria-label]="'Texto del bloque ' + (si + 1)"
-            class="mt-3 w-full resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
-          ></textarea>
-        }
+        <label
+          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+          for="tagline"
+        >
+          Una línea sobre lo que haces
+        </label>
+        <input
+          id="tagline"
+          [value]="contenido().tagline ?? ''"
+          (input)="actualizar({ tagline: $any($event.target).value })"
+          placeholder="Fotografía de arquitectura y espacio construido."
+          aria-label="Frase de presentación del perfil"
+          class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+        />
 
-        @if (seccion.type !== 'texto') {
-          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            @for (foto of itemsDe(si); track foto.mediaId) {
-              <figure class="group min-w-0">
-                <div
-                  class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
-                >
-                  @if (miniaturas()[foto.mediaId]) {
-                    <img
-                      [src]="miniaturas()[foto.mediaId]"
-                      alt=""
-                      class="h-full w-full object-cover"
-                    />
-                  }
-                  <!-- Los índices son (si, $index): la sección y la foto DENTRO
+        <label
+          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+          for="intro"
+        >
+          Presentación
+        </label>
+        <textarea
+          id="intro"
+          rows="3"
+          [value]="contenido().intro ?? ''"
+          (input)="actualizar({ intro: $any($event.target).value })"
+          placeholder="A quién va dirigido este pase y qué va a encontrar."
+          aria-label="Introducción del pase"
+          class="resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+        ></textarea>
+      </section>
+
+      <!-- Bloques -->
+      @for (seccion of contenido().sections; track $index; let si = $index) {
+        <section class="mt-6 rounded-xl border border-[#16303a] bg-[#0a1620]/60 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <span class="font-mono text-[10px] tracking-[0.24em] text-emerald-400/80 uppercase">
+              {{
+                seccion.type === 'texto'
+                  ? 'Texto'
+                  : seccion.type === 'galeria'
+                    ? 'Galería'
+                    : 'Proyecto'
+              }}
+            </span>
+            <div class="flex items-center gap-3 font-mono text-[11px] text-[#63848d]">
+              <button
+                type="button"
+                (click)="moverSeccion(si, -1)"
+                [disabled]="$first"
+                class="hover:text-[#cfe3e0] disabled:opacity-30"
+              >
+                SUBIR
+              </button>
+              <button
+                type="button"
+                (click)="moverSeccion(si, 1)"
+                [disabled]="$last"
+                class="hover:text-[#cfe3e0] disabled:opacity-30"
+              >
+                BAJAR
+              </button>
+              <button type="button" (click)="quitarSeccion(si)" class="hover:text-rose-400">
+                QUITAR
+              </button>
+            </div>
+          </div>
+
+          <input
+            [value]="seccion.title ?? ''"
+            (input)="editarSeccion(si, { title: $any($event.target).value })"
+            placeholder="Título del bloque"
+            [attr.aria-label]="'Título del bloque ' + (si + 1)"
+            class="mt-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-[#cfe3e0] uppercase outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          />
+
+          @if (seccion.type !== 'galeria') {
+            <textarea
+              rows="4"
+              [value]="$any(seccion).body ?? ''"
+              (input)="editarSeccion(si, $any({ body: $any($event.target).value }))"
+              placeholder="Escribe aquí. Una línea en blanco separa párrafos."
+              [attr.aria-label]="'Texto del bloque ' + (si + 1)"
+              class="mt-3 w-full resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+            ></textarea>
+          }
+
+          @if (seccion.type !== 'texto') {
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              @for (foto of itemsDe(si); track foto.mediaId) {
+                <figure class="group min-w-0">
+                  <div
+                    class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
+                  >
+                    @if (miniaturas()[foto.mediaId]) {
+                      <img
+                        [src]="miniaturas()[foto.mediaId]"
+                        alt=""
+                        class="h-full w-full object-cover"
+                      />
+                    }
+                    <!-- Los índices son (si, $index): la sección y la foto DENTRO
                        de ella. Antes se pasaba $index en los dos sitios, así que
                        tocar el pie de una foto de la tercera sección editaba la
                        primera. Y el botón de quitar era sr-only: existía solo
                        para un lector de pantalla, y ni siquiera bien. -->
-                  <button
-                    type="button"
-                    (click)="quitarFoto(si, $index)"
-                    [attr.aria-label]="'Quitar la foto ' + ($index + 1) + ' de ' + seccion.title"
-                    class="absolute top-2 right-2 rounded border border-[#1c3b44] bg-[#081420]/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-red-400/60 hover:text-red-300 focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    QUITAR
-                  </button>
-                </div>
-                <input
-                  [value]="foto.caption ?? ''"
-                  (input)="editarFoto(si, $index, $any($event.target).value)"
-                  [attr.aria-label]="'Pie de la foto ' + ($index + 1)"
-                  placeholder="Pie de foto"
-                  class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-[#8fb0b2] outline-none placeholder:text-[#5e848f] focus:border-[#1c3b44]"
-                />
-              </figure>
-            }
-          </div>
+                    <button
+                      type="button"
+                      (click)="quitarFoto(si, $index)"
+                      [attr.aria-label]="'Quitar la foto ' + ($index + 1) + ' de ' + seccion.title"
+                      class="absolute top-2 right-2 rounded border border-[#1c3b44] bg-[#081420]/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-red-400/60 hover:text-red-300 focus-visible:opacity-100 group-hover:opacity-100"
+                    >
+                      QUITAR
+                    </button>
+                  </div>
+                  <input
+                    [value]="foto.caption ?? ''"
+                    (input)="editarFoto(si, $index, $any($event.target).value)"
+                    [attr.aria-label]="'Pie de la foto ' + ($index + 1)"
+                    placeholder="Pie de foto"
+                    class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-[#8fb0b2] outline-none placeholder:text-[#5e848f] focus:border-[#1c3b44]"
+                  />
+                </figure>
+              }
+            </div>
 
-          <label
-            class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
-          >
-            AÑADIR ARCHIVOS
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif,image/gif,application/pdf,video/mp4,video/webm"
-              multiple
-              class="hidden"
-              (change)="subirFotos(si, $event)"
-            />
-          </label>
+            <label
+              class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+            >
+              AÑADIR ARCHIVOS
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif,image/gif,application/pdf,video/mp4,video/webm"
+                multiple
+                class="hidden"
+                (change)="subirFotos(si, $event)"
+              />
+            </label>
 
-          <!--
+            <!--
             Esto tiene que estar escrito, y con estas palabras.
 
             Las fotos salen marcadas con el identificador de cada visita metido
@@ -611,93 +640,153 @@
             en cada apertura. Callarlo dejaría al cliente creyendo que su vídeo
             lleva una protección que no lleva, y de eso va la mitad del producto.
           -->
-          <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
-            Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y
-            los PDF se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una
-            captura de pantalla.
-          </p>
-        }
-      </section>
-    } @empty {
-      <p class="mt-8 font-serif text-[15px] text-[#6f8f93]">
-        Todavía no hay bloques. Empieza por un texto que presente el trabajo, o por una galería.
-      </p>
-    }
-
-    <div class="mt-6 flex flex-wrap gap-3">
-      <button
-        type="button"
-        (click)="anadirSeccion('texto')"
-        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
-      >
-        + TEXTO
-      </button>
-      <button
-        type="button"
-        (click)="anadirSeccion('proyecto')"
-        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
-      >
-        + PROYECTO
-      </button>
-      <button
-        type="button"
-        (click)="anadirSeccion('galeria')"
-        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
-      >
-        + GALERÍA
-      </button>
-    </div>
-
-    <!-- Guardar y compartir -->
-    <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-[#16303a] pt-6">
-      <button
-        type="button"
-        (click)="guardar()"
-        [disabled]="ocupado()"
-        class="rounded-lg bg-emerald-500/90 px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#04140e] hover:bg-emerald-400 disabled:opacity-40"
-      >
-        GUARDAR CAMBIOS
-      </button>
-      <button
-        type="button"
-        (click)="generar()"
-        [disabled]="ocupado()"
-        class="rounded-lg border border-[#1c3b44] px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40"
-      >
-        GENERAR ENLACE
-      </button>
-      <span class="font-mono text-[11px] text-[#63848d]">
-        {{ totalFotos() }} {{ totalFotos() === 1 ? 'foto' : 'fotos' }}
-      </span>
-      @if (aviso()) {
-        <span class="font-mono text-[11px] text-emerald-400">{{ aviso() }}</span>
+            <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+              Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y
+              los PDF se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una
+              captura de pantalla.
+            </p>
+          }
+        </section>
+      } @empty {
+        <p class="mt-8 font-serif text-[15px] text-[#6f8f93]">
+          Todavía no hay bloques. Empieza por un texto que presente el trabajo, o por una galería.
+        </p>
       }
-      @if (error()) {
-        <span class="font-mono text-[11px] text-rose-400">{{ error() }}</span>
-      }
-    </div>
 
-    @if (enlace()) {
-      <div class="mt-4 flex items-center gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] p-3">
-        <a
-          [href]="enlace()"
-          target="_blank"
-          rel="noreferrer"
-          class="min-w-0 flex-1 truncate font-mono text-[12px] text-emerald-400 hover:underline"
-        >
-          {{ enlace() }}
-        </a>
+      <div class="mt-6 flex flex-wrap gap-3">
         <button
           type="button"
-          (click)="copiar()"
-          class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#6f8f93] hover:text-[#cfe3e0]"
+          (click)="anadirSeccion('texto')"
+          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
         >
-          {{ copiado() ? 'COPIADO' : 'COPIAR' }}
+          + TEXTO
+        </button>
+        <button
+          type="button"
+          (click)="anadirSeccion('proyecto')"
+          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+        >
+          + PROYECTO
+        </button>
+        <button
+          type="button"
+          (click)="anadirSeccion('galeria')"
+          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+        >
+          + GALERÍA
         </button>
       </div>
-      <p class="mt-2 font-mono text-[11px] text-[#63848d]">
-        Caduca a los 15 minutos y se cierra en cuanto lo abran.
-      </p>
+
+      <!-- Guardar y compartir -->
+      <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-[#16303a] pt-6">
+        <button
+          type="button"
+          (click)="guardar()"
+          [disabled]="ocupado()"
+          class="rounded-lg bg-emerald-500/90 px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#04140e] hover:bg-emerald-400 disabled:opacity-40"
+        >
+          GUARDAR CAMBIOS
+        </button>
+        <button
+          type="button"
+          (click)="generar()"
+          [disabled]="ocupado()"
+          class="rounded-lg border border-[#1c3b44] px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40"
+        >
+          GENERAR ENLACE
+        </button>
+        <span class="font-mono text-[11px] text-[#63848d]">
+          {{ totalFotos() }} {{ totalFotos() === 1 ? 'foto' : 'fotos' }}
+        </span>
+        @if (aviso()) {
+          <span class="font-mono text-[11px] text-emerald-400">{{ aviso() }}</span>
+        }
+        @if (error()) {
+          <span class="font-mono text-[11px] text-rose-400">{{ error() }}</span>
+        }
+      </div>
+
+      @if (enlace()) {
+        <div
+          class="mt-4 flex items-center gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] p-3"
+        >
+          <a
+            [href]="enlace()"
+            target="_blank"
+            rel="noreferrer"
+            class="min-w-0 flex-1 truncate font-mono text-[12px] text-emerald-400 hover:underline"
+          >
+            {{ enlace() }}
+          </a>
+          <button
+            type="button"
+            (click)="copiar()"
+            class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#6f8f93] hover:text-[#cfe3e0]"
+          >
+            {{ copiado() ? 'COPIADO' : 'COPIAR' }}
+          </button>
+        </div>
+        <p class="mt-2 font-mono text-[11px] text-[#63848d]">
+          Caduca a los 15 minutos y se cierra en cuanto lo abran.
+        </p>
+      }
+
+      <!--
+      Borrar el perfil.
+
+      Va al final, separado y en rojo: lo destructivo tiene que parecerlo. Y
+      exige teclear el nombre, como el borrado de cuenta exige teclear el
+      identificador. El aviso dice las dos consecuencias que no se ven: que se
+      va el contenido y que los enlaces ya enviados dejan de abrirse.
+    -->
+      <section class="mt-12 rounded-xl border border-[#3b1c22] bg-[#160b0e]/60 p-5">
+        @if (!borrandoPerfil()) {
+          <button
+            type="button"
+            (click)="borrandoPerfil.set(true); errorPerfil.set('')"
+            class="font-mono text-[11px] tracking-[0.16em] text-[#a9707a] hover:text-red-300"
+          >
+            BORRAR ESTE PERFIL
+          </button>
+        } @else {
+          <p class="font-mono text-[11px] tracking-[0.22em] text-red-300 uppercase">
+            Borrar «{{ nombre() }}»
+          </p>
+          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+            Se borra el perfil con todas sus fotos, y no hay vuelta atrás. Los pases que hayas
+            enviado de este perfil <strong>dejarán de abrirse</strong>.
+          </p>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <label
+              class="font-mono text-[10px] tracking-[0.16em] text-[#a9707a]"
+              for="confirmar-perfil"
+            >
+              Escribe {{ nombre() }} para confirmar:
+            </label>
+            <input
+              id="confirmar-perfil"
+              [(ngModel)]="confirmacionPerfil"
+              name="confirmacionPerfil"
+              class="min-w-0 flex-1 rounded-lg border border-[#3b1c22] bg-[#0c1a24] px-3 py-2 font-mono text-[13px] text-[#cfe3e0] outline-none focus:border-red-400/60"
+            />
+            <button
+              type="button"
+              (click)="borrarPerfilActual()"
+              [disabled]="ocupado() || confirmacionPerfil.trim() !== nombre()"
+              class="rounded-lg border border-red-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-red-300 hover:bg-red-400/10 disabled:opacity-40"
+            >
+              BORRAR
+            </button>
+            <button
+              type="button"
+              (click)="borrandoPerfil.set(false); confirmacionPerfil = ''"
+              class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+            >
+              CANCELAR
+            </button>
+          </div>
+        }
+      </section>
     }
 
     <footer class="mt-16 border-t border-[#16303a] pt-6">

@@ -35,6 +35,17 @@ export const CambiarPasswordSchema = z.object({
   nueva: z.string().min(10).max(200),
 });
 
+/**
+ * Confirmación del borrado de un perfil.
+ *
+ * Se teclea el NOMBRE del perfil, igual que el borrado de cuenta hace teclear
+ * el identificador. Un `DELETE` a secas se manda sin querer; escribir el nombre
+ * de lo que se va a destruir, no.
+ */
+export const BorrarPerfilSchema = z.object({
+  confirmacion: z.string().min(1).max(120),
+});
+
 export const MediaItemSchema = z.object({
   mediaId: z.string().uuid(),
   caption: z.string().max(280).optional(),

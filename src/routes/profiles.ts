@@ -2,7 +2,13 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import type { Db } from "../db";
-import { CreateProfileSchema, PresignSchema, UpdateProfileSchema, idsDeMedios } from "../schemas";
+import {
+  BorrarPerfilSchema,
+  CreateProfileSchema,
+  PresignSchema,
+  UpdateProfileSchema,
+  idsDeMedios,
+} from "../schemas";
 import { parseProfileData } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { signUploadUrl, verifyUploadSignature } from "../lib/media";
@@ -18,7 +24,7 @@ import {
 import { LIMITE_ABSOLUTO, LIMITE_POR_TIPO } from "../lib/sniff";
 import { cuentaDelUsuario, pasesAbiertos, perfilesActivos } from "../lib/cuentas";
 import { GRACIA_CONGELADO_MS } from "../lib/planes";
-import { activarPerfil } from "../lib/congelado";
+import { activarPerfil, borrarPerfil } from "../lib/congelado";
 import { CuerpoDemasiadoGrandeError, leerCuerpoConTope } from "../lib/body";
 
 export function profilesRoutes({ config, db, storage }: Deps) {
@@ -162,6 +168,40 @@ export function profilesRoutes({ config, db, storage }: Deps) {
    * vez de rechazar la petición: con un plan de un solo perfil, rechazar sería
    * dejar al cliente encerrado en el primero que creó.
    */
+  /**
+   * Borrar un perfil. Inmediato e irreversible.
+   *
+   * Exige teclear el NOMBRE del perfil, como el borrado de cuenta exige teclear
+   * el identificador: lo destructivo tiene que costar más que un clic de más.
+   * Se comprueba contra el nombre real leído de la base, no contra lo que diga
+   * el cliente que se llama.
+   */
+  profiles.delete("/api/profiles/:id", async (c) => {
+    const usuario = c.get("usuario");
+    const profileId = c.req.param("id");
+    const body = await c.req.json().catch(() => null);
+    const parsed = BorrarPerfilSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "hay que confirmar tecleando el nombre del perfil" }, 400);
+    }
+
+    const perfil = await db.one<{ display_name: string }>(
+      `SELECT display_name FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
+      [profileId, usuario.id]
+    );
+    // Mismo 404 para «no existe» y «no es tuyo»: el error no puede convertirse
+    // en un buscador de identificadores ajenos.
+    if (!perfil) return c.json({ error: "no encontrado" }, 404);
+
+    if (parsed.data.confirmacion.trim() !== perfil.display_name) {
+      return c.json({ error: "el nombre no coincide" }, 400);
+    }
+
+    const borrado = await borrarPerfil(db, storage, usuario.id, profileId);
+    if (!borrado) return c.json({ error: "no encontrado" }, 404);
+    return c.json({ ok: true });
+  });
+
   profiles.post("/api/profiles/:id/activar", async (c) => {
     const ok = await activarPerfil(db, c.get("usuario").id, c.req.param("id"));
     if (!ok) return c.json({ error: "perfil no encontrado" }, 404);

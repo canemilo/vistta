@@ -1,4 +1,5 @@
 import type { Db } from "../db";
+import type { Storage } from "../storage/port";
 import { cuentaDelUsuario } from "./cuentas";
 import { limitesDe, type Plan } from "./planes";
 
@@ -155,4 +156,47 @@ async function descongelar(db: Db, ids: readonly string[]): Promise<string[]> {
     [[...ids]]
   );
   return rows.map((r) => r.id);
+}
+
+/**
+ * Borra un perfil del cliente, con todo lo suyo.
+ *
+ * Existe porque crear sin poder deshacer es un callejón sin salida: el límite
+ * del plan cuenta perfiles ACTIVOS, así que un perfil creado por error se
+ * quedaba ocupando una plaza para siempre. Con el plan Prueba, que da uno, eso
+ * dejaba la cuenta encerrada en el primero que hubiera creado.
+ *
+ * Congelar no servía como sustituto: la purga se lleva un perfil congelado
+ * pasada la gracia, así que «congelo esto para liberar la plaza» habría sido en
+ * realidad «programo su destrucción sin decírtelo».
+ *
+ * Es INMEDIATO E IRREVERSIBLE, como el borrado de cuenta del bloque F, y por
+ * eso la ruta exige teclear el nombre del perfil. Los bytes se borran ANTES que
+ * la fila: al revés, el CASCADE se llevaría los registros de los medios y en el
+ * bucket quedarían objetos que ya nadie sabe encontrar.
+ *
+ * Se lleva por delante los pases vivos de ese perfil, y eso hay que decirlo en
+ * la pantalla: un enlace que ya se envió dejará de abrirse.
+ */
+export async function borrarPerfil(
+  db: Db,
+  storage: Storage,
+  userId: string,
+  profileId: string
+): Promise<boolean> {
+  const { rows: medios } = await db.query<{ storage_key: string }>(
+    `SELECT m.storage_key FROM vistta.media m
+     JOIN vistta.profiles p ON p.id = m.profile_id
+     WHERE m.profile_id = $1 AND p.owner_id = $2`,
+    [profileId, userId]
+  );
+  for (const m of medios) await storage.delete(m.storage_key);
+
+  // El `owner_id` va en el DELETE y no en una comprobación previa: así no hay
+  // un hueco entre mirar de quién es y borrarlo.
+  const res = await db.query(`DELETE FROM vistta.profiles WHERE id = $1 AND owner_id = $2`, [
+    profileId,
+    userId,
+  ]);
+  return res.rowCount === 1;
 }
