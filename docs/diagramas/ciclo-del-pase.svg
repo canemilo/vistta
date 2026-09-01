@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" font-family="Helvetica, Arial, sans-serif">
+  <style>
+    .caja { fill:#ffffff; stroke:#1d7f86; stroke-width:1.4; rx:6; }
+    .caja-fin { fill:#f6f7f8; stroke:#8c9aa1; stroke-width:1.4; rx:6; }
+    .et { font-size:12.5px; fill:#0b1a24; text-anchor:middle; font-weight:600; }
+    .sub { font-size:10px; fill:#5d7783; text-anchor:middle; }
+    .fl { stroke:#1d7f86; stroke-width:1.5; fill:none; marker-end:url(#p); }
+    .fl-x { stroke:#b3535f; stroke-width:1.4; fill:none; marker-end:url(#pr); stroke-dasharray:5 3; }
+    .cond { font-size:10.5px; fill:#2a4550; text-anchor:middle; }
+    .cond-x { font-size:10.5px; fill:#a04752; text-anchor:middle; }
+  </style>
+  <defs>
+    <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d7f86"/>
+    </marker>
+    <marker id="pr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b3535f"/>
+    </marker>
+  </defs>
+
+  <rect x="20"  y="70" width="150" height="62" class="caja"/>
+  <text x="95"  y="96"  class="et">Se genera</text>
+  <text x="95"  y="114" class="sub">pending · 15 min</text>
+
+  <rect x="250" y="70" width="150" height="62" class="caja"/>
+  <text x="325" y="96"  class="et">Se envía</text>
+  <text x="325" y="114" class="sub">lo manda el cliente</text>
+
+  <rect x="480" y="70" width="170" height="62" class="caja"/>
+  <text x="565" y="90"  class="et">Se abre UNA vez</text>
+  <text x="565" y="108" class="sub">UPDATE atómico</text>
+  <text x="565" y="122" class="sub">consumed_at = ahora</text>
+
+  <rect x="730" y="70" width="150" height="62" class="caja-fin"/>
+  <text x="805" y="96"  class="et">Cerrado</text>
+  <text x="805" y="114" class="sub">410 para siempre</text>
+
+  <rect x="480" y="230" width="170" height="56" class="caja-fin"/>
+  <text x="565" y="252" class="et">Caducado</text>
+  <text x="565" y="270" class="sub">nadie lo abrió a tiempo</text>
+
+  <path d="M170,101 H244" class="fl"/>
+  <path d="M400,101 H474" class="fl"/>
+  <path d="M650,101 H724" class="fl"/>
+  <path d="M325,132 C325,200 400,230 474,252" class="fl-x"/>
+
+  <text x="207" y="92"  class="cond">enlace</text>
+  <text x="437" y="92"  class="cond">1.ª petición</text>
+  <text x="687" y="92"  class="cond">recargar → 410</text>
+  <text x="395" y="196" class="cond-x">pasan 15 min</text>
+
+  <text x="20" y="316" font-size="11" fill="#5d7783">
+    La segunda petición y todas las siguientes reciben 410, sean de quien sean: el consumo es un único UPDATE condicional.
+  </text>
+</svg>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="Helvetica, Arial, sans-serif">
+  <style>
+    .sistema { fill:#f7fafa; stroke:#c3d3d7; stroke-width:1.2; }
+    .caso { fill:#ffffff; stroke:#1d7f86; stroke-width:1.3; }
+    .caso-admin { fill:#fffdf5; stroke:#b58a1b; stroke-width:1.3; }
+    .txt { font-size:12px; fill:#16323c; }
+    .txt-c { font-size:12px; fill:#16323c; text-anchor:middle; }
+    .actor { font-size:12.5px; fill:#0b1a24; text-anchor:middle; font-weight:600; }
+    .nota { font-size:10.5px; fill:#5d7783; text-anchor:middle; }
+    .rel { stroke:#7f9aa3; stroke-width:1; fill:none; }
+    .rel-p { stroke:#7f9aa3; stroke-width:1; fill:none; stroke-dasharray:4 3; }
+    .fig { stroke:#0b1a24; stroke-width:1.4; fill:none; }
+    .titulo { font-size:11px; fill:#5d7783; letter-spacing:0.12em; }
+  </style>
+
+  <rect x="230" y="20" width="440" height="580" rx="10" class="sistema"/>
+  <text x="250" y="45" class="titulo">VISTTA</text>
+
+  <!-- Actor: profesional -->
+  <g transform="translate(90,150)">
+    <circle cx="0" cy="-26" r="11" class="fig"/>
+    <path d="M0,-15 V15 M-16,-4 H16 M0,15 L-13,38 M0,15 L13,38" class="fig"/>
+    <text x="0" y="58" class="actor">Profesional</text>
+    <text x="0" y="74" class="nota">fotógrafo, estudio</text>
+  </g>
+
+  <!-- Actor: cliente final -->
+  <g transform="translate(90,430)">
+    <circle cx="0" cy="-26" r="11" class="fig"/>
+    <path d="M0,-15 V15 M-16,-4 H16 M0,15 L-13,38 M0,15 L13,38" class="fig"/>
+    <text x="0" y="58" class="actor">Destinatario</text>
+    <text x="0" y="74" class="nota">quien recibe el pase</text>
+  </g>
+
+  <!-- Actor: administrador -->
+  <g transform="translate(810,300)">
+    <circle cx="0" cy="-26" r="11" class="fig"/>
+    <path d="M0,-15 V15 M-16,-4 H16 M0,15 L-13,38 M0,15 L13,38" class="fig"/>
+    <text x="0" y="58" class="actor">Administrador</text>
+    <text x="0" y="74" class="nota">operador de Vistta</text>
+  </g>
+
+  <!-- Casos del profesional -->
+  <ellipse cx="380" cy="90"  rx="118" ry="24" class="caso"/><text x="380" y="94" class="txt-c">Entrar al panel</text>
+  <ellipse cx="380" cy="150" rx="118" ry="24" class="caso"/><text x="380" y="154" class="txt-c">Gestionar perfiles</text>
+  <ellipse cx="380" cy="210" rx="118" ry="24" class="caso"/><text x="380" y="214" class="txt-c">Subir medios</text>
+  <ellipse cx="380" cy="270" rx="118" ry="24" class="caso"/><text x="380" y="274" class="txt-c">Generar un pase</text>
+  <ellipse cx="380" cy="330" rx="118" ry="24" class="caso"/><text x="380" y="334" class="txt-c">Cambiar de plan</text>
+
+  <!-- Casos del destinatario -->
+  <ellipse cx="380" cy="430" rx="118" ry="24" class="caso"/><text x="380" y="434" class="txt-c">Abrir el pase</text>
+  <ellipse cx="380" cy="490" rx="118" ry="24" class="caso"/><text x="380" y="494" class="txt-c">Avisar de un contenido</text>
+
+  <!-- Casos del administrador -->
+  <ellipse cx="600" cy="380" rx="88" ry="22" class="caso-admin"/><text x="600" y="384" class="txt-c">Gestionar cuentas</text>
+  <ellipse cx="600" cy="430" rx="88" ry="22" class="caso-admin"/><text x="600" y="434" class="txt-c">Conciliar pagos</text>
+  <ellipse cx="600" cy="480" rx="88" ry="22" class="caso-admin"/><text x="600" y="484" class="txt-c">Reiniciar contraseña</text>
+  <ellipse cx="600" cy="530" rx="88" ry="22" class="caso-admin"/><text x="600" y="534" class="txt-c">Retirar contenido</text>
+
+  <!-- Relaciones del profesional -->
+  <path d="M120,124 C180,100 210,92 262,90"   class="rel"/>
+  <path d="M120,132 C180,140 210,148 262,150" class="rel"/>
+  <path d="M120,142 C180,180 200,205 262,210" class="rel"/>
+  <path d="M120,150 C180,215 200,262 262,270" class="rel"/>
+  <path d="M120,158 C180,265 200,322 262,330" class="rel"/>
+
+  <!-- Relaciones del destinatario -->
+  <path d="M120,412 C180,420 210,428 262,430" class="rel"/>
+  <path d="M120,424 C180,470 210,486 262,490" class="rel"/>
+
+  <!-- Relaciones del administrador -->
+  <path d="M780,286 C740,330 700,372 688,380" class="rel"/>
+  <path d="M780,292 C740,350 700,424 688,430" class="rel"/>
+  <path d="M780,300 C740,380 700,474 688,480" class="rel"/>
+  <path d="M780,308 C740,410 700,524 688,530" class="rel"/>
+
+  <text x="250" y="588" class="nota" text-anchor="start">
+    El administrador NO tiene acceso al contenido de los clientes: gestiona cuentas.
+  </text>
+  <text x="250" y="570" class="nota" text-anchor="start">
+    «Generar un pase» congela una instantánea del contenido; «Abrir el pase» la consume y lo cierra.
+  </text>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" font-family="Helvetica, Arial, sans-serif">
+  <style>
+    .t   { font-size:11px; fill:#5d7783; letter-spacing:0.1em; }
+    .lbl { font-size:11.5px; fill:#16323c; }
+    .num { font-size:11px; fill:#5d7783; }
+    .cod { fill:#1d7f86; } .pru { fill:#4aa89a; } .doc { fill:#b58a1b; }
+    .eje { stroke:#d5e0e3; stroke-width:1; }
+  </style>
+
+  <text x="0" y="16" class="t">LÍNEAS POR TIPO DE ARCHIVO</text>
+
+  <!-- escala: 5019 líneas = 620 px  -->
+  <g transform="translate(150,34)">
+    <line x1="0" y1="-6" x2="0" y2="216" class="eje"/>
+
+    <text x="-10" y="18"  class="lbl" text-anchor="end">Backend</text>
+    <rect x="0" y="6"   width="620" height="18" class="cod"/>
+    <text x="632" y="19" class="num">5.019</text>
+
+    <text x="-10" y="52" class="lbl" text-anchor="end">Pruebas backend</text>
+    <rect x="0" y="40"  width="403" height="18" class="pru"/>
+    <text x="415" y="53" class="num">3.260</text>
+
+    <text x="-10" y="86" class="lbl" text-anchor="end">Frontend</text>
+    <rect x="0" y="74"  width="468" height="18" class="cod"/>
+    <text x="480" y="87" class="num">3.790</text>
+
+    <text x="-10" y="120" class="lbl" text-anchor="end">Pruebas frontend</text>
+    <rect x="0" y="108" width="112" height="18" class="pru"/>
+    <text x="124" y="121" class="num">906</text>
+
+    <text x="-10" y="154" class="lbl" text-anchor="end">Documentación</text>
+    <rect x="0" y="142" width="264" height="18" class="doc"/>
+    <text x="276" y="155" class="num">2.137</text>
+
+    <text x="-10" y="188" class="lbl" text-anchor="end">Migraciones SQL</text>
+    <rect x="0" y="176" width="47" height="18" class="cod"/>
+    <text x="59" y="189" class="num">383</text>
+  </g>
+
+  <g transform="translate(0,270)">
+    <rect x="150" y="-10" width="12" height="12" class="cod"/><text x="168" y="0" class="num">código</text>
+    <rect x="230" y="-10" width="12" height="12" class="pru"/><text x="248" y="0" class="num">pruebas</text>
+    <rect x="312" y="-10" width="12" height="12" class="doc"/><text x="330" y="0" class="num">documentación</text>
+    <text x="470" y="0" class="num">Razón pruebas/código: 0,47 en backend · 0,24 en frontend</text>
+  </g>
+</svg>

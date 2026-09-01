@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Helvetica, Arial, sans-serif">
+  <style>
+    .zona { fill:#f7fafa; stroke:#c3d3d7; stroke-width:1.2; rx:8; }
+    .comp { fill:#ffffff; stroke:#1d7f86; stroke-width:1.3; rx:5; }
+    .ext  { fill:#fffdf5; stroke:#b58a1b; stroke-width:1.3; rx:5; }
+    .et { font-size:12px; fill:#0b1a24; text-anchor:middle; font-weight:600; }
+    .sub { font-size:9.5px; fill:#5d7783; text-anchor:middle; }
+    .lbl { font-size:10px; fill:#5d7783; letter-spacing:0.1em; }
+    .fl { stroke:#5d7783; stroke-width:1.3; fill:none; marker-end:url(#a); }
+    .cap { font-size:9.5px; fill:#2a4550; text-anchor:middle; }
+  </style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#5d7783"/></marker></defs>
+
+  <rect x="20" y="30" width="180" height="150" class="zona"/>
+  <text x="34" y="52" class="lbl">NAVEGADOR</text>
+  <rect x="40" y="66" width="140" height="44" class="comp"/>
+  <text x="110" y="84" class="et">Panel</text><text x="110" y="100" class="sub">Angular · profesional</text>
+  <rect x="40" y="122" width="140" height="44" class="comp"/>
+  <text x="110" y="140" class="et">Viewer</text><text x="110" y="156" class="sub">Angular · destinatario</text>
+
+  <rect x="250" y="30" width="400" height="330" class="zona"/>
+  <text x="264" y="52" class="lbl">VPS · DOCKER COMPOSE</text>
+
+  <rect x="272" y="70" width="160" height="52" class="comp"/>
+  <text x="352" y="90" class="et">Caddy</text><text x="352" y="106" class="sub">TLS · estáticos · proxy</text>
+
+  <rect x="272" y="150" width="160" height="66" class="comp"/>
+  <text x="352" y="172" class="et">API (Node + Hono)</text>
+  <text x="352" y="188" class="sub">rutas · autorización</text>
+  <text x="352" y="202" class="sub">marca de agua (Sharp)</text>
+
+  <rect x="462" y="150" width="160" height="66" class="comp"/>
+  <text x="542" y="172" class="et">Trabajador</text>
+  <text x="542" y="188" class="sub">reaper · purga</text>
+  <text x="542" y="202" class="sub">vencimientos</text>
+
+  <rect x="272" y="252" width="350" height="66" class="comp"/>
+  <text x="447" y="274" class="et">PostgreSQL 16</text>
+  <text x="447" y="290" class="sub">esquema vistta · 12 tablas · cola de trabajos</text>
+  <text x="447" y="306" class="sub">sin puerto publicado</text>
+
+  <rect x="700" y="150" width="170" height="66" class="ext"/>
+  <text x="785" y="172" class="et">Cloudflare R2</text>
+  <text x="785" y="188" class="sub">bucket privado</text>
+  <text x="785" y="202" class="sub">puerto Storage</text>
+
+  <path d="M200,105 H266" class="fl"/>
+  <text x="233" y="98" class="cap">HTTPS</text>
+  <path d="M352,122 V144" class="fl"/>
+  <path d="M352,216 V246" class="fl"/>
+  <path d="M542,216 V252" class="fl"/>
+  <!-- A R2 por encima del trabajador: cruzar su caja haría ilegible el dibujo. -->
+  <path d="M432,164 V130 H785 V144" class="fl"/>
+  <text x="608" y="124" class="cap">lee los bytes al servir</text>
+  <path d="M622,200 H694" class="fl"/>
+  <text x="658" y="216" class="cap">borra</text>
+
+  <rect x="20" y="400" width="850" height="96" class="zona"/>
+  <text x="34" y="422" class="lbl">LO QUE NO CRUZA ESTA FRONTERA</text>
+  <text x="34" y="446" font-size="11" fill="#2a4550">· El navegador NUNCA habla con R2: pide /m/&lt;id&gt; a la API, que comprueba firma, instantánea del pase y estado.</text>
+  <text x="34" y="464" font-size="11" fill="#2a4550">· La base no publica puerto: solo se ve desde la red interna de compose.</text>
+  <text x="34" y="482" font-size="11" fill="#2a4550">· La clave de servicio del almacenamiento no sale del proceso Node.</text>
+</svg>
