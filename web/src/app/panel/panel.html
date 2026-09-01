@@ -2,50 +2,98 @@
   <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales)
        `main` y no `div`: es la única región de la pantalla, y sin ella el enlace
        de «saltar al contenido» no lleva a ninguna parte. -->
-  <main id="contenido" class="flex min-h-screen items-center justify-center px-6">
-    <div class="w-full max-w-[420px] rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 p-6">
-      <h1 class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">
-        vistta · panel
+  <main id="contenido" class="flex min-h-screen items-center justify-center px-6 py-12">
+    <div class="w-full max-w-[440px]">
+      <!--
+        La identidad va FUERA de la tarjeta, no dentro.
+
+        Dentro, el logo compite con el formulario por el mismo espacio y acaba
+        pareciendo un campo más. Fuera, la pantalla se lee en dos tiempos: quién
+        eres y luego qué tienes que hacer.
+      -->
+      <h1>
+        <img src="/vistta-logo.svg" alt="Vistta" width="410" height="170" class="h-14 w-auto" />
       </h1>
-      <label
-        class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
-        for="usuario"
-      >
-        USUARIO
-      </label>
-      <input
-        id="usuario"
-        type="text"
-        autocomplete="username"
-        [(ngModel)]="usuarioId"
-        (keyup.enter)="entrar()"
-        class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
-      />
-      <label
-        class="mt-4 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
-        for="contrasena"
-      >
-        CONTRASEÑA
-      </label>
-      <input
-        id="contrasena"
-        type="password"
-        autocomplete="current-password"
-        [(ngModel)]="contrasena"
-        (keyup.enter)="entrar()"
-        class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
-      />
-      <button
-        type="button"
-        (click)="entrar()"
-        [disabled]="ocupado() || !usuarioId.trim() || contrasena.length < 8"
-        class="mt-4 w-full rounded-lg bg-emerald-500/90 px-3 py-2.5 font-mono text-[12px] tracking-[0.2em] text-[#04140e] transition-colors hover:bg-emerald-400 disabled:opacity-40"
-      >
-        ENTRAR
-      </button>
-      @if (error()) {
-        <p class="mt-4 font-mono text-[12px] text-rose-400">{{ error() }}</p>
-      }
+
+      <!--
+        El hilo.
+
+        Es el mismo signo que la marca usa bajo «ONE LINK. ONE VIEW.»: un nodo y
+        una línea que va de un extremo al otro. Aquí separa la identidad del
+        formulario, y no es un adorno: dice de qué va el producto antes de que
+        nadie escriba nada. El degradado azul→verde solo aparece aquí.
+      -->
+      <div class="mt-7 flex items-center gap-3">
+        <span
+          class="h-[9px] w-[9px] shrink-0 rounded-full border border-[color:var(--color-marca-azul)] bg-[#060e17]"
+          aria-hidden="true"
+        ></span>
+        <span class="hilo h-px flex-1" aria-hidden="true"></span>
+      </div>
+      <p class="mt-3 font-mono text-[11px] tracking-[0.28em] text-[#8fb0b2] uppercase">
+        Un enlace. <span class="texto-marca">Una apertura.</span>
+      </p>
+
+      <div class="mt-8 rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 p-6">
+        <h2 class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">
+          Entrar al panel
+        </h2>
+        <label
+          class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+          for="usuario"
+        >
+          USUARIO
+        </label>
+        <input
+          id="usuario"
+          type="text"
+          autocomplete="username"
+          [(ngModel)]="usuarioId"
+          (keyup.enter)="entrar()"
+          class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+        />
+        <label
+          class="mt-4 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+          for="contrasena"
+        >
+          CONTRASEÑA
+        </label>
+        <input
+          id="contrasena"
+          type="password"
+          autocomplete="current-password"
+          [(ngModel)]="contrasena"
+          (keyup.enter)="entrar()"
+          class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+        />
+        <button
+          type="button"
+          (click)="entrar()"
+          [disabled]="ocupado() || !usuarioId.trim() || contrasena.length < 8"
+          class="mt-6 w-full rounded-lg border border-emerald-400/60 bg-emerald-400/10 px-3 py-3 font-mono text-[12px] tracking-[0.2em] text-emerald-300 transition-colors hover:bg-emerald-400/20 hover:text-emerald-200 disabled:opacity-40 disabled:hover:bg-emerald-400/10"
+        >
+          ENTRAR
+        </button>
+        @if (error()) {
+          <p class="mt-4 font-mono text-[12px] text-rose-400" role="alert">{{ error() }}</p>
+        }
+
+        <!--
+        La contraseña la entrega un administrador y es temporal. Decirlo aquí
+        evita el callejón de quien la recibe por teléfono y no sabe si es la
+        buena ni qué hacer con ella después.
+      -->
+        <p
+          class="mt-5 border-t border-[#16303a] pt-4 font-mono text-[10px] leading-[1.7] text-[#63848b]"
+        >
+          ¿Primera vez? Entra con la contraseña temporal que te dieron y cámbiala desde el panel.
+          Las cuentas las crea un administrador: no hay registro público.
+        </p>
+      </div>
+
+      <p class="mt-6 font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">
+        <a href="/legal" class="underline hover:text-emerald-400">Términos y privacidad</a>
+      </p>
     </div>
   </main>
 } @else if (vistaPrevia()) {
