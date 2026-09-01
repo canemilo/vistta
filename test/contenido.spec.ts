@@ -114,10 +114,14 @@ describe("contenido del perfil", () => {
   });
 
   it("un perfil con el formato antiguo se sigue viendo como galería", async () => {
-    const profileId = await seedProfile("pro_legado", {
-      bio: "texto antiguo",
-      media: [{ key: "viejo/1.jpg", type: "image" }],
-    }, await crearCuenta());
+    const profileId = await seedProfile(
+      "pro_legado",
+      {
+        bio: "texto antiguo",
+        media: [{ key: "viejo/1.jpg", type: "image" }],
+      },
+      await crearCuenta()
+    );
     const { token } = await createPass(env, { profileId });
     const body = await (
       await callAs("198.51.100.23", "/api/open/" + token)

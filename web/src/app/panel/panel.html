@@ -1,24 +1,40 @@
 @if (!sesion()) {
-  <!-- Entrada al panel -->
+  <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales) -->
   <div class="flex min-h-screen items-center justify-center px-6">
     <div class="w-full max-w-[420px] rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 p-6">
       <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">vistta · panel</p>
-      <label class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase" for="pin">
-        PIN
+      <label
+        class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+        for="usuario"
+      >
+        USUARIO
       </label>
       <input
-        id="pin"
-        type="password"
-        inputmode="numeric"
-        autocomplete="off"
-        [(ngModel)]="pin"
+        id="usuario"
+        type="text"
+        autocomplete="username"
+        [(ngModel)]="usuarioId"
         (keyup.enter)="entrar()"
-        class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.4em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+        class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+      />
+      <label
+        class="mt-4 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+        for="contrasena"
+      >
+        CONTRASEÑA
+      </label>
+      <input
+        id="contrasena"
+        type="password"
+        autocomplete="current-password"
+        [(ngModel)]="contrasena"
+        (keyup.enter)="entrar()"
+        class="mt-2 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
       />
       <button
         type="button"
         (click)="entrar()"
-        [disabled]="ocupado() || pin.length < 4"
+        [disabled]="ocupado() || !usuarioId.trim() || contrasena.length < 8"
         class="mt-4 w-full rounded-lg bg-emerald-500/90 px-3 py-2.5 font-mono text-[12px] tracking-[0.2em] text-[#04140e] transition-colors hover:bg-emerald-400 disabled:opacity-40"
       >
         ENTRAR
@@ -30,7 +46,9 @@
   </div>
 } @else if (vistaPrevia()) {
   <!-- Vista previa: el mismo documento que verá el cliente -->
-  <div class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[#16303a] bg-[#081420] px-6 py-3">
+  <div
+    class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[#16303a] bg-[#081420] px-6 py-3"
+  >
     <p class="font-mono text-[10px] tracking-[0.24em] text-[#6f8f93] uppercase">
       Vista previa · no consume ningún pase
     </p>
@@ -51,9 +69,13 @@
 } @else {
   <!-- Edición del contenido -->
   <div class="mx-auto max-w-[860px] px-6 pb-24">
-    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-[#16303a] py-5">
+    <header
+      class="flex flex-wrap items-center justify-between gap-4 border-b border-[#16303a] py-5"
+    >
       <div>
-        <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">vistta · panel</p>
+        <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">
+          vistta · panel
+        </p>
         <p class="mt-1 font-mono text-[11px] text-emerald-400">Sesión abierta</p>
       </div>
       <div class="flex items-center gap-3">
@@ -88,7 +110,10 @@
         class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[15px] text-[#e6f4f1] outline-none focus:border-emerald-400/60"
       />
 
-      <label class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase" for="tagline">
+      <label
+        class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+        for="tagline"
+      >
         Una línea sobre lo que haces
       </label>
       <input
@@ -99,7 +124,10 @@
         class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
       />
 
-      <label class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase" for="intro">
+      <label
+        class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+        for="intro"
+      >
         Presentación
       </label>
       <textarea
@@ -117,12 +145,34 @@
       <section class="mt-6 rounded-xl border border-[#16303a] bg-[#0a1620]/60 p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <span class="font-mono text-[10px] tracking-[0.24em] text-emerald-400/80 uppercase">
-            {{ seccion.type === 'texto' ? 'Texto' : seccion.type === 'galeria' ? 'Galería' : 'Proyecto' }}
+            {{
+              seccion.type === 'texto'
+                ? 'Texto'
+                : seccion.type === 'galeria'
+                  ? 'Galería'
+                  : 'Proyecto'
+            }}
           </span>
           <div class="flex items-center gap-3 font-mono text-[11px] text-[#4f7079]">
-            <button type="button" (click)="moverSeccion(si, -1)" [disabled]="$first" class="hover:text-[#cfe3e0] disabled:opacity-30">SUBIR</button>
-            <button type="button" (click)="moverSeccion(si, 1)" [disabled]="$last" class="hover:text-[#cfe3e0] disabled:opacity-30">BAJAR</button>
-            <button type="button" (click)="quitarSeccion(si)" class="hover:text-rose-400">QUITAR</button>
+            <button
+              type="button"
+              (click)="moverSeccion(si, -1)"
+              [disabled]="$first"
+              class="hover:text-[#cfe3e0] disabled:opacity-30"
+            >
+              SUBIR
+            </button>
+            <button
+              type="button"
+              (click)="moverSeccion(si, 1)"
+              [disabled]="$last"
+              class="hover:text-[#cfe3e0] disabled:opacity-30"
+            >
+              BAJAR
+            </button>
+            <button type="button" (click)="quitarSeccion(si)" class="hover:text-rose-400">
+              QUITAR
+            </button>
           </div>
         </div>
 
@@ -147,7 +197,9 @@
           <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             @for (foto of itemsDe(si); track foto.key) {
               <figure class="min-w-0">
-                <div class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]">
+                <div
+                  class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
+                >
                   @if (miniaturas()[foto.key]) {
                     <img [src]="miniaturas()[foto.key]" alt="" class="h-full w-full object-cover" />
                   }
@@ -173,7 +225,13 @@
             class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
           >
             AÑADIR FOTOS
-            <input type="file" accept="image/*" multiple class="hidden" (change)="subirFotos(si, $event)" />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              class="hidden"
+              (change)="subirFotos(si, $event)"
+            />
           </label>
         }
       </section>
@@ -184,9 +242,27 @@
     }
 
     <div class="mt-6 flex flex-wrap gap-3">
-      <button type="button" (click)="anadirSeccion('texto')" class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400">+ TEXTO</button>
-      <button type="button" (click)="anadirSeccion('proyecto')" class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400">+ PROYECTO</button>
-      <button type="button" (click)="anadirSeccion('galeria')" class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400">+ GALERÍA</button>
+      <button
+        type="button"
+        (click)="anadirSeccion('texto')"
+        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+      >
+        + TEXTO
+      </button>
+      <button
+        type="button"
+        (click)="anadirSeccion('proyecto')"
+        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+      >
+        + PROYECTO
+      </button>
+      <button
+        type="button"
+        (click)="anadirSeccion('galeria')"
+        class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+      >
+        + GALERÍA
+      </button>
     </div>
 
     <!-- Guardar y compartir -->
@@ -220,10 +296,19 @@
 
     @if (enlace()) {
       <div class="mt-4 flex items-center gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] p-3">
-        <a [href]="enlace()" target="_blank" rel="noreferrer" class="min-w-0 flex-1 truncate font-mono text-[12px] text-emerald-400 hover:underline">
+        <a
+          [href]="enlace()"
+          target="_blank"
+          rel="noreferrer"
+          class="min-w-0 flex-1 truncate font-mono text-[12px] text-emerald-400 hover:underline"
+        >
           {{ enlace() }}
         </a>
-        <button type="button" (click)="copiar()" class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#6f8f93] hover:text-[#cfe3e0]">
+        <button
+          type="button"
+          (click)="copiar()"
+          class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#6f8f93] hover:text-[#cfe3e0]"
+        >
           {{ copiado() ? 'COPIADO' : 'COPIAR' }}
         </button>
       </div>

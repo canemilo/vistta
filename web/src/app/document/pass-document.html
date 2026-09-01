@@ -1,7 +1,5 @@
 <!-- Barra de estado: la capa "máquina" que enmarca el trabajo del cliente. -->
-<div
-  class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md"
->
+<div class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md">
   <div class="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-6 py-3">
     <div class="flex min-w-0 items-center gap-2.5">
       <span
@@ -31,7 +29,9 @@
         {{ profile().tagline }}
       </p>
     }
-    <p class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#4f7079] uppercase">
+    <p
+      class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#4f7079] uppercase"
+    >
       @if (hora()) {
         <span>Abierto {{ hora() }}</span>
         <span aria-hidden="true">·</span>
@@ -59,7 +59,9 @@
       <!-- El título se queda anclado mientras se recorre el bloque -->
       <div class="md:sticky md:top-20 md:self-start">
         @if (seccion.title) {
-          <h2 class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-[#7fd8bd] uppercase">
+          <h2
+            class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-[#7fd8bd] uppercase"
+          >
             {{ seccion.title }}
           </h2>
         }
@@ -80,11 +82,16 @@
         }
 
         @if (seccion.items.length) {
-          <div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6" [class.mt-0]="!seccion.body">
+          <div
+            class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6"
+            [class.mt-0]="!seccion.body"
+          >
             @for (foto of seccion.items; track foto.url) {
               <figure class="group col-span-1 min-w-0 sm:col-span-1 {{ ancho($index) }}">
                 <div
-                  class="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-[#16303a] {{ proporcion($index) }}"
+                  class="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-[#16303a] {{
+                    proporcion($index)
+                  }}"
                   [style.background-image]="fondo($index)"
                 >
                   <img
@@ -130,8 +137,8 @@
     <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">Pase cerrado</p>
     <p class="mt-3 font-mono text-[12px] text-[#8fb0b2]">{{ marca() }}</p>
     <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
-      Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas
-      volver a verlo, pide uno nuevo a quien te lo envió.
+      Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas volver
+      a verlo, pide uno nuevo a quien te lo envió.
     </p>
   </footer>
 </article>

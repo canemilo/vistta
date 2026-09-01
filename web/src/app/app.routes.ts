@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
   // El panel es la home: quien entra aquí es el profesional, no su cliente.

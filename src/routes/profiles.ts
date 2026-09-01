@@ -129,9 +129,7 @@ profiles.get("/api/media/*", async (c) => {
 /** ¿Ese perfil es del usuario de la sesión? */
 async function esSuyo(c: Context<Ctx>, profileId: string): Promise<boolean> {
   if (!profileId) return false;
-  const fila = await c.env.DB.prepare(
-    `SELECT id FROM profiles WHERE id = ?1 AND owner_id = ?2`
-  )
+  const fila = await c.env.DB.prepare(`SELECT id FROM profiles WHERE id = ?1 AND owner_id = ?2`)
     .bind(profileId, c.get("usuario").id)
     .first<{ id: string }>();
   return fila !== null;

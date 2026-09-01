@@ -1,7 +1,13 @@
 import { Hono } from "hono";
 import type { Env } from "../env";
 import { PanelLoginSchema } from "../schemas";
-import { LOGIN_RULE, cerrarSesion, createSession, usuarioDeLaSesion, verificarCredenciales } from "../lib/auth";
+import {
+  LOGIN_RULE,
+  cerrarSesion,
+  createSession,
+  usuarioDeLaSesion,
+  verificarCredenciales,
+} from "../lib/auth";
 import { clearRateLimit, clientId, hitRateLimit } from "../lib/ratelimit";
 
 export const panel = new Hono<{ Bindings: Env }>();

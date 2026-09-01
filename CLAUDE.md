@@ -4,6 +4,7 @@ Vistta es una herramienta SaaS para **presentar trabajo** (portfolio, galería, 
 a un cliente concreto mediante un **enlace privado de un solo uso** que caduca al abrirse.
 
 ## Stack (decisión de datos: v1.2)
+
 - TypeScript en todo el proyecto. Gestor: npm/pnpm.
 - **Runtime backend: Node** (elegido porque Argon2id y Sharp no corren nativos en Workers).
 - **Backend**: Node + Hono. **Base de datos: PostgreSQL** desde el MVP —**Supabase (gratis, sin tarjeta)**—
@@ -14,8 +15,8 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
   el fichero; verificar la cifra antes de fijarla). 200 MB por pase. El tamaño **declarado** por el
   cliente no vale nada: se valida contra los bytes reales al confirmar la subida.
 - Validación: Zod. Pruebas: Vitest contra **Postgres real** (servicio de contenedor en CI, Docker en
-local). **pg-mem queda descartado**: es monohilo y sin MVCC, así que el test del consumo atómico del
-pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante del producto. Deploy MVP: host Node sin tarjeta
+  local). **pg-mem queda descartado**: es monohilo y sin MVCC, así que el test del consumo atómico del
+  pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante del producto. Deploy MVP: host Node sin tarjeta
   (p. ej. Render) o VPS; frontend en Cloudflare Pages.
 
 > Nota de decisión: se descarta D1 para el MVP. D1 es gratis y sin tarjeta, pero el proyecto va a Postgres
@@ -23,12 +24,18 @@ pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante
 > estaba en R2, no en D1: por eso los medios del MVP van en Supabase Storage.
 
 ## Invariante crítico — uso único atómico (PostgreSQL)
+
 El pase se consume UNA sola vez y el consumo es ATÓMICO con un único UPDATE condicional:
-    UPDATE passes SET status='consumed', consumed_at=$1
-    WHERE token_hash=$2 AND status='pending' AND expires_at > $1;
+
+```sql
+UPDATE passes SET status='consumed', consumed_at=$1
+WHERE token_hash=$2 AND status='pending' AND expires_at > $1;
+```
+
 Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado (usado/caducado/inexistente).
 
 ## Seguridad (no negociable)
+
 - Token opaco de 128 bits; en BD solo su **hash SHA-256** (nunca el token en claro).
 - Cabeceras: CSP, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`.
 - Medios solo por URL firmada y efímera; **marca de agua incrustada en los píxeles**, por visita
@@ -41,10 +48,12 @@ Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado 
   como protección. Secretos fuera del repo. Logs sin PII.
 
 ## Cumplimiento
+
 - RGPD: usuario = responsable; Vistta = encargado (art. 28).
 - AUP con notice-and-takedown; **tolerancia cero** a CSAM y a contenido no consentido.
 
 ## Cómo trabajar aquí
+
 - Delega en el subagente adecuado: backend, frontend, security, infra-devops, qa-testing, compliance, docs.
   **Ojo: `.claude/` con esos 7 subagentes no está en el repo** (nunca se commiteó). Hasta que se
   reponga, hay que darle el rol al agente en el propio prompt.

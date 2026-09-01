@@ -13,21 +13,24 @@
 - **Pase de un solo uso atómico**: implementado y correcto (`src/lib/pass.ts`). Es lo mejor del repo.
 - **Firma HMAC de medios** (`src/lib/media.ts`): implementada y portable a Node sin cambios (WebCrypto).
 - **Auth a medias**: hay cuentas, sesiones y rate limit, pero con **PBKDF2**, no Argon2id.
-- **El esquema no está en el repo.** Ninguna migración crea `users`, `profiles.owner_id` ni
-  `panel_sessions.user_id`, que el código sí usa. El esquema real vive solo en
-  `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`, que está en `.gitignore`.
-- **La suite no arranca**: `vitest.config.ts` perdió `nodejs_compat`, el binding `MEDIA` y
-  `MEDIA_SIGNING_KEY`. `npx vitest run` da "no tests" y un error de configuración.
-- **El CI está rojo**: `ci.yml` invoca `pnpm lint` y `pnpm format:check`, que `package.json` ya no define.
-- Todo ello queda sellado en el commit `3aac675` de la rama `wip-bloques-b-c`.
+- **El esquema ya está en el repo** (P0.1, 2026-09-01): `0002_auth_ratelimit.sql` recuperado y
+  `0003_usuarios.sql` reconstruido (`users`, `profiles.owner_id`, `panel_sessions.user_id`).
+  Verificado columna a columna contra el `.schema` del SQLite local con `PRAGMA table_info`,
+  `index_list` y `foreign_key_list`: coincide exactamente.
+- **La suite arranca y pasa**: 33 tests en 4 ficheros, incluidos los 5 de firma de medios.
+  Verde también sin `.dev.vars`, que es como corre el CI.
+- **El CI pasa entero en local**: typecheck, lint, format:check, test y build de `web/`.
+- El estado roto anterior queda sellado en el commit `3aac675` de la rama `wip-bloques-b-c`.
 
 ## 1. Decisiones (Bloque A)
+
 - [x] Runtime = Node. [x] Datos = PostgreSQL/Supabase (sin tarjeta). [x] Medios MVP = Supabase Storage; R2 en producción.
 - [x] Proyecto Supabase creado (`ysrsruebruqppmtvgozm`); credenciales en `.env`, ignorado por git.
       Falta la contraseña y la región de `DATABASE_URL`.
 - [ ] Marca/paleta única en tailwind.config.js.
 
 ### Decisiones del 2026-09-01 (bloque D)
+
 - **Vídeo: sí, con tope de 50 MB** (el plan gratuito de Supabase limita el fichero; verificar la cifra
   exacta antes de fijarla). El panel debe avisar de que **el vídeo no lleva marca incrustada**.
 - **Marca de agua incrustada en los píxeles, por visita** (Sharp al servir). Las imágenes pasan por
@@ -43,10 +46,14 @@
 
 ## 2. Bloques restantes
 
-- [ ] **P0 — Higiene** (bloqueante, antes de nada): reconstruir la migración con `users`,
-      `profiles.owner_id`, `panel_sessions.user_id` y `rate_limits` (fuente: el `.schema` del SQLite
-      local, ya volcado); devolver a `package.json` los scripts que el CI invoca; restaurar los
-      bindings de `vitest.config.ts` para tener línea base verde **desde la que** migrar.
+- [x] **P0 — Higiene** — cerrado el 2026-09-01. Línea base verde desde la que migrar:
+      migraciones `0002`/`0003` reconstruidas y verificadas contra el SQLite local; `package.json`
+      con sus scripts y devDependencies (el lockfile ya los traía, así que `--frozen-lockfile`
+      fallaba); `vitest.config.ts` con `nodejs_compat`, `r2Buckets: ["MEDIA"]` y `MEDIA_SIGNING_KEY`;
+      `nodejs_compat` de vuelta en `wrangler.toml`. Dos roturas más que el CI también tocaba y que
+      el plan no había registrado: `eslint` no tenía globales de Node para `scripts/*.mjs`, y
+      `web/src/app/panel/panel.html` seguía pidiendo un `pin` que el componente ya no tiene (era
+      del login viejo; ahora usa usuario + contraseña, como `Api.login`).
 - [ ] **B+C — rehacer de verdad**, ahora dentro de D0: no existen sobre Postgres.
 - [ ] **D0 — Node + Postgres + Supabase**: `config.ts` con Zod; `db.ts` con `pg`; migraciones en
       dialecto Postgres; portar `pass`/`ratelimit`/`auth`; `@hono/node-server` + inyección de
@@ -102,7 +109,7 @@ Auditados y verificados el 2026-09-01. No son teóricos.
 
 ## 5. Definición de "cerrado"
 
-- [ ] P0: la suite arranca y el CI pasa.
+- [x] P0: la suite arranca (33 tests verdes) y el CI pasa entero en local.
 - [ ] D0: Node + Postgres + Argon2id, con el test de concurrencia del pase verde contra Postgres real.
 - [ ] D: subida con límites verificados sobre bytes reales; marca incrustada; dimensiones en BD;
       los seis fallos de §3 corregidos y con test.

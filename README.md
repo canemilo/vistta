@@ -4,6 +4,7 @@ Backend del MVP: Cloudflare Workers + Hono + D1. Núcleo: el **ciclo del pase** 
 **consumo atómico de un solo uso**.
 
 ## Estructura
+
     src/index.ts          App Hono + cabeceras de seguridad
     src/routes/passes.ts  POST /api/passes (crear) · GET /v/:token (abrir+consumir)
     src/lib/pass.ts       createPass / consumePass (UPDATE atómico)
@@ -14,6 +15,7 @@ Backend del MVP: Cloudflare Workers + Hono + D1. Núcleo: el **ciclo del pase** 
     test/pass.spec.ts     un solo uso, caducidad, auth, concurrencia
 
 ## Puesta en marcha
+
     pnpm install
     pnpm db:create                 # copia el database_id al wrangler.toml
     pnpm db:migrate:local
@@ -22,6 +24,7 @@ Backend del MVP: Cloudflare Workers + Hono + D1. Núcleo: el **ciclo del pase** 
     pnpm test                      # ejecuta las pruebas
 
 ## Probar a mano
+
     # crear un pase (necesitas un profile en la BD; ver seed en el test)
     curl -X POST localhost:8787/api/passes \
       -H "authorization: Bearer <PANEL_TOKEN>" -H "content-type: application/json" \
@@ -29,6 +32,7 @@ Backend del MVP: Cloudflare Workers + Hono + D1. Núcleo: el **ciclo del pase** 
     # abrir el enlace devuelto: la 1ª vez 200, la 2ª 410 (Acceso denegado)
 
 ## Despliegue (MVP gratis)
+
     pnpm db:migrate:remote
     wrangler secret put PANEL_TOKEN
     pnpm deploy

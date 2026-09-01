@@ -1,6 +1,8 @@
 name = "vistta-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
+# Lo exige @cloudflare/vitest-pool-workers y lo usa el arnés de pruebas.
+compatibility_flags = ["nodejs_compat"]
 
 # Crea la base con `pnpm db:create` y pega aquí el database_id que te devuelva.
 [[d1_databases]]

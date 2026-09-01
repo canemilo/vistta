@@ -19,11 +19,7 @@ export function generarSalt(): string {
   return toHex(bytes);
 }
 
-export async function derivar(
-  password: string,
-  salt: string,
-  iterations: number
-): Promise<string> {
+export async function derivar(password: string, salt: string, iterations: number): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(password),

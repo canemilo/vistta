@@ -20,7 +20,9 @@ if (password.length < 8) {
 }
 
 const salt = randomBytes(16).toString("hex");
-const hash = pbkdf2Sync(password, Buffer.from(salt, "hex"), iteraciones, 32, "sha256").toString("hex");
+const hash = pbkdf2Sync(password, Buffer.from(salt, "hex"), iteraciones, 32, "sha256").toString(
+  "hex"
+);
 const ahora = Date.now();
 const esc = (v) => String(v).replace(/'/g, "''");
 
@@ -33,7 +35,16 @@ VALUES ('p_${esc(id)}', '${esc(displayName)}', NULL, '{"sections":[]}', ${ahora}
 
 execFileSync(
   "pnpm",
-  ["exec", "wrangler", "d1", "execute", "vistta", remoto ? "--remote" : "--local", "--command", sql],
+  [
+    "exec",
+    "wrangler",
+    "d1",
+    "execute",
+    "vistta",
+    remoto ? "--remote" : "--local",
+    "--command",
+    sql,
+  ],
   { stdio: ["ignore", "ignore", "inherit"] }
 );
 

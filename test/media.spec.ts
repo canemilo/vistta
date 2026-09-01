@@ -12,16 +12,20 @@ beforeEach(async () => {
 
 async function openPassWithMedia(ip: string) {
   const propietario = await crearCuenta("dueno" + ip.replace(/\./g, ""), "Dueño");
-  const profileId = await seedProfile("pro_media", {
-    intro: "demo",
-    sections: [
-      {
-        type: "galeria",
-        title: "Selección",
-        items: [{ key: "obras/foto.jpg", type: "image", caption: "Obra 1" }],
-      },
-    ],
-  }, propietario);
+  const profileId = await seedProfile(
+    "pro_media",
+    {
+      intro: "demo",
+      sections: [
+        {
+          type: "galeria",
+          title: "Selección",
+          items: [{ key: "obras/foto.jpg", type: "image", caption: "Obra 1" }],
+        },
+      ],
+    },
+    propietario
+  );
   const { token } = await createPass(env, { profileId });
   const res = await callAs(ip, "/api/open/" + token);
   const body = await res.json<{ sections: { items: { url: string; type: string }[] }[] }>();
