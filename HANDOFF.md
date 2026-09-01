@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0 y D.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D y E.** El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -25,7 +25,9 @@
   dimensiones y LQIP medidos al confirmar.
 - **Marca de agua incrustada en los píxeles** con Sharp, por visita, al servir `/m/:mediaId`.
 - **Cola `vistta.jobs`** con `FOR UPDATE SKIP LOCKED` y reaper de huérfanos, en el mismo proceso.
-- **68 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
+- **Planes** (`prueba`/`pro`/`boveda`) con sus límites en `src/lib/planes.ts`, congelado reversible
+  de los perfiles que sobran y purga por antigüedad sobre la cola de D.
+- **87 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
 
@@ -72,8 +74,10 @@
       con la marca dentro; reaper de huérfanos; `/m/:mediaId` sirve por tipo; `open` devuelve
       `width`/`height`/`lqip`. Los tres fallos abiertos del §3 quedan cerrados y con test.
       Ver «Desvíos del plan en D», más abajo.
-- [ ] **E — Planes/cuotas/volatilidad** · planes Prueba/Pro/Bóveda, caducidades 7/14 días, máx. pases
-      simultáneos, **cron de purga** (reutiliza la cola `jobs` de D).
+- [x] **E — Planes/cuotas/volatilidad** — cerrado el 2026-09-01. Migración `0003_planes`
+      (`users.plan`/`plan_since`, `profiles.status`/`frozen_at`); límites de perfiles, pases
+      simultáneos y cuota aplicados en los tres puntos donde se crea algo; congelado reversible;
+      purga en la cola de D. Ver «Decisiones y desvíos en E», más abajo.
 - [ ] **F — Facturación manual (Bizum/PayPal)**: código VISTTA-XXXX, /api/admin/activate-plan, auditoría.
 - [ ] **G — Frontend Angular**: viewer con CDK; bento pipe (dimensiones reales desde BD, que D provee);
       vistas de login/register/reset, dashboard, /billing, /admin; accesibilidad + Lighthouse.
@@ -97,6 +101,39 @@ ahí. El `presign` sigue siendo un paso aparte: es el que reserva cuota y firma.
 **Se añadió un adaptador `fs` del puerto `Storage`.** No estaba en el plan, pero sin él
 `pnpm setup:local` siembra en un almacén en memoria que muere con el proceso de la siembra, y deja
 perfiles apuntando a bytes que ya no existen. Pon `STORAGE_DRIVER=fs` en tu `.env`.
+
+## 2.2. Decisiones y desvíos en E
+
+> **LAS CIFRAS DE LOS PLANES SIGUEN SIN DECIDIR.** Cuántos perfiles, cuántos pases a la vez y
+> cuántos megabytes da cada plan está puesto a ojo y marcado como PROVISIONAL en
+> `src/lib/planes.ts`. Ese es el único archivo que hay que tocar para fijarlas: ninguna ruta,
+> ninguna consulta y ningún trabajo de la cola llevan un número escrito a mano. Lo que sí está
+> decidido son los tres nombres, que Bóveda es el plan sin caducidad, y que pasarse de un límite
+> nunca borra nada por sorpresa.
+
+**Qué caduca**: el CONTENIDO del perfil, no el enlace. Pasada la retención del plan (7 días en
+Prueba, 14 en Pro), el medio se borra del almacenamiento y de la base. En Bóveda no caduca nunca, y
+de ahí el nombre. En el código eso es `retencionMs: null`, y `null` **no es cero**: la purga se salta
+el plan entero en vez de traducirlo a un número. Hay un test que se pone rojo si alguien hace esa
+traducción.
+
+**Pasarse de un límite no borra nada.** Al bajar de plan, los perfiles que sobran quedan
+`congelado`: siguen en la base con su contenido, no se editan, no generan pases y los pases que ya
+tuvieran dejan de abrirse (410, el mismo que un pase usado: al cliente final no se le cuenta la
+situación comercial de quien le mandó el enlace). El dueño elige cuál deja activo con
+`POST /api/profiles/:id/activar`, que **intercambia** en vez de rechazar — con un plan de un solo
+perfil, rechazar dejaría al cliente encerrado en el primero que creó. Subir de plan descongela solo.
+Solo si un perfil agota entera la gracia se borra, y eso vive en `src/lib/purga.ts`, aparte de
+`congelado.ts`, para que la parte reversible y la irreversible no se lean como si fueran lo mismo.
+
+**Se añadió `POST /api/profiles`.** No estaba en el plan, pero sin una forma de crear perfiles el
+límite de perfiles del plan no se puede ni aplicar ni probar.
+
+**Dos protecciones de la purga que conviene no quitar sin leer**: no toca un medio que esté en la
+instantánea de un pase todavía abrible (ese enlace ya salió y tiene que seguir enseñando lo que
+prometía), y no aplica una retención nueva a contenido anterior al plan actual (`plan_since`), para
+que bajar de Bóveda no evapore el archivo esa misma noche. Las dos tienen test y las dos se han
+verificado por mutación.
 
 ## 3. Fallos conocidos
 
@@ -135,6 +172,14 @@ empeoraba, y tres en D.
 **Aviso para el bloque H**: la marca usa texto SVG, que en una imagen de contenedor mínima sin
 fontconfig saldría vacío. Por eso la capa lleva también una banda opaca: si faltan las fuentes, algo
 queda incrustado igual. Aun así, la imagen de producción tiene que traer fuentes.
+
+### Aprendizaje de E
+
+Los invariantes de concurrencia ya son cinco, y **todos los que se han buscado han aparecido**. En E
+salieron dos más: sin bloquear la fila de la cuenta, 10 de 16 peticiones se saltan el límite de
+pases simultáneos y 9 de 16 el de perfiles. A estas alturas la regla es al revés de como se planteó
+en D0: no es «comprobar si este contador tiene una carrera», es «este contador la tiene, escribe el
+`FOR UPDATE` y el test de ráfaga desde el principio».
 
 ### Aprendizaje de D, que se suma al de D0
 
@@ -176,6 +221,9 @@ rómpelo a propósito y comprueba que se pone rojo.
       **y verificado por mutación** (se rompe el consumo a propósito y el test se pone rojo).
 - [x] D: subida con límites verificados sobre bytes reales; marca incrustada; dimensiones en BD;
       los tres fallos del §3 corregidos y con test, verificados por mutación.
-- [ ] Planes/cuotas + cron de purga. [ ] Facturación + admin.
+- [x] Planes/cuotas + cron de purga: límites aplicados con test de ráfaga, congelado reversible y
+      purga verificada por mutación (Bóveda no caduca, la gracia se respeta, un pase abierto
+      protege sus medios). **Pendiente: fijar las cifras de `src/lib/planes.ts`.**
+- [ ] Facturación + admin.
 - [ ] Frontend completo accesible. [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.

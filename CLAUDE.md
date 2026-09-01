@@ -27,17 +27,22 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
 > en producción; usar Supabase/Postgres desde el inicio evita la migración D1→Postgres. El peaje de tarjeta
 > estaba en R2, no en D1: por eso los medios del MVP van en Supabase Storage.
 
-## Invariantes de concurrencia — los tres se prueban con RÁFAGA
+## Invariantes de concurrencia — se prueban con RÁFAGA, siempre
 
-Son tres, no uno, y los tres fallan igual: dos peticiones simultáneas casi nunca se solapan, así
-que un test de dos pasa aunque el código esté mal. Hacen falta ~16 y romper el código a propósito
-para ver el test en rojo antes de darlo por bueno.
+Ya son cinco, y **todos los que se han buscado han aparecido**. Todos fallan igual: dos peticiones
+simultáneas casi nunca se solapan, así que un test de dos pasa aunque el código esté mal. Hacen
+falta ~16 y romper el código a propósito para ver el test en rojo antes de darlo por bueno.
 
 1. **Consumo del pase**: un único UPDATE condicional (abajo).
-2. **Reserva de cuota**: la fila del perfil se bloquea con `SELECT … FOR UPDATE` dentro de la
+2. **Reserva de cuota**: la fila del perfil bloqueada con `SELECT … FOR UPDATE` dentro de la
    transacción. Sin eso, 12 de 16 reservas de 50 MB entran contra una cuota de 200 MB.
 3. **Toma de trabajos de la cola**: `FOR UPDATE SKIP LOCKED` en una sola sentencia. Con "leer y
    luego marcar", 7 de 16 trabajadores se llevan el mismo trabajo.
+4. **Pases simultáneos** y 5. **perfiles del plan**: la fila de la CUENTA bloqueada. Sin eso, 10 de
+   16 y 9 de 16 se cuelan.
+
+La regla, a estas alturas, va al revés: si añades un contador con un tope, da por hecho que tiene
+carrera. Escribe el `FOR UPDATE` y el test de ráfaga desde el principio.
 
 ## Invariante crítico — uso único atómico (PostgreSQL)
 
@@ -71,6 +76,20 @@ Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado 
 - Auth del panel: Argon2id + sesiones opacas con TTL + rate limit; a futuro passkey/WebAuthn.
 - **Seguridad honesta**: NUNCA prometer que se evita una captura; NO vender el bloqueo de clic derecho
   como protección. Secretos fuera del repo. Logs sin PII.
+
+## Planes y volatilidad (desde E)
+
+- Las CIFRAS de los planes viven solo en `src/lib/planes.ts`, y hoy son **provisionales**. Ninguna
+  ruta, consulta ni trabajo de la cola lleva un número escrito a mano: cambiar de oferta comercial
+  es editar ese archivo.
+- El contenido de este producto **caduca**: es para enseñar trabajo, no para alojarlo. `Bóveda` es
+  el plan sin caducidad, y en el código eso es `retencionMs: null`. **`null` no es cero**: la purga
+  se salta ese plan entero en vez de traducirlo a un número.
+- **Pasarse de un límite nunca borra nada por sorpresa.** Lo que sobra se congela (reversible,
+  `lib/congelado.ts`), el cliente elige qué deja activo y el cambio intercambia en vez de rechazar.
+  Solo agotada la gracia entera se borra, y eso vive aparte en `lib/purga.ts`.
+- La purga no toca un medio que esté en la instantánea de un pase todavía abrible, ni aplica una
+  retención nueva a contenido anterior al plan actual (`users.plan_since`).
 
 ## Cumplimiento
 
