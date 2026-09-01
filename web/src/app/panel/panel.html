@@ -85,7 +85,9 @@
           class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
         >
           @for (p of perfiles(); track p.id) {
-            <option [value]="p.id">{{ p.displayName }}</option>
+            <option [value]="p.id" [disabled]="p.status === 'congelado'">
+              {{ p.displayName }}{{ p.status === 'congelado' ? ' · congelado' : '' }}
+            </option>
           }
         </select>
         <button
@@ -97,6 +99,62 @@
         </button>
       </div>
     </header>
+
+    <!--
+      El aviso de borrado.
+
+      Va aquí arriba, antes que nada, y con la fecha en días: es lo único de
+      todo el panel que anuncia que se va a destruir trabajo del cliente. Un
+      texto discreto al pie sería una forma elegante de que no se enterase.
+    -->
+    @if (congelados().length) {
+      <section class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5" role="alert">
+        <p class="font-mono text-[11px] tracking-[0.22em] text-amber-300 uppercase">
+          Perfiles congelados
+        </p>
+        <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+          Tu plan da para {{ plan()?.limites?.perfiles ?? 1 }}
+          {{ plan()?.limites?.perfiles === 1 ? 'perfil activo' : 'perfiles activos' }}. Los de abajo
+          siguen guardados con todo su contenido, pero no se pueden editar ni enviar. Puedes activar
+          el que necesites en cualquier momento: entrará este y se congelará otro.
+        </p>
+        <ul class="mt-4 flex flex-col gap-2">
+          @for (p of congelados(); track p.id) {
+            <li
+              class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] px-4 py-3"
+            >
+              <span class="font-mono text-[12px] text-[#cfe3e0]">{{ p.displayName }}</span>
+              <span class="font-mono text-[11px] text-amber-300">
+                Se borra en {{ diasHasta(p.purgeAt) }}
+                {{ diasHasta(p.purgeAt) === 1 ? 'día' : 'días' }}
+              </span>
+              <button
+                type="button"
+                (click)="rescatar(p.id)"
+                [disabled]="ocupado()"
+                class="rounded-lg border border-amber-500/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-amber-300 hover:border-amber-400 disabled:opacity-40"
+              >
+                ACTIVAR ESTE
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <!-- Lo que el plan permite y lo que va gastado. Sin esto, el cliente solo
+         descubre sus límites al chocar con ellos. -->
+    @if (plan(); as p) {
+      <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-[#5c7d84]">
+        Plan {{ p.nombre }} · {{ uso().perfilesActivos }}/{{ p.limites.perfiles }} perfiles ·
+        {{ uso().pasesAbiertos }}/{{ p.limites.pasesSimultaneos }} pases abiertos ·
+        @if (p.limites.retencionMs === null) {
+          el contenido no caduca
+        } @else {
+          el contenido se borra a los {{ p.limites.retencionMs / 86400000 }} días
+        }
+      </p>
+    }
 
     <!-- Cabecera de la página del cliente -->
     <section class="mt-8 grid gap-4">

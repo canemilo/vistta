@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
+import { PLANES } from "../src/lib/planes";
 import {
-  CUOTA_POR_PERFIL,
   DemasiadasReservasError,
   MAX_RESERVAS_ABIERTAS,
   cuotaUsada,
@@ -313,7 +313,7 @@ describe("subida de medios", () => {
     );
     const aceptadas = intentos.filter((r) => r.status === "fulfilled");
     expect(aceptadas).toHaveLength(4);
-    expect(await cuotaUsada(db, "pro_1")).toBe(CUOTA_POR_PERFIL);
+    expect(await cuotaUsada(db, "pro_1")).toBe(PLANES.prueba.cuotaPorPerfil);
   });
 
   it("no se pueden acumular reservas sin confirmar", async () => {

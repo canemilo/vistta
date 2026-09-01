@@ -2,6 +2,7 @@ import type { Db } from "../db";
 import type { Storage } from "../storage/port";
 import { LIMITE_POR_TIPO, detectarTipo, type MediaKind } from "./sniff";
 import { derivados } from "./watermark";
+import { cuentaDelPerfil } from "./cuentas";
 
 /**
  * El modelo de medios. La regla que ordena todo el módulo:
@@ -14,8 +15,12 @@ import { derivados } from "./watermark";
  * por eso un usuario podía escribir la clave de otro y servirla.
  */
 
-/** Cuota de contenido por perfil. El pase enseña el perfil: es la misma cifra. */
-export const CUOTA_POR_PERFIL = 200 * 1024 * 1024;
+/*
+ * La cuota ya no es una constante: sale del plan del dueño del perfil, y vive
+ * en src/lib/planes.ts con el resto de las cifras. Hasta el bloque E era un
+ * número escrito aquí, y eso obligaba a tocar este archivo para cambiar de
+ * oferta comercial.
+ */
 
 /** Cuánto vive una reserva sin confirmar antes de que el reaper se la lleve. */
 export const TTL_RESERVA_MS = 30 * 60 * 1000;
@@ -79,12 +84,19 @@ export async function reservarMedio(
     throw new ReservaNoValidaError("tamaño fuera del límite del tipo");
   }
 
+  const cuenta = await cuentaDelPerfil(db, opts.profileId);
+  if (!cuenta) throw new ReservaNoValidaError("perfil no encontrado");
+  const cuota = cuenta.limites.cuotaPorPerfil;
+
   return db.tx(async (tx) => {
+    // Solo los perfiles activos admiten subidas. Uno congelado está de camino a
+    // borrarse: dejar meter cosas dentro sería cobrarle sitio a alguien por algo
+    // que va a desaparecer.
     const perfil = await tx.one<{ id: string }>(
-      `SELECT id FROM vistta.profiles WHERE id = $1 FOR UPDATE`,
+      `SELECT id FROM vistta.profiles WHERE id = $1 AND status = 'activo' FOR UPDATE`,
       [opts.profileId]
     );
-    if (!perfil) throw new ReservaNoValidaError("perfil no encontrado");
+    if (!perfil) throw new ReservaNoValidaError("perfil no encontrado o congelado");
 
     const abiertas = await tx.one<{ n: number }>(
       `SELECT count(*)::int AS n FROM vistta.media WHERE profile_id = $1 AND status = 'pending'`,
@@ -95,8 +107,8 @@ export async function reservarMedio(
     }
 
     const usada = await cuotaUsada(tx, opts.profileId);
-    if (usada + opts.declaredBytes > CUOTA_POR_PERFIL) {
-      throw new CuotaExcedidaError(`${usada} + ${opts.declaredBytes} > ${CUOTA_POR_PERFIL}`);
+    if (usada + opts.declaredBytes > cuota) {
+      throw new CuotaExcedidaError(`${usada} + ${opts.declaredBytes} > ${cuota}`);
     }
 
     const mediaId = crypto.randomUUID();
@@ -188,6 +200,9 @@ export async function confirmarMedio(
 
   // La cuota se decide con los bytes reales, no con los declarados: declarar un
   // kilobyte y subir diez megas es exactamente el ataque que esto para.
+  const cuenta = await cuentaDelPerfil(db, opts.profileId);
+  const cuota = cuenta?.limites.cuotaPorPerfil ?? 0;
+
   const confirmado = await db.tx(async (tx) => {
     await tx.one(`SELECT id FROM vistta.profiles WHERE id = $1 FOR UPDATE`, [opts.profileId]);
     const otros = await tx.one<{ total: number }>(
@@ -195,7 +210,7 @@ export async function confirmarMedio(
        WHERE profile_id = $1 AND status <> 'failed' AND id <> $2`,
       [opts.profileId, opts.mediaId]
     );
-    if ((otros?.total ?? 0) + bytesReales > CUOTA_POR_PERFIL) return null;
+    if ((otros?.total ?? 0) + bytesReales > cuota) return null;
 
     return tx.one<MedioRow>(
       `UPDATE vistta.media

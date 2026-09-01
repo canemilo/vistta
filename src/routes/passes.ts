@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import { CreatePassSchema } from "../schemas";
-import { createPass, consumePass, ProfileNotFoundError } from "../lib/pass";
+import { createPass, consumePass, DemasiadosPasesError, ProfileNotFoundError } from "../lib/pass";
 import type { SeccionDePase } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { hitRateLimit } from "../lib/ratelimit";
@@ -49,9 +49,10 @@ export function passesRoutes({ config, db }: Deps) {
       return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
     }
 
-    // Solo se generan pases del propio perfil.
+    // Solo se generan pases del propio perfil, y solo de uno activo.
     const suyo = await db.one<{ id: string }>(
-      `SELECT id FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
+      `SELECT id FROM vistta.profiles
+       WHERE id = $1 AND owner_id = $2 AND status = 'activo'`,
       [parsed.data.profileId, usuario.id]
     );
     if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
@@ -62,6 +63,12 @@ export function passesRoutes({ config, db }: Deps) {
     } catch (err) {
       if (err instanceof ProfileNotFoundError) {
         return c.json({ error: "perfil no encontrado" }, 404);
+      }
+      if (err instanceof DemasiadosPasesError) {
+        // 409 y no 402: el problema no es que no haya pagado, es que ya tiene
+        // demasiados enlaces vivos. Se arregla esperando a que caduquen o a que
+        // los abran, sin tocar la cartera.
+        return c.json({ error: "demasiados pases abiertos a la vez", limite: err.limite }, 409);
       }
       throw err;
     }

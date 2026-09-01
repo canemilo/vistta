@@ -85,6 +85,15 @@ export const UpdateProfileSchema = z.object({
   data: ProfileDataSchema,
 });
 
+/** Crear un perfil. El id lo genera el servidor: no lo elige el cliente. */
+export const CreateProfileSchema = z.object({
+  displayName: z.string().min(1).max(120),
+  brandColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+});
+
 /** Reserva de subida: lo que el cliente declara ANTES de mandar un solo byte. */
 export const PresignSchema = z.object({
   profileId: z.string().min(1).max(128),

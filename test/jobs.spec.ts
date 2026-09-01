@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { encolar, completar, fallar, tomarTrabajo, MAX_INTENTOS } from "../src/lib/jobs";
 import { pasarReaper, GRACIA_SIN_REFERENCIAS_MS } from "../src/lib/reaper";
 import { TTL_RESERVA_MS, reservarMedio } from "../src/lib/media-store";
-import { procesarUno, asegurarReaper, TRABAJO_REAPER } from "../src/worker";
+import { procesarUno, asegurarPeriodicos, TRABAJO_REAPER } from "../src/worker";
 import {
   callAs,
   crearCuenta,
@@ -78,18 +78,21 @@ describe("cola de trabajos", () => {
     expect(await procesarUno({ db, storage })).toBe(false);
   });
 
-  it("la limpieza se reencola sola tras ejecutarse", async () => {
-    await asegurarReaper(db);
-    // Encolarla dos veces no duplica: la segunda ve que ya hay una esperando.
-    await asegurarReaper(db);
-    expect((await db.query(`SELECT 1 FROM vistta.jobs`)).rowCount).toBe(1);
+  it("los trabajos periódicos se reencolan solos tras ejecutarse", async () => {
+    await asegurarPeriodicos(db);
+    // Encolarlos dos veces no duplica: la segunda ve que ya hay uno esperando.
+    await asegurarPeriodicos(db);
+    expect((await db.query(`SELECT 1 FROM vistta.jobs`)).rowCount).toBe(2);
 
-    expect(await procesarUno({ db, storage })).toBe(true);
-    const { rows } = await db.query<{ status: string }>(
-      `SELECT status FROM vistta.jobs ORDER BY created_at`
+    // Se vacía la cola: cada trabajo queda hecho y deja su sucesor esperando.
+    while (await procesarUno({ db, storage })) {
+      /* seguir */
+    }
+    const { rows } = await db.query<{ kind: string; status: string }>(
+      `SELECT kind, status FROM vistta.jobs ORDER BY created_at`
     );
-    // La que corrió queda hecha, y deja otra esperando su turno.
-    expect(rows.map((r) => r.status)).toEqual(["done", "pending"]);
+    expect(rows.filter((r) => r.status === "done")).toHaveLength(2);
+    expect(rows.filter((r) => r.status === "pending")).toHaveLength(2);
   });
 });
 

@@ -8,7 +8,7 @@ import { createSupabaseStorage } from "./storage/supabase";
 import type { Storage } from "./storage/port";
 import type { Config } from "./config";
 import { cargarEnvLocal } from "../scripts/env-local";
-import { arrancarTrabajador, asegurarReaper } from "./worker";
+import { arrancarTrabajador, asegurarPeriodicos } from "./worker";
 
 /** Punto de entrada del proceso: lo único que habla con process.env y la red. */
 
@@ -55,7 +55,7 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
 // El trabajador va en el mismo proceso en el MVP. Comparte la base y nada más,
 // así que sacarlo a otro proceso (o a varios) en el bloque H no toca la API:
 // la toma de trabajos ya salta las filas que otro tenga cogidas.
-await asegurarReaper(db);
+await asegurarPeriodicos(db);
 const pararTrabajador = arrancarTrabajador({ db, storage });
 
 for (const senal of ["SIGINT", "SIGTERM"] as const) {

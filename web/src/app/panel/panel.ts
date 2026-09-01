@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import {
   Api,
   type EditableSection,
+  type EstadoDeCuenta,
   type MediaRef,
   type ProfileContent,
   type ProfileRow,
@@ -33,6 +34,19 @@ export class Panel {
   protected readonly sesion = signal<string | null>(null);
   protected readonly usuario = signal<Usuario | null>(null);
   protected readonly perfiles = signal<ProfileRow[]>([]);
+  protected readonly plan = signal<EstadoDeCuenta['plan']>(null);
+  protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
+
+  /** Los que están de camino a borrarse. Son los que el cliente debe ver primero. */
+  protected readonly congelados = computed(() =>
+    this.perfiles().filter((p) => p.status === 'congelado'),
+  );
+
+  /** Días que faltan para que se borre un perfil congelado. */
+  protected diasHasta(purgeAt: number | null): number {
+    if (purgeAt === null) return 0;
+    return Math.max(0, Math.ceil((purgeAt - Date.now()) / 86_400_000));
+  }
   protected readonly perfilId = signal('');
   protected readonly nombre = signal('');
   protected readonly contenido = signal<ProfileContent>({ sections: [] });
@@ -103,9 +117,36 @@ export class Panel {
   private async abrirPanel(token: string, user: Usuario): Promise<void> {
     this.sesion.set(token);
     this.usuario.set(user);
-    const { profiles } = await this.api.profiles(token);
-    this.perfiles.set(profiles);
-    if (profiles[0]) await this.elegirPerfil(profiles[0].id);
+    await this.recargarPerfiles(token);
+    const primero = this.perfiles().find((p) => p.status === 'activo') ?? this.perfiles()[0];
+    if (primero) await this.elegirPerfil(primero.id);
+  }
+
+  private async recargarPerfiles(token: string): Promise<void> {
+    const estado = await this.api.profiles(token);
+    this.perfiles.set(estado.profiles);
+    this.plan.set(estado.plan);
+    this.uso.set(estado.uso);
+  }
+
+  /**
+   * Rescata un perfil congelado. Si el plan no da para más, el servidor
+   * intercambia: entra este y sale el activo más antiguo. Por eso hay que
+   * recargar la lista entera y no solo marcar uno.
+   */
+  protected async rescatar(id: string): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion) return;
+    this.ocupado.set(true);
+    try {
+      await this.api.activarPerfil(sesion, id);
+      await this.recargarPerfiles(sesion);
+      await this.elegirPerfil(id);
+    } catch {
+      this.error.set('No se pudo activar ese perfil.');
+    } finally {
+      this.ocupado.set(false);
+    }
   }
 
   protected async salir(): Promise<void> {
@@ -114,6 +155,7 @@ export class Panel {
     this.sesion.set(null);
     this.usuario.set(null);
     this.perfiles.set([]);
+    this.plan.set(null);
     this.contenido.set({ sections: [] });
     this.enlace.set('');
     if (token) await this.api.logout(token).catch(() => undefined);

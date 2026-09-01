@@ -21,6 +21,7 @@ import { readFile } from "node:fs/promises";
 import { createDb, createPool } from "../src/db";
 import { crearUsuario } from "../src/lib/auth";
 import { confirmarMedio, reservarMedio } from "../src/lib/media-store";
+import { cambiarPlan } from "../src/lib/congelado";
 import { createFsStorage } from "../src/storage/fs";
 import { createSupabaseStorage } from "../src/storage/supabase";
 import { loadConfig } from "../src/config";
@@ -170,6 +171,8 @@ try {
       password: CLAVE_DEMO,
     });
     await guardarPerfil(db, `p_${userId}`, userId, perfil);
+    // Un perfil por cuenta: entra de sobra en el plan de entrada.
+    await cambiarPlan(db, userId, "prueba");
     console.log(
       creada
         ? `Perfil p_${userId} sembrado (usuario ${userId} / ${CLAVE_DEMO})`
@@ -183,6 +186,14 @@ try {
   // son las cuatro copias y un quinto en blanco solo ensucia el selector.
   await db.query(`DELETE FROM vistta.profiles WHERE id = $1`, [`p_${ESCAPARATE.id}`]);
 
+  /*
+   * La cuenta escaparate va en Bóveda, y no por privilegio: tiene cuatro
+   * perfiles, y en cualquier otro plan tres de ellos estarían congelados y de
+   * camino a borrarse. Una demo con tres cuartas partes congeladas no enseña el
+   * producto, enseña un error. Además, así sus fotos no caducan a los siete
+   * días y la demo local sigue sirviendo la semana que viene.
+   */
+  await cambiarPlan(db, ESCAPARATE.id, "boveda");
   for (const [userId, perfil] of Object.entries(contenido)) {
     await guardarPerfil(db, `p_${ESCAPARATE.id}_${userId}`, ESCAPARATE.id, perfil);
   }

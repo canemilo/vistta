@@ -3,6 +3,7 @@ import { generateToken, hashToken } from "./token";
 import { ProfileDataSchema, idsDeMedios, type ProfileData, type Section } from "../schemas";
 import { mediosDelPerfil, type MedioRow } from "./media-store";
 import type { MediaKind } from "./sniff";
+import { cuentaDelPerfil, pasesAbiertos } from "./cuentas";
 
 /** Un medio ya resuelto contra la base: el cliente nunca dijo nada de esto. */
 export interface ItemDePase {
@@ -34,6 +35,13 @@ export interface PassView {
 
 export class ProfileNotFoundError extends Error {}
 
+/** El plan no da para más enlaces vivos a la vez. */
+export class DemasiadosPasesError extends Error {
+  constructor(readonly limite: number) {
+    super(`el plan permite ${limite} pases abiertos a la vez`);
+  }
+}
+
 /**
  * Crea un pase pendiente y devuelve el token en claro (solo se ve aquí).
  *
@@ -46,11 +54,15 @@ export async function createPass(
   db: Db,
   opts: { profileId: string; ttlSeconds?: number }
 ): Promise<{ id: string; token: string; expiresAt: number }> {
+  // Un perfil congelado no genera pases: está de camino a borrarse, y un enlace
+  // que caduca antes de que lo abran es peor que no dar ninguno.
   const profile = await db.one<{ id: string; data: unknown }>(
-    `SELECT id, data FROM vistta.profiles WHERE id = $1`,
+    `SELECT id, data FROM vistta.profiles WHERE id = $1 AND status = 'activo'`,
     [opts.profileId]
   );
   if (!profile) throw new ProfileNotFoundError(opts.profileId);
+
+  const cuenta = await cuentaDelPerfil(db, opts.profileId);
 
   const token = generateToken();
   const tokenHash = await hashToken(token);
@@ -67,6 +79,22 @@ export async function createPass(
   );
 
   await db.tx(async (tx) => {
+    /*
+     * El tercer invariante de concurrencia del proyecto, y falla igual que los
+     * otros dos: sin bloquear la fila de la cuenta, una ráfaga de peticiones ve
+     * todas el mismo recuento y se cuelan casi todas.
+     *
+     * Un perfil sin dueño (los de antes de que hubiera cuentas) no tiene plan
+     * que aplicar: se deja pasar en vez de inventarle un límite.
+     */
+    if (cuenta?.userId) {
+      await tx.one(`SELECT id FROM vistta.users WHERE id = $1 FOR UPDATE`, [cuenta.userId]);
+      const abiertos = await pasesAbiertos(tx, cuenta.userId, now);
+      if (abiertos >= cuenta.limites.pasesSimultaneos) {
+        throw new DemasiadosPasesError(cuenta.limites.pasesSimultaneos);
+      }
+    }
+
     await tx.query(
       `INSERT INTO vistta.passes (id, token_hash, profile_id, status, created_at, expires_at)
        VALUES ($1, $2, $3, 'pending', $4, $5)`,
@@ -109,14 +137,20 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
 
   if (!claimed) return null; // denegado
 
+  // El perfil tiene que seguir activo. Si se congeló entre generar el enlace y
+  // abrirlo, el cliente ve lo mismo que con un pase usado: para él es un enlace
+  // que ya no vale, y no tiene por qué enterarse de la situación comercial de
+  // quien se lo mandó.
   const profile = await db.one<{
     id: string;
     display_name: string;
     brand_color: string | null;
     data: unknown;
-  }>(`SELECT id, display_name, brand_color, data FROM vistta.profiles WHERE id = $1`, [
-    claimed.profile_id,
-  ]);
+  }>(
+    `SELECT id, display_name, brand_color, data FROM vistta.profiles
+     WHERE id = $1 AND status = 'activo'`,
+    [claimed.profile_id]
+  );
   if (!profile) return null;
 
   const data = parseProfileData(profile.data);

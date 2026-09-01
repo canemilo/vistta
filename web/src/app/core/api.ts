@@ -46,6 +46,23 @@ export interface Sesion {
 export interface ProfileRow {
   id: string;
   displayName: string;
+  status: 'activo' | 'congelado';
+  /** Fecha en que se borrará si nadie lo rescata. null si está activo. */
+  purgeAt: number | null;
+}
+
+export interface LimitesDePlan {
+  perfiles: number;
+  pasesSimultaneos: number;
+  cuotaPorPerfil: number;
+  /** null = no caduca nunca. Es lo que se paga en Bóveda. */
+  retencionMs: number | null;
+}
+
+export interface EstadoDeCuenta {
+  profiles: ProfileRow[];
+  plan: { nombre: 'prueba' | 'pro' | 'boveda'; limites: LimitesDePlan } | null;
+  uso: { perfilesActivos: number; pasesAbiertos: number };
 }
 
 /**
@@ -119,11 +136,32 @@ export class Api {
     );
   }
 
-  profiles(session: string): Promise<{ profiles: ProfileRow[] }> {
+  profiles(session: string): Promise<EstadoDeCuenta> {
     return firstValueFrom(
-      this.http.get<{ profiles: ProfileRow[] }>('/api/profiles', {
+      this.http.get<EstadoDeCuenta>('/api/profiles', {
         headers: { authorization: `Bearer ${session}` },
       }),
+    );
+  }
+
+  /** Elige qué perfil queda activo. Si no hay hueco, intercambia por otro. */
+  activarPerfil(session: string, id: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `/api/profiles/${encodeURIComponent(id)}/activar`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  createProfile(session: string, displayName: string): Promise<ProfileRow> {
+    return firstValueFrom(
+      this.http.post<ProfileRow>(
+        '/api/profiles',
+        { displayName },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
     );
   }
 

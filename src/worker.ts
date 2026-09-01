@@ -2,6 +2,7 @@ import type { Db } from "./db";
 import type { Storage } from "./storage/port";
 import { completar, encolar, fallar, tomarTrabajo, type Trabajo } from "./lib/jobs";
 import { pasarReaper } from "./lib/reaper";
+import { purgar } from "./lib/purga";
 
 /**
  * El trabajador de la cola. Vive en el mismo proceso que la API en el MVP, y
@@ -10,9 +11,19 @@ import { pasarReaper } from "./lib/reaper";
  */
 
 export const TRABAJO_REAPER = "reaper";
+export const TRABAJO_PURGA = "purga";
 
-/** Cada cuánto se vuelve a encolar la limpieza. */
+/** Cada cuánto se vuelve a encolar la limpieza de huérfanos. */
 export const PERIODO_REAPER_MS = 15 * 60 * 1000;
+
+/**
+ * Cada cuánto pasa la purga.
+ *
+ * Una vez por hora, no cada cinco minutos: lo que borra se mide en días, así que
+ * ir más a menudo no adelanta nada y solo multiplica las oportunidades de que un
+ * fallo se lleve algo por delante.
+ */
+export const PERIODO_PURGA_MS = 60 * 60 * 1000;
 
 export interface DepsDelTrabajador {
   db: Db;
@@ -35,6 +46,21 @@ const MANEJADORES: Record<string, Manejador> = {
     // en un temporizador de un proceso concreto, que con dos procesos daría dos
     // limpiezas por periodo.
     await encolar(db, TRABAJO_REAPER, {}, Date.now() + PERIODO_REAPER_MS);
+  },
+
+  /** La volatilidad del producto. Borra contenido: ver `lib/purga.ts`. */
+  async [TRABAJO_PURGA]({ db, storage }) {
+    const resultado = await purgar(db, storage);
+    // Esto sí se registra siempre que borre algo, aunque sea una sola fila. Es
+    // lo único del sistema que destruye trabajo de un cliente, y tiene que
+    // quedar rastro de cuánto y cuándo. Cuántos, nunca de quién: sin PII.
+    if (resultado.mediosCaducados + resultado.perfilesBorrados > 0) {
+      console.warn(
+        `purga: ${resultado.mediosCaducados} medios caducados, ` +
+          `${resultado.perfilesBorrados} perfiles congelados borrados`
+      );
+    }
+    await encolar(db, TRABAJO_PURGA, {}, Date.now() + PERIODO_PURGA_MS);
   },
 };
 
@@ -63,13 +89,15 @@ export async function procesarUno(deps: DepsDelTrabajador): Promise<boolean> {
   return true;
 }
 
-/** Deja encolada la limpieza si no hay ya una esperando. */
-export async function asegurarReaper(db: Db): Promise<void> {
-  const pendiente = await db.one<{ id: string }>(
-    `SELECT id FROM vistta.jobs WHERE kind = $1 AND status IN ('pending', 'running') LIMIT 1`,
-    [TRABAJO_REAPER]
-  );
-  if (!pendiente) await encolar(db, TRABAJO_REAPER);
+/** Deja encolados los trabajos periódicos, si no hay ya uno esperando. */
+export async function asegurarPeriodicos(db: Db): Promise<void> {
+  for (const kind of [TRABAJO_REAPER, TRABAJO_PURGA]) {
+    const pendiente = await db.one<{ id: string }>(
+      `SELECT id FROM vistta.jobs WHERE kind = $1 AND status IN ('pending', 'running') LIMIT 1`,
+      [kind]
+    );
+    if (!pendiente) await encolar(db, kind);
+  }
 }
 
 /** Arranca el bucle. Devuelve la función para pararlo. */

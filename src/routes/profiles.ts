@@ -2,12 +2,11 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import type { Db } from "../db";
-import { PresignSchema, UpdateProfileSchema, idsDeMedios } from "../schemas";
+import { CreateProfileSchema, PresignSchema, UpdateProfileSchema, idsDeMedios } from "../schemas";
 import { parseProfileData } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { signUploadUrl, verifyUploadSignature } from "../lib/media";
 import {
-  CUOTA_POR_PERFIL,
   CuotaExcedidaError,
   DemasiadasReservasError,
   ReservaNoValidaError,
@@ -17,6 +16,9 @@ import {
   reservarMedio,
 } from "../lib/media-store";
 import { LIMITE_ABSOLUTO, LIMITE_POR_TIPO } from "../lib/sniff";
+import { cuentaDelUsuario, pasesAbiertos, perfilesActivos } from "../lib/cuentas";
+import { GRACIA_CONGELADO_MS } from "../lib/planes";
+import { activarPerfil } from "../lib/congelado";
 import { CuerpoDemasiadoGrandeError, leerCuerpoConTope } from "../lib/body";
 
 export function profilesRoutes({ config, db, storage }: Deps) {
@@ -32,14 +34,92 @@ export function profilesRoutes({ config, db, storage }: Deps) {
     });
   }
 
-  /** Perfiles del usuario que pide. Nadie ve los de otro. */
+  /**
+   * Perfiles del usuario que pide, con su plan al lado. Nadie ve los de otro.
+   *
+   * Los congelados vienen también, y con la fecha en que se borrarán: si el
+   * panel no los enseñara, el cliente se enteraría de que existían el día que
+   * dejaran de existir.
+   */
   profiles.get("/api/profiles", async (c) => {
-    const { rows } = await db.query<{ id: string; displayName: string }>(
-      `SELECT id, display_name AS "displayName" FROM vistta.profiles
-       WHERE owner_id = $1 ORDER BY display_name`,
-      [c.get("usuario").id]
+    const usuario = c.get("usuario");
+    const { rows } = await db.query<{
+      id: string;
+      displayName: string;
+      status: string;
+      frozenAt: number | null;
+    }>(
+      `SELECT id, display_name AS "displayName", status, frozen_at AS "frozenAt"
+       FROM vistta.profiles WHERE owner_id = $1
+       ORDER BY status, display_name`,
+      [usuario.id]
     );
-    return c.json({ profiles: rows });
+    const cuenta = await cuentaDelUsuario(db, usuario.id);
+
+    return c.json({
+      profiles: rows.map((p) => ({
+        id: p.id,
+        displayName: p.displayName,
+        status: p.status,
+        // Fecha en la que se borra, no "hace cuánto se congeló": es lo que el
+        // cliente necesita para decidir, y evita que el panel repita el cálculo.
+        purgeAt: p.frozenAt === null ? null : p.frozenAt + GRACIA_CONGELADO_MS,
+      })),
+      plan: cuenta ? { nombre: cuenta.plan, limites: cuenta.limites } : null,
+      uso: {
+        perfilesActivos: await perfilesActivos(db, usuario.id),
+        pasesAbiertos: await pasesAbiertos(db, usuario.id),
+      },
+    });
+  });
+
+  /**
+   * Crear un perfil. Aquí es donde el límite de perfiles del plan significa algo.
+   *
+   * El id lo genera el servidor: si lo eligiera el cliente, dos cuentas podrían
+   * pelearse por el mismo y el error revelaría que el otro existe.
+   */
+  profiles.post("/api/profiles", async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const parsed = CreateProfileSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
+    }
+
+    const usuario = c.get("usuario");
+    const cuenta = await cuentaDelUsuario(db, usuario.id);
+    if (!cuenta) return c.json({ error: "no autorizado" }, 401);
+
+    const creado = await db.tx(async (tx) => {
+      // Fila de la cuenta bloqueada: sin esto, una ráfaga de creaciones ve todas
+      // el mismo recuento y se saltan el límite. Es el mismo patrón que la
+      // cuota de medios y el límite de pases.
+      await tx.one(`SELECT id FROM vistta.users WHERE id = $1 FOR UPDATE`, [usuario.id]);
+      if ((await perfilesActivos(tx, usuario.id)) >= cuenta.limites.perfiles) return null;
+
+      const id = `p_${crypto.randomUUID()}`;
+      await tx.query(
+        `INSERT INTO vistta.profiles (id, display_name, brand_color, data, created_at, owner_id)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6)`,
+        [
+          id,
+          parsed.data.displayName,
+          parsed.data.brandColor ?? null,
+          JSON.stringify({ sections: [] }),
+          Date.now(),
+          usuario.id,
+        ]
+      );
+      return id;
+    });
+
+    if (!creado) {
+      return c.json(
+        { error: "el plan no da para más perfiles", limite: cuenta.limites.perfiles },
+        409
+      );
+    }
+    return c.json({ id: creado, displayName: parsed.data.displayName }, 201);
   });
 
   // Contenido de un perfil, tal cual está guardado (con ids, no URLs firmadas).
@@ -57,6 +137,7 @@ export function profilesRoutes({ config, db, storage }: Deps) {
     if (!row) return c.json({ error: "perfil no encontrado" }, 404);
 
     const data = parseProfileData(row.data);
+    const cuenta = await cuentaDelUsuario(db, c.get("usuario").id);
     // El panel necesita las dimensiones para pintar la rejilla igual que el
     // viewer; van aparte del contenido, porque el contenido solo guarda ids.
     const medios = await mediosDelPerfil(db, row.id, idsDeMedios(data));
@@ -70,8 +151,21 @@ export function profilesRoutes({ config, db, storage }: Deps) {
         height: m.height,
         lqip: m.lqip,
       })),
-      quota: { usados: await cuotaUsada(db, row.id), total: CUOTA_POR_PERFIL },
+      quota: { usados: await cuotaUsada(db, row.id), total: cuenta?.limites.cuotaPorPerfil ?? 0 },
     });
+  });
+
+  /**
+   * El cliente elige qué perfil deja activo.
+   *
+   * Si no queda hueco en el plan, se intercambia por el activo más antiguo en
+   * vez de rechazar la petición: con un plan de un solo perfil, rechazar sería
+   * dejar al cliente encerrado en el primero que creó.
+   */
+  profiles.post("/api/profiles/:id/activar", async (c) => {
+    const ok = await activarPerfil(db, c.get("usuario").id, c.req.param("id"));
+    if (!ok) return c.json({ error: "perfil no encontrado" }, 404);
+    return c.json({ ok: true });
   });
 
   // Guardar el contenido que ha montado el cliente.
@@ -83,7 +177,11 @@ export function profilesRoutes({ config, db, storage }: Deps) {
     }
 
     const profileId = c.req.param("id");
-    if (!(await esSuyo(db, c, profileId))) return c.json({ error: "perfil no encontrado" }, 404);
+    // Un perfil congelado se lee pero no se escribe: sigue ahí entero para que
+    // el cliente lo rescate, no para que siga trabajando en él.
+    if (!(await esSuyo(db, c, profileId, { soloActivos: true }))) {
+      return c.json({ error: "perfil no encontrado o congelado" }, 404);
+    }
 
     /*
      * Aquí se cierra el IDOR entre inquilinos.
@@ -136,7 +234,9 @@ export function profilesRoutes({ config, db, storage }: Deps) {
     }
     const { profileId, kind, bytes } = parsed.data;
 
-    if (!(await esSuyo(db, c, profileId))) return c.json({ error: "perfil no encontrado" }, 404);
+    if (!(await esSuyo(db, c, profileId, { soloActivos: true }))) {
+      return c.json({ error: "perfil no encontrado o congelado" }, 404);
+    }
     if (bytes > LIMITE_POR_TIPO[kind]) {
       return c.json({ error: "archivo demasiado grande", limite: LIMITE_POR_TIPO[kind] }, 413);
     }
@@ -250,12 +350,24 @@ export function profilesRoutes({ config, db, storage }: Deps) {
   return profiles;
 }
 
-/** ¿Ese perfil es del usuario de la sesión? */
-async function esSuyo(db: Db, c: Context<AppEnv>, profileId: string): Promise<boolean> {
+/**
+ * ¿Ese perfil es del usuario de la sesión?
+ *
+ * `soloActivos` lo exige además activo. Se pide donde se escribe (guardar
+ * contenido, subir medios) y no donde se lee: un perfil congelado tiene que
+ * poder consultarse, o el cliente no podría ni ver qué está a punto de perder.
+ */
+async function esSuyo(
+  db: Db,
+  c: Context<AppEnv>,
+  profileId: string,
+  opciones: { soloActivos?: boolean } = {}
+): Promise<boolean> {
   if (!profileId) return false;
   const fila = await db.one<{ id: string }>(
-    `SELECT id FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
-    [profileId, c.get("usuario").id]
+    `SELECT id FROM vistta.profiles
+     WHERE id = $1 AND owner_id = $2 AND ($3::boolean IS NOT TRUE OR status = 'activo')`,
+    [profileId, c.get("usuario").id, opciones.soloActivos ?? false]
   );
   return fila !== null;
 }
