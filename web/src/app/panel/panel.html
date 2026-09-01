@@ -1,8 +1,12 @@
 @if (!sesion()) {
-  <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales) -->
-  <div class="flex min-h-screen items-center justify-center px-6">
+  <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales)
+       `main` y no `div`: es la única región de la pantalla, y sin ella el enlace
+       de «saltar al contenido» no lleva a ninguna parte. -->
+  <main id="contenido" class="flex min-h-screen items-center justify-center px-6">
     <div class="w-full max-w-[420px] rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 p-6">
-      <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">vistta · panel</p>
+      <h1 class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">
+        vistta · panel
+      </h1>
       <label
         class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
         for="usuario"
@@ -43,7 +47,7 @@
         <p class="mt-4 font-mono text-[12px] text-rose-400">{{ error() }}</p>
       }
     </div>
-  </div>
+  </main>
 } @else if (vistaPrevia()) {
   <!-- Vista previa: el mismo documento que verá el cliente -->
   <div
