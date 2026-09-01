@@ -6,10 +6,10 @@ import { Api, type Usuario } from '../core/api';
 /**
  * La puerta del panel de administración.
  *
- * Lo que se prueba aquí no es el aspecto: es lo que la pantalla NO cuenta. El
- * formulario responde lo mismo a unas credenciales incorrectas que a una cuenta
- * correcta sin el rol, así que probar usuarios no sirve para averiguar quién es
- * administrador. Es la mitad de la defensa; la otra es que la API responde 404
+ * Lo que se prueba aquí no es el aspecto: es lo que la pantalla NO deja
+ * averiguar. El formulario responde lo mismo a unas credenciales incorrectas
+ * que a una cuenta correcta sin el rol, así que probar usuarios no sirve para
+ * saber quién es administrador. Es la mitad de la defensa; la otra es que la API responde 404
  * en todo /api/admin/* a quien no lo sea, y eso vive en test/admin.spec.ts.
  */
 
@@ -80,11 +80,12 @@ describe('Admin · la puerta', () => {
 
   afterEach(() => sessionStorage.clear());
 
-  it('no anuncia que esto es administración', async () => {
-    // Quien llegue por probar la URL no debería enterarse de qué hay detrás.
-    expect(texto()).not.toContain('Administración');
-    expect(texto()).not.toContain('Panel de administración');
-    expect(texto()).toContain('Acceso restringido');
+  it('la puerta se nombra: pone «Administración»', async () => {
+    // Decisión tomada a sabiendas: la URL se averigua escribiéndola, así que
+    // esconder el rótulo compraba poco y costaba claridad a quien la usa a
+    // diario. Lo que sí se protege es OTRA cosa, y va en las dos pruebas de
+    // abajo: que probando cuentas no se pueda averiguar quién es administrador.
+    expect(texto()).toContain('Administración');
   });
 
   it('los campos tienen etiqueta visible unida a su control', async () => {
@@ -117,8 +118,8 @@ describe('Admin · la puerta', () => {
     await intentaEntrar('marina', 'una-contrasena-larga');
 
     expect(sessionStorage.getItem('vistta.sesion')).toBeNull();
-    // Y sigue en la puerta.
-    expect(texto()).toContain('Acceso restringido');
+    // Y sigue en la puerta: el formulario está a la vista, no el panel.
+    expect(fixture.nativeElement.querySelector('#admin-clave')).not.toBeNull();
   });
 
   it('una sesión de cliente que llegue aquí se va a su panel', async () => {

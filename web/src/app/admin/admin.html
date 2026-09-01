@@ -2,10 +2,12 @@
   <!--
     La puerta.
 
-    Sigue sin decir que esto es administración, y no es un descuido de copy: el
-    formulario responde lo mismo a unas credenciales incorrectas que a una
-    cuenta sin el rol, así que quien pruebe no averigua si existe alguien detrás.
-    Lo que cambia aquí es el REGISTRO, no lo que se cuenta.
+    Se nombra: pone «Administración». Es una decisión tomada a sabiendas, no un
+    descuido, y lo que compra es claridad para quien la usa a diario. Lo que NO
+    se puede tocar es lo de debajo: el formulario responde lo mismo a unas
+    credenciales incorrectas que a una cuenta correcta sin el rol. Esa es la
+    disclosure que importa —quién es administrador—, y no la de si esta URL
+    lleva a algún sitio, que se averigua igual escribiéndola.
 
     La entrada del cliente es cálida y explica; esta es un instrumento: solo
     monoespaciada, medida corta, esquinas marcadas y ni una palabra de más. Sin
@@ -21,7 +23,7 @@
         alt="Vistta"
         width="410"
         height="170"
-        class="h-9 w-auto opacity-90"
+        class="mx-auto h-16 w-auto"
       />
 
       <!-- Esquinas marcadas: el panel se lee como un instrumento, no como una
@@ -45,8 +47,8 @@
           aria-hidden="true"
         ></span>
 
-        <h1 class="font-mono text-[10px] tracking-[0.34em] text-[#8fb0b2] uppercase">
-          Acceso restringido
+        <h1 class="text-center font-mono text-[10px] tracking-[0.34em] text-[#8fb0b2] uppercase">
+          Administración
         </h1>
 
         <label
@@ -100,7 +102,9 @@
         segunda línea evita el único camino de escalada que quedaría abierto:
         que alguien pida por ahí que le concedan el rol.
       -->
-      <p class="mt-6 font-mono text-[10px] leading-[1.8] tracking-[0.06em] text-[#5e848f]">
+      <p
+        class="mt-6 text-center font-mono text-[10px] leading-[1.8] tracking-[0.06em] text-[#5e848f]"
+      >
         Cada acción queda registrada con su autor y su fecha.<br />
         El rol se concede solo desde la máquina que tiene la base.
       </p>
