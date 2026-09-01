@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F y G.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F, G y H.** El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -36,7 +36,10 @@
   CUENTA. Sin ella, la temporal que entrega el administrador no se podía cambiar.
 - **Frontend cerrado**: rejilla justificada con las dimensiones reales de la BD, ampliación de foto
   en el viewer, y accesibilidad medida (100 en el panel y en el documento).
-- **129 tests de backend** contra Postgres real y **6 de frontend** en Chrome de verdad (Karma), los
+- **Producción lista**: imagen de la API (bundle con esbuild, sin transpilador dentro), imagen del
+  panel dentro de un Caddy, `compose.prod.yml` con base sin puerto publicado y migraciones en un
+  servicio aparte, copias verificadas y restauradas, y adaptador de **R2** firmando SigV4 a mano.
+- **143 tests de backend** contra Postgres real y **6 de frontend** en Chrome de verdad (Karma), los
   dos enganchados a `pnpm check` y al CI. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
@@ -99,8 +102,12 @@
       accesibilidad medida con Lighthouse sobre el build de producción (100 en el panel y en el
       documento del pase); primera prueba de frontend y su arnés en el CI. Ver «Decisiones y desvíos
       en G», más abajo.
-- [ ] **H — Producción/escalado**: Clean Architecture; VPS + Docker + Caddy + PostgreSQL; Cloudflare
-      delante; R2 (nueva implementación del puerto `Storage`, no una reescritura); CI/CD, backups.
+- [x] **H — Producción/escalado** — cerrado el 2026-09-01. `Dockerfile` de la API y `Dockerfile.web`
+      (Angular dentro de un Caddy); `compose.prod.yml` con los cuatro servicios; `deploy/Caddyfile`
+      con TLS, CSP estricta y la reescritura de `X-Forwarded-For`; `src/storage/r2.ts` firmando
+      SigV4 sin SDK; `scripts/backup.sh` con verificación antes de rotar; el CI construye y ARRANCA
+      las dos imágenes; runbook en `DESPLIEGUE.md`. Ver «Decisiones y desvíos en H», más abajo.
+      **Queda probarlo contra R2 y un VPS de verdad**: sin cuenta con tarjeta no se puede.
 - [ ] **I — Cumplimiento**: RGPD (art. 28, RAT, EIPD), AUP + notice-and-takedown.
 
 ## 2.1. Desvíos del plan en D
@@ -262,6 +269,69 @@ que iba dirigido se encontraría un enlace muerto. Si alguien «arregla» ese 63
 primera. Y el botón de quitar era `sr-only`: existía solo para un lector de pantalla y ni siquiera
 hacía lo que decía.
 
+## 2.6. Decisiones y desvíos en H
+
+**No se ha hecho el refactor a «Clean Architecture», y es deliberado.** Estaba escrito en el plan,
+pero lo que hay ya es una arquitectura de puertos y adaptadores: `src/routes/*` son adaptadores de
+entrada, `src/lib/*` es el dominio, `Db` y `Storage` son puertos con varias implementaciones, y nada
+lee `process.env` salvo `server.ts`. Mover eso a carpetas llamadas `domain/`, `application/` e
+`infrastructure/` cambiaría 40 archivos, invalidaría todo el historial de `git blame` y no arreglaría
+ni un fallo. Si algún día aparece una razón concreta —un segundo adaptador de entrada, por ejemplo—
+se hace entonces y por esa razón.
+
+**La imagen no lleva transpilador.** El proyecto se ejecuta con `tsx` en desarrollo; en producción se
+empaqueta con esbuild (`dist/server.js`, `dist/migrar.js`) y corre con `node` a secas. Arranca antes,
+no hay que instalar dependencias de desarrollo en el servidor y la superficie es menor. Los binarios
+nativos (Sharp, Argon2, pg) se quedan externos y siguen viniendo de `node_modules`.
+
+**`packageManager` fijado a pnpm 9.15.9** en los dos `package.json`. Sin eso, corepack coge la última
+dentro del contenedor; pnpm 10 bloquea los scripts de instalación y Sharp y Argon2 se quedan sin su
+binario nativo. La construcción fallaba con un mensaje que no menciona ninguna de las dos cosas.
+
+**El aviso de las fuentes de la marca de agua era cierto y hoy ya no lo es.** Se midió: quitando
+`fontconfig` y las fuentes de la imagen, el texto del SVG **se sigue dibujando**, porque el libvips
+que Sharp trae precompilado lleva su propia fuente de reserva; lo único que cambia es un
+`Fontconfig error` por stderr. Se instalan igual —quitan ese error y la propiedad deja de depender de
+un detalle interno de Sharp—, pero quien sostiene la garantía es `scripts/comprobar-fuentes.ts`, que
+corre DENTRO de la construcción: si el texto no se dibuja, la imagen no llega a existir. El día que
+se compile contra el libvips del sistema o se cambie a una base musl, el aviso vuelve.
+
+**La firma de R2 se ha verificado contra un servidor que la valida.** `src/storage/r2.ts` implementa
+SigV4 a mano, sin SDK de AWS: de él se usarían tres llamadas y arrastra decenas de dependencias a
+una imagen que se despliega. Probado contra MinIO —sube, baja y borra con claves que llevan barras y
+espacios— y por mutación: saltarse un paso de la derivación de la clave da 403, y firmar un cuerpo
+vacío mandando bytes de verdad da 400 (o sea, `x-amz-content-sha256` cubre el cuerpo de verdad).
+**Contra R2 no se ha probado**: hace falta una cuenta con tarjeta.
+
+**Un fallo real que solo apareció levantando la pila entera.** Una variable de entorno opcional
+VACÍA no es lo mismo que ausente para Zod: con `SUPABASE_URL=` y `PAYPAL_DESTINO=` en el `.env` —que
+es exactamente como queda una plantilla rellenada a medias— la API entraba en bucle de reinicio
+quejándose de una URL de Supabase que nadie había pedido usar. Arreglado en `config.ts` y fijado con
+`test/config.spec.ts`. No se encuentra leyendo el código: hay que arrancarlo.
+
+**La API no arranca si no llega a la base, y así se queda.** Antes se caía con un volcado de pila de
+`pg`; ahora imprime el motivo y sale con código 1. Fallar rápido es lo correcto —una API sin base no
+sirve y el orquestador reintenta—, pero tenía que decir por qué.
+
+**`X-Forwarded-For` se REESCRIBE en Caddy, no se añade.** El backend se queda con la última entrada
+(`client-ip.ts`), así que si Caddy acumulara lo que mandó el cliente, cualquiera podría fijar su
+propia identidad y saltarse el límite del login mandando una distinta en cada intento. Y por eso el
+Caddyfile NO declara `trusted_proxies`: se quiere que `{remote_host}` sea siempre el par real del
+socket. Activar el proxy de Cloudflare obliga a cambiar dos cosas a la vez —la cabecera y el
+cortafuegos del origen—, y está escrito en `DESPLIEGUE.md`.
+
+**La CSP del panel es estricta en scripts y no en estilos.** Para poder poner `script-src 'self'` se
+apagó `inlineCritical` en `angular.json`: Angular metía un `<style>` en línea y, peor, un
+`onload="this.media='all'"`, que es un manejador en línea y habría exigido `'unsafe-inline'` en
+scripts. En estilos sí se deja `'unsafe-inline'`, porque Angular inyecta los estilos de cada
+componente como `<style>` al montar y la alternativa es un nonce por petición, que obliga a generar
+el HTML dinámicamente. Un estilo inyectado no ejecuta código.
+
+**La copia de seguridad se comprueba ANTES de rotar.** Si el volcado no se puede leer, el script sale
+con error y no borra nada: al revés, una noche con la base caída se llevaría por delante las copias
+buenas. Se ha restaurado de verdad —11 tablas y las filas vuelven—, no solo generado. **Los medios no
+están en esas copias**: viven en R2.
+
 ## 3. Fallos conocidos
 
 Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los
@@ -296,9 +366,11 @@ empeoraba, y tres en D.
    tal cual —marcarlos obligaría a recodificar en cada visita— **y el panel lo dice con esas
    palabras**, porque callarlo sería vender una protección que no existe.
 
-**Aviso para el bloque H**: la marca usa texto SVG, que en una imagen de contenedor mínima sin
-fontconfig saldría vacío. Por eso la capa lleva también una banda opaca: si faltan las fuentes, algo
-queda incrustado igual. Aun así, la imagen de producción tiene que traer fuentes.
+**Aviso para el bloque H — resuelto y matizado en H.** Se temía que la marca, que usa texto SVG,
+saliera vacía en una imagen de contenedor sin fontconfig. Se midió sobre la imagen real y **no pasa**:
+el libvips precompilado de Sharp lleva su propia fuente de reserva. Las fuentes se instalan igual y,
+sobre todo, `scripts/comprobar-fuentes.ts` corre dentro de la construcción y la tumba si el texto no
+se dibuja. La banda opaca de la capa sigue ahí como segunda red.
 
 ### Aprendizaje de F — el verde falso que ninguna mutación detectaba
 
@@ -374,5 +446,8 @@ rómpelo a propósito y comprueba que se pone rojo.
       suspensión reversible, borrado confirmado, auditoría), y la facturación manual con él.
 - [x] Frontend completo accesible: 100 de accesibilidad y 100 de buenas prácticas en Lighthouse,
       medido sobre el build de producción, en el panel y en el documento del pase.
+- [x] Producción reproducible: las dos imágenes construyen y arrancan en el CI, la pila entera se
+      ha levantado en local (Caddy con TLS, migraciones, API sana) y la copia de seguridad se ha
+      restaurado de verdad. Falta el estreno contra R2 y un VPS.
 - [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.

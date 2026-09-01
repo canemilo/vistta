@@ -1,0 +1,82 @@
+# Caddy: TLS, estáticos del panel/viewer y proxy a la API.
+#
+# Dos superficies con reglas distintas y a propósito:
+#   - los ESTÁTICOS (Angular) los sirve Caddy y les pone aquí sus cabeceras;
+#   - la API se las pone ella misma (`src/lib/security.ts`) y aquí no se tocan,
+#     para que no haya dos sitios donde cambiarlas y uno se quede viejo.
+
+{
+	email {$ACME_EMAIL}
+}
+
+# No se declara `trusted_proxies` a propósito. Haría que Caddy dedujera el
+# cliente a partir de X-Forwarded-For cuando el par está en un rango de
+# confianza, y aquí queremos justo lo contrario: que `{remote_host}` sea siempre
+# el par real del socket, que nadie puede falsear.
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# --- API, medios y salud -------------------------------------------------
+	@backend path /api/* /m/* /health
+	handle @backend {
+		reverse_proxy api:8787 {
+			# X-Forwarded-For se REESCRIBE, no se añade: el backend se queda con la
+			# última entrada, así que si aquí se acumulara lo que mandó el cliente,
+			# cualquiera podría fijar su propia identidad y saltarse el límite del
+			# login mandando una distinta en cada intento.
+			#
+			# `{remote_host}` es el par que Caddy ve de verdad. Si algún día se
+			# activa el proxy de Cloudflare por delante, ese par pasa a ser
+			# Cloudflare y TODOS los clientes compartirían identidad: entonces hay
+			# que cambiar esta línea por `{http.request.header.Cf-Connecting-Ip}` y,
+			# a la vez, cerrar el origen a los rangos de Cloudflare por cortafuegos.
+			# Sin lo segundo, esa cabecera la puede escribir cualquiera.
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# --- Panel y viewer (Angular) --------------------------------------------
+	handle {
+		root * /srv
+
+		header {
+			# `script-src 'self'` estricto: en el HTML construido no queda ni un
+			# script en línea ni un `onload=`. Para eso se apagó `inlineCritical`
+			# en angular.json; si alguien lo vuelve a encender, la hoja de estilos
+			# deja de cargar y hay que enterarse aquí.
+			#
+			# `style-src` sí lleva 'unsafe-inline', y no es un descuido: Angular
+			# mete los estilos de cada componente en el JS y los inyecta como
+			# <style> al montar. La alternativa es un nonce por petición, que
+			# obliga a generar el HTML dinámicamente. Un estilo inyectado no
+			# ejecuta código; el script sigue cerrado, que es lo que importa.
+			Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+			X-Frame-Options "DENY"
+			X-Content-Type-Options "nosniff"
+			Referrer-Policy "no-referrer"
+			Permissions-Policy "camera=(), microphone=(), geolocation=()"
+			Cross-Origin-Opener-Policy "same-origin"
+			# Nada de esto se indexa: un buscador que abra un pase lo consume.
+			X-Robots-Tag "noindex, nofollow, noarchive"
+			Strict-Transport-Security "max-age=31536000; includeSubDomains"
+			-Server
+		}
+
+		# Los archivos llevan hash en el nombre: cambiarlos cambia la URL, así que
+		# se pueden cachear para siempre sin miedo.
+		@hashed path_regexp \-[A-Z0-9]{8}\.(js|css|woff2)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+		# El index NO se cachea: es lo que decide qué versión de la app se carga.
+		@index path / /index.html
+		header @index Cache-Control "no-store"
+
+		# Angular resuelve las rutas en el navegador: lo que no sea un archivo
+		# existente se sirve como index.html. Sin esto, recargar en /v/<token>
+		# devuelve 404 en vez del viewer.
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -15,3 +15,6 @@ dist/
 
 # Volcado del repo para herramientas de IA. Es un artefacto, no fuente.
 repomix-output.xml
+
+# Volcados de la base en el servidor. Nunca al repo.
+copias/

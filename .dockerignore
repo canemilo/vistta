@@ -1,0 +1,18 @@
+# Lo que NUNCA debe entrar en la imagen.
+.env
+.env.*
+!.env.example
+.git
+.github
+node_modules
+dist
+web/node_modules
+web/dist
+web/.angular
+.medios-locales
+test
+seed
+repomix-output.xml
+*.log
+.DS_Store
+.idea

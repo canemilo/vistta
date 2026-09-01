@@ -172,6 +172,31 @@ no se negocian:
   significa nada): 100 de accesibilidad y 100 de buenas prácticas en el panel y en el documento.
 - Hay pruebas de frontend (Karma + Chrome de verdad) y van en `pnpm check` y en el CI.
 
+## Producción (desde H)
+
+- **En producción no se transpila nada.** `pnpm build` empaqueta con esbuild a `dist/` y el
+  contenedor corre `node dist/server.js`. `tsx` es solo de desarrollo y no entra en la imagen.
+- **`packageManager` fijado a pnpm 9.15.9** en los dos `package.json`. Sin eso, corepack coge pnpm 10
+  dentro del contenedor, que bloquea los scripts de instalación, y Sharp y Argon2 se quedan sin
+  binario nativo con un error que no menciona ninguna de las dos cosas.
+- **Una variable de entorno vacía es una variable ausente** (`config.ts`). Un `.env` de despliegue
+  deja las opcionales escritas y en blanco; para Zod `""` no es `undefined`, y la API entraba en
+  bucle de reinicio. Hay prueba.
+- **La API no arranca si no llega a la base**, a propósito, pero sale con motivo legible y código 1.
+- **`X-Forwarded-For` lo REESCRIBE Caddy, no lo añade**: el backend se queda con la última entrada,
+  así que acumular lo del cliente le dejaría elegir su identidad y saltarse el rate limit. Por eso el
+  Caddyfile no declara `trusted_proxies`. Poner Cloudflare delante obliga a cambiar DOS cosas a la
+  vez: la cabecera y el cortafuegos del origen (ver `DESPLIEGUE.md`).
+- **CSP: estricta en scripts, `'unsafe-inline'` en estilos.** Para lo primero se apagó
+  `inlineCritical` en `angular.json` (metía un `<style>` y un `onload=` en línea); lo segundo es
+  inevitable mientras Angular inyecte los estilos de componente al montar.
+- **R2 se firma a mano** (`src/storage/r2.ts`), sin SDK de AWS. Se eligió R2 por el egreso: cada
+  visita relee el original para marcarlo. Verificado contra MinIO y por mutación; **no contra R2**.
+- **Las copias se comprueban antes de rotar**, y se han restaurado de verdad. **Los medios no están
+  en ellas**: viven en R2.
+- La comprobación de fuentes de la marca de agua corre DENTRO de la construcción de la imagen: si el
+  texto SVG no se dibuja, la imagen no llega a existir.
+
 ## Cumplimiento
 
 - RGPD: usuario = responsable; Vistta = encargado (art. 28).

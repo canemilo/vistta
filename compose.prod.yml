@@ -1,0 +1,88 @@
+# Despliegue en el VPS: base, migraciones, API y Caddy.
+#
+#   docker compose -f compose.prod.yml up -d
+#
+# Los secretos NO están aquí: salen de un `.env` junto a este archivo, que no se
+# commitea. Ver DESPLIEGUE.md.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vistta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?hace falta POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-vistta}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Los volcados salen aquí para que `scripts/backup.sh` los recoja del host.
+      - ./copias:/copias
+    # SIN `ports`: la base solo se ve desde la red interna de compose. Publicarla
+    # sería abrir Postgres a internet para ahorrarse un `docker compose exec`.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vistta} -d ${POSTGRES_DB:-vistta}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # Las migraciones van en un servicio aparte que corre y termina. Si fueran
+  # parte del arranque de la API, dos réplicas migrarían a la vez.
+  migrar:
+    image: ${IMAGEN_API:-vistta-api:latest}
+    command: ["node", "dist/migrar.js"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vistta}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vistta}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: ${IMAGEN_API:-vistta-api:latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vistta}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vistta}
+      MEDIA_SIGNING_KEY: ${MEDIA_SIGNING_KEY:?hace falta MEDIA_SIGNING_KEY}
+      BASE_URL: ${BASE_URL:?hace falta BASE_URL}
+      # Detrás de Caddy: sin esto, todos los clientes comparten la IP del proxy
+      # y el límite del login se aplica a todos juntos.
+      TRUST_PROXY: "true"
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-r2}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      SUPABASE_MEDIA_BUCKET: ${SUPABASE_MEDIA_BUCKET:-vistta-media}
+      BIZUM_TELEFONO: ${BIZUM_TELEFONO:-}
+      PAYPAL_DESTINO: ${PAYPAL_DESTINO:-}
+    # Tampoco publica puerto: solo entra por Caddy.
+    depends_on:
+      db:
+        condition: service_healthy
+      migrar:
+        condition: service_completed_successfully
+
+  caddy:
+    image: ${IMAGEN_WEB:-vistta-web:latest}
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO:?hace falta DOMINIO}
+      ACME_EMAIL: ${ACME_EMAIL:?hace falta ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Los certificados sobreviven a recrear el contenedor. Sin esto, cada
+      # despliegue pide certificados nuevos y Let's Encrypt acaba limitando.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
