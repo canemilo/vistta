@@ -87,12 +87,13 @@ export async function createPass(
      * Un perfil sin dueño (los de antes de que hubiera cuentas) no tiene plan
      * que aplicar: se deja pasar en vez de inventarle un límite.
      */
-    if (cuenta?.userId) {
+    // `pasesSimultaneos: null` es Bóveda: sin límite. Se sale del bloque entero
+    // en vez de comparar contra un número grande, igual que la retención.
+    const tope = cuenta?.limites.pasesSimultaneos;
+    if (cuenta?.userId && tope !== null && tope !== undefined) {
       await tx.one(`SELECT id FROM vistta.users WHERE id = $1 FOR UPDATE`, [cuenta.userId]);
       const abiertos = await pasesAbiertos(tx, cuenta.userId, now);
-      if (abiertos >= cuenta.limites.pasesSimultaneos) {
-        throw new DemasiadosPasesError(cuenta.limites.pasesSimultaneos);
-      }
+      if (abiertos >= tope) throw new DemasiadosPasesError(tope);
     }
 
     await tx.query(

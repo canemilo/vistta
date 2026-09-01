@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
 import { PLANES } from "../src/lib/planes";
+import { LIMITE_POR_TIPO } from "../src/lib/sniff";
 import {
   DemasiadasReservasError,
   MAX_RESERVAS_ABIERTAS,
@@ -300,20 +301,29 @@ describe("subida de medios", () => {
 
     /*
      * El segundo invariante de concurrencia del proyecto, y se prueba igual que
-     * el primero: con una RÁFAGA. Dieciséis reservas de 50 MB piden 800 MB
-     * contra una cuota de 200; solo pueden entrar cuatro.
+     * el primero: con una RÁFAGA. Dieciséis reservas del tamaño máximo de vídeo
+     * piden muchísimo más de lo que cabe; solo pueden entrar las que quepan.
+     *
+     * El número de aceptadas se calcula, no se escribe: las cifras de los planes
+     * las decide el cliente en `planes.ts` y este test no puede romperse cada
+     * vez que las cambie.
      *
      * Comprobado por mutación: quitando el `FOR UPDATE` de la fila del perfil,
      * las dieciséis ven la misma suma y pasan casi todas.
      */
+    const trozo = LIMITE_POR_TIPO.video;
+    const caben = Math.floor(PLANES.prueba.cuotaPorPerfil / trozo);
     const intentos = await Promise.allSettled(
       Array.from({ length: 16 }, () =>
-        reservarMedio(db, { profileId: "pro_1", kind: "video", declaredBytes: 50 * 1024 * 1024 })
+        reservarMedio(db, { profileId: "pro_1", kind: "video", declaredBytes: trozo })
       )
     );
-    const aceptadas = intentos.filter((r) => r.status === "fulfilled");
-    expect(aceptadas).toHaveLength(4);
-    expect(await cuotaUsada(db, "pro_1")).toBe(PLANES.prueba.cuotaPorPerfil);
+    expect(intentos.filter((r) => r.status === "fulfilled")).toHaveLength(caben);
+
+    // Y lo comprometido más otro trozo ya no cabría: el corte está donde toca.
+    const usada = await cuotaUsada(db, "pro_1");
+    expect(usada).toBe(caben * trozo);
+    expect(usada + trozo).toBeGreaterThan(PLANES.prueba.cuotaPorPerfil);
   });
 
   it("no se pueden acumular reservas sin confirmar", async () => {

@@ -63,7 +63,7 @@ describe("límites del plan", () => {
 
   it("una ráfaga de pases no se salta el límite de simultáneos", async () => {
     const { perfilId } = await cuenta();
-    const limite = PLANES.prueba.pasesSimultaneos;
+    const limite = topeDePases("prueba");
 
     /*
      * El tercer invariante de concurrencia. Se prueba igual que los otros dos y
@@ -81,7 +81,7 @@ describe("límites del plan", () => {
 
   it("un pase consumido deja hueco para el siguiente", async () => {
     const { perfilId } = await cuenta();
-    const limite = PLANES.prueba.pasesSimultaneos;
+    const limite = topeDePases("prueba");
 
     const pases = [];
     for (let i = 0; i < limite; i++) pases.push(await createPass(db, { profileId: perfilId }));
@@ -90,6 +90,18 @@ describe("límites del plan", () => {
     // El límite es de enlaces VIVOS, no de enlaces creados en total.
     await callAs("203.0.113.101", "/api/open/" + pases[0].token);
     await expect(createPass(db, { profileId: perfilId })).resolves.toBeTruthy();
+  });
+
+  it("en Bóveda los pases son ilimitados: `null` no es un número grande", async () => {
+    const { userId, perfilId } = await cuenta();
+    await cambiarPlan(db, userId, "boveda");
+
+    // Cuarenta de golpe, muy por encima del tope de cualquier otro plan. Si
+    // alguien tradujera el `null` a una cifra, este test la encontraría.
+    const intentos = await Promise.allSettled(
+      Array.from({ length: 40 }, () => createPass(db, { profileId: perfilId }))
+    );
+    expect(intentos.filter((r) => r.status === "fulfilled")).toHaveLength(40);
   });
 
   it("una ráfaga de creaciones de perfil no se salta el límite", async () => {
@@ -337,6 +349,19 @@ describe("purga — la parte que sí borra", () => {
     expect(await db.one(`SELECT id FROM vistta.profiles WHERE id = $1`, [perfilId])).not.toBeNull();
   });
 });
+
+/**
+ * El tope de pases de un plan, exigiendo que lo tenga.
+ *
+ * Los tests que comprueban el límite necesitan un número; el plan sin límite
+ * tiene el suyo propio, más abajo. Esto evita que un `!` disimule el día en que
+ * alguien ponga `null` en un plan que sí debía tener tope.
+ */
+function topeDePases(plan: "prueba" | "pro"): number {
+  const tope = PLANES[plan].pasesSimultaneos;
+  if (tope === null) throw new Error(`el plan ${plan} debería tener tope de pases`);
+  return tope;
+}
 
 async function estadoDe(userId: string): Promise<Record<string, string>> {
   const { rows } = await db.query<{ id: string; status: string }>(

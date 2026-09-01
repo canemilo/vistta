@@ -77,7 +77,8 @@
 - [x] **E — Planes/cuotas/volatilidad** — cerrado el 2026-09-01. Migración `0003_planes`
       (`users.plan`/`plan_since`, `profiles.status`/`frozen_at`); límites de perfiles, pases
       simultáneos y cuota aplicados en los tres puntos donde se crea algo; congelado reversible;
-      purga en la cola de D. Ver «Decisiones y desvíos en E», más abajo.
+      purga en la cola de D, con las cifras del cliente ya aplicadas. Ver «Decisiones y desvíos en
+      E», más abajo.
 - [ ] **F — Facturación manual (Bizum/PayPal)**: código VISTTA-XXXX, /api/admin/activate-plan, auditoría.
 - [ ] **G — Frontend Angular**: viewer con CDK; bento pipe (dimensiones reales desde BD, que D provee);
       vistas de login/register/reset, dashboard, /billing, /admin; accesibilidad + Lighthouse.
@@ -104,12 +105,11 @@ perfiles apuntando a bytes que ya no existen. Pon `STORAGE_DRIVER=fs` en tu `.en
 
 ## 2.2. Decisiones y desvíos en E
 
-> **LAS CIFRAS DE LOS PLANES SIGUEN SIN DECIDIR.** Cuántos perfiles, cuántos pases a la vez y
-> cuántos megabytes da cada plan está puesto a ojo y marcado como PROVISIONAL en
-> `src/lib/planes.ts`. Ese es el único archivo que hay que tocar para fijarlas: ninguna ruta,
-> ninguna consulta y ningún trabajo de la cola llevan un número escrito a mano. Lo que sí está
-> decidido son los tres nombres, que Bóveda es el plan sin caducidad, y que pasarse de un límite
-> nunca borra nada por sorpresa.
+> **Cifras fijadas por el cliente el 2026-09-01** (1/3/10 perfiles · 5/30/ilimitado pases a la vez ·
+> 70 MB/200 MB/1 GB por perfil · 7/15 días/nunca de retención). Siguen viviendo solo en
+> `src/lib/planes.ts`. **Queda una sin decidir**: `GRACIA_CONGELADO_MS`, cuánto sobrevive un perfil
+> congelado antes de borrarse, hoy en 30 días. Es el plazo más delicado del proyecto, porque cuando
+> vence se destruye trabajo de un cliente sin vuelta atrás.
 
 **Qué caduca**: el CONTENIDO del perfil, no el enlace. Pasada la retención del plan (7 días en
 Prueba, 14 en Pro), el medio se borra del almacenamiento y de la base. En Bóveda no caduca nunca, y
@@ -128,6 +128,11 @@ Solo si un perfil agota entera la gracia se borra, y eso vive en `src/lib/purga.
 
 **Se añadió `POST /api/profiles`.** No estaba en el plan, pero sin una forma de crear perfiles el
 límite de perfiles del plan no se puede ni aplicar ni probar.
+
+**«Ilimitado» y «nunca» son `null`, no números grandes.** Bóveda no topa los pases simultáneos y no
+caduca; las dos cosas se escriben como ausencia de límite y el código se salta la comprobación
+entera. Escribirlas como una cifra alta funcionaría hoy y fallaría el día que alguien la compare o
+la sume. Hay un test por cada una, y los dos se ponen rojos si se sustituye el `null` por un número.
 
 **Dos protecciones de la purga que conviene no quitar sin leer**: no toca un medio que esté en la
 instantánea de un pase todavía abrible (ese enlace ya salió y tiene que seguir enseñando lo que
@@ -222,8 +227,9 @@ rómpelo a propósito y comprueba que se pone rojo.
 - [x] D: subida con límites verificados sobre bytes reales; marca incrustada; dimensiones en BD;
       los tres fallos del §3 corregidos y con test, verificados por mutación.
 - [x] Planes/cuotas + cron de purga: límites aplicados con test de ráfaga, congelado reversible y
-      purga verificada por mutación (Bóveda no caduca, la gracia se respeta, un pase abierto
-      protege sus medios). **Pendiente: fijar las cifras de `src/lib/planes.ts`.**
+      purga verificada por mutación (Bóveda no caduca ni topa pases, la gracia se respeta, un pase
+      abierto protege sus medios). Cifras del cliente aplicadas; falta solo fijar
+      `GRACIA_CONGELADO_MS`.
 - [ ] Facturación + admin.
 - [ ] Frontend completo accesible. [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.

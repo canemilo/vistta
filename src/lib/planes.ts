@@ -3,11 +3,8 @@
  *
  * ============================================================================
  *  ESTE ES EL ÚNICO SITIO DONDE SE TOCAN LOS NÚMEROS DE LOS PLANES.
- *  Las cifras de abajo están marcadas como PROVISIONALES: son un punto de
- *  partida razonable para que el bloque E se pueda probar de punta a punta,
- *  no una decisión de producto. Cámbialas aquí y no hace falta tocar nada más:
- *  ninguna ruta, ningún trabajo de la cola y ninguna consulta llevan un número
- *  escrito a mano.
+ *  Cámbialos aquí y no hace falta tocar nada más: ninguna ruta, ningún trabajo
+ *  de la cola y ninguna consulta llevan un número escrito a mano.
  * ============================================================================
  *
  * Lo que SÍ es decisión tomada y no provisional:
@@ -31,8 +28,14 @@ const DIA = 24 * 60 * 60 * 1000;
 export interface LimitesDePlan {
   /** Perfiles que pueden estar ACTIVOS a la vez. Los que sobran se congelan. */
   perfiles: number;
-  /** Pases generados y todavía sin abrir ni caducar. */
-  pasesSimultaneos: number;
+  /**
+   * Pases generados y todavía sin abrir ni caducar. `null` = sin límite.
+   *
+   * Mismo criterio que `retencionMs`: «ilimitado» se escribe como ausencia de
+   * límite y no como un número muy grande. Un tope enorme sigue siendo un tope,
+   * y tarde o temprano alguien lo compara, lo suma o lo divide.
+   */
+  pasesSimultaneos: number | null;
   /** Bytes de medios por perfil. Cuenta lo confirmado y lo reservado. */
   cuotaPorPerfil: number;
   /**
@@ -45,36 +48,42 @@ export interface LimitesDePlan {
 }
 
 /**
- * PROVISIONAL — pendiente de decidir por el cliente.
- * Ver la cabecera del archivo.
+ * Cifras fijadas por el cliente el 2026-09-01.
+ *
+ * Un aviso para quien las cambie: la cuota de Prueba (70 MB) es menor que la
+ * suma de dos vídeos al máximo permitido (50 MB cada uno). Es coherente —en ese
+ * plan cabe un vídeo y poco más—, pero si alguna vez se sube el tope de vídeo
+ * por encima de la cuota de un plan, ese plan se queda sin poder aceptar un
+ * solo vídeo. Los topes por tipo están en `sniff.ts`.
  */
 export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
   prueba: {
     perfiles: 1,
-    pasesSimultaneos: 3,
-    cuotaPorPerfil: 200 * MB,
+    pasesSimultaneos: 5,
+    cuotaPorPerfil: 70 * MB,
     retencionMs: 7 * DIA,
   },
   pro: {
     perfiles: 3,
-    pasesSimultaneos: 25,
+    pasesSimultaneos: 30,
     cuotaPorPerfil: 200 * MB,
-    retencionMs: 14 * DIA,
+    retencionMs: 15 * DIA,
   },
   boveda: {
     perfiles: 10,
-    pasesSimultaneos: 100,
+    // Sin límite. No es un número grande: es la ausencia de límite.
+    pasesSimultaneos: null,
     cuotaPorPerfil: 1024 * MB,
-    // Lo que distingue a este plan. No es un número grande: es la ausencia de
-    // plazo, y por eso es `null` y no `Infinity`.
+    // Lo otro que distingue a este plan: la ausencia de plazo, no un plazo largo.
     retencionMs: null,
   },
 });
 
 /**
- * PROVISIONAL — cuánto sobrevive un perfil congelado antes de borrarse.
+ * Cuánto sobrevive un perfil congelado antes de borrarse.
  *
- * Es el plazo más delicado del proyecto: cuando venza, se borra trabajo del
+ * PROVISIONAL: es el único plazo que el cliente todavía no ha fijado, y el más
+ * delicado del proyecto: cuando venza, se borra trabajo del
  * cliente y no hay vuelta atrás. Está puesto largo a propósito. Si dudas entre
  * dos cifras, coge la mayor: un mes de más cuesta unos megabytes, y un mes de
  * menos cuesta el contenido de alguien.

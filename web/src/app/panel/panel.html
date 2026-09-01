@@ -147,11 +147,11 @@
     @if (plan(); as p) {
       <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-[#5c7d84]">
         Plan {{ p.nombre }} · {{ uso().perfilesActivos }}/{{ p.limites.perfiles }} perfiles ·
-        {{ uso().pasesAbiertos }}/{{ p.limites.pasesSimultaneos }} pases abiertos ·
+        {{ uso().pasesAbiertos }}/{{ p.limites.pasesSimultaneos ?? '∞' }} pases abiertos ·
         @if (p.limites.retencionMs === null) {
           el contenido no caduca
         } @else {
-          el contenido se borra a los {{ p.limites.retencionMs / 86400000 }} días
+          el contenido se borra a los {{ dias(p.limites.retencionMs) }} días
         }
       </p>
     }

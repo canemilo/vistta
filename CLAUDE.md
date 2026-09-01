@@ -13,9 +13,10 @@ a un cliente concreto mediante un **enlace privado de un solo uso** que caduca a
 - **Medios (MVP)**: Supabase Storage con signed URLs (sin tarjeta). **Producción**: Cloudflare R2 (egress 0, requiere tarjeta al activar).
   En desarrollo local, `STORAGE_DRIVER=fs` deja los bytes en disco: con `memory` la siembra muere
   con su proceso y deja perfiles apuntando a nada.
-- **Límites de medios**: imagen 10 MB, PDF 15 MB, **vídeo 50 MB** (el plan gratuito de Supabase topa
-  el fichero; verificar la cifra antes de fijarla). 200 MB por pase. El tamaño **declarado** por el
-  cliente no vale nada: se valida contra los bytes reales al confirmar la subida.
+- **Límites de medios por archivo**: imagen 10 MB, PDF 15 MB, **vídeo 50 MB** (el plan gratuito de
+  Supabase topa el fichero; verificar la cifra antes de fijarla). La cuota por perfil ya no es una
+  cifra fija: sale del plan (ver abajo). El tamaño **declarado** por el cliente no vale nada: se
+  valida contra los bytes reales al confirmar la subida.
 - Validación: Zod. Pruebas: Vitest contra **Postgres real** (servicio de contenedor en CI, Docker en
   local). **pg-mem queda descartado**: es monohilo y sin MVCC, así que el test del consumo atómico del
   pase pasaría aunque el UPDATE estuviera mal. Un verde falso sobre el invariante del producto.
@@ -79,12 +80,26 @@ Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado 
 
 ## Planes y volatilidad (desde E)
 
-- Las CIFRAS de los planes viven solo en `src/lib/planes.ts`, y hoy son **provisionales**. Ninguna
-  ruta, consulta ni trabajo de la cola lleva un número escrito a mano: cambiar de oferta comercial
-  es editar ese archivo.
+- Las CIFRAS de los planes viven solo en `src/lib/planes.ts`. Ninguna ruta, consulta ni trabajo de
+  la cola lleva un número escrito a mano: cambiar de oferta comercial es editar ese archivo.
+  Fijadas por el cliente el 2026-09-01:
+
+  |                | Prueba | Pro     | Bóveda    |
+  | -------------- | ------ | ------- | --------- |
+  | Perfiles       | 1      | 3       | 10        |
+  | Pases a la vez | 5      | 30      | ilimitado |
+  | Cuota/perfil   | 70 MB  | 200 MB  | 1 GB      |
+  | Retención      | 7 días | 15 días | nunca     |
+
+- **«Ilimitado» y «nunca» se escriben como `null`, jamás como un número grande.** Un tope enorme
+  sigue siendo un tope y alguien acabará comparándolo, sumándolo o dividiéndolo. El código se salta
+  la comprobación entera cuando es `null`, y hay un test por cada uno que se pone rojo si alguien
+  los traduce a cifras.
 - El contenido de este producto **caduca**: es para enseñar trabajo, no para alojarlo. `Bóveda` es
-  el plan sin caducidad, y en el código eso es `retencionMs: null`. **`null` no es cero**: la purga
-  se salta ese plan entero en vez de traducirlo a un número.
+  el plan sin caducidad.
+- Ojo al cruzar cifras: la cuota de Prueba (70 MB) es menor que dos vídeos al máximo (50 MB). Es
+  coherente, pero si el tope por tipo llegara a superar la cuota de un plan, ese plan no podría
+  aceptar ni un archivo de ese tipo.
 - **Pasarse de un límite nunca borra nada por sorpresa.** Lo que sobra se congela (reversible,
   `lib/congelado.ts`), el cliente elige qué deja activo y el cambio intercambia en vez de rechazar.
   Solo agotada la gracia entera se borra, y eso vive aparte en `lib/purga.ts`.

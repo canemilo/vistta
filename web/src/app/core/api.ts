@@ -53,9 +53,10 @@ export interface ProfileRow {
 
 export interface LimitesDePlan {
   perfiles: number;
-  pasesSimultaneos: number;
+  /** null = sin límite. */
+  pasesSimultaneos: number | null;
   cuotaPorPerfil: number;
-  /** null = no caduca nunca. Es lo que se paga en Bóveda. */
+  /** null = no caduca nunca. Las dos cosas son lo que se paga en Bóveda. */
   retencionMs: number | null;
 }
 

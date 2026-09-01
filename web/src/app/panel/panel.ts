@@ -42,6 +42,11 @@ export class Panel {
     this.perfiles().filter((p) => p.status === 'congelado'),
   );
 
+  /** Un plazo en milisegundos, contado en días. */
+  protected dias(ms: number): number {
+    return Math.round(ms / 86_400_000);
+  }
+
   /** Días que faltan para que se borre un perfil congelado. */
   protected diasHasta(purgeAt: number | null): number {
     if (purgeAt === null) return 0;
