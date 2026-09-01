@@ -2,9 +2,10 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0 y D0.** El backend ya es Node + Hono + PostgreSQL con
-> Argon2id, y las pruebas van contra Postgres real. Antes de P0 este archivo daba por cerrados los
-> bloques B y C describiendo un backend que no existía en el disco; ahora describe lo que hay.
+> **Al día el 2026-09-01, tras cerrar P0, D0 y D.** El backend es Node + Hono + PostgreSQL con
+> Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
+> P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
+> disco; ahora describe lo que hay.
 > **Si vuelves a encontrar una discrepancia, gana el disco, no este archivo.**
 
 ## 0. Estado real (verificado en el árbol de trabajo)
@@ -19,6 +20,12 @@
   en el CI.
 - Migraciones en dialecto PostgreSQL con `node-pg-migrate`, en el esquema `vistta` con RLS activada
   y sin políticas.
+- **Medios con fila propia** (`vistta.media`): el contenido del perfil guarda `mediaId`, no claves de
+  almacenamiento. Subida en dos pasos (reservar y confirmar), tipo detectado de los bytes reales,
+  dimensiones y LQIP medidos al confirmar.
+- **Marca de agua incrustada en los píxeles** con Sharp, por visita, al servir `/m/:mediaId`.
+- **Cola `vistta.jobs`** con `FOR UPDATE SKIP LOCKED` y reaper de huérfanos, en el mismo proceso.
+- **68 tests** contra Postgres real. Adaptador `fs` del puerto `Storage` para desarrollo local.
 
 ## 1. Decisiones (Bloque A)
 
@@ -59,10 +66,12 @@
       con `createApp(deps)`; Argon2id; arnés contra Postgres real; puerto `Storage` con adaptador
       Supabase y en memoria. **Los 5 tests de firma vuelven a verde**, y con ellos los otros 34.
 
-- [ ] **D — Medios**: tabla `media` + cuota; `presign` (valida sesión, propiedad, tipo, tamaño y cuota
-      **antes** de firmar); `confirm` (magic bytes + tamaño real; los bytes que el backend no ha
-      inspeccionado no se sirven nunca); cola `jobs` con `SKIP LOCKED`; Sharp a WebP; reaper de
-      huérfanos; `/m/*` por tipo; `open` devuelve `width`/`height`/`lqip`.
+- [x] **D — Medios** — cerrado el 2026-09-01. Migración `0002_medios` (`media`, `pass_media`,
+      `jobs`); `presign` valida sesión, propiedad, tipo, tamaño y cuota **antes** de firmar;
+      `confirm` inspecciona magic bytes y tamaño real; cola `jobs` con `SKIP LOCKED`; Sharp a WebP
+      con la marca dentro; reaper de huérfanos; `/m/:mediaId` sirve por tipo; `open` devuelve
+      `width`/`height`/`lqip`. Los tres fallos abiertos del §3 quedan cerrados y con test.
+      Ver «Desvíos del plan en D», más abajo.
 - [ ] **E — Planes/cuotas/volatilidad** · planes Prueba/Pro/Bóveda, caducidades 7/14 días, máx. pases
       simultáneos, **cron de purga** (reutiliza la cola `jobs` de D).
 - [ ] **F — Facturación manual (Bizum/PayPal)**: código VISTTA-XXXX, /api/admin/activate-plan, auditoría.
@@ -72,10 +81,27 @@
       delante; R2 (nueva implementación del puerto `Storage`, no una reescritura); CI/CD, backups.
 - [ ] **I — Cumplimiento**: RGPD (art. 28, RAT, EIPD), AUP + notice-and-takedown.
 
+## 2.1. Desvíos del plan en D
+
+Tres cosas salieron distintas de como estaban escritas en el plan, y las tres a propósito.
+
+**Las dimensiones y el LQIP se calculan al confirmar, no en la cola.** Los bytes ya están en memoria
+y Sharp ya está cargado; hacerlo ahí quita un estado entero —el medio `ready` del que aún no se sabe
+cuánto mide— y deja que `ready` signifique siempre "inspeccionado Y medido". La cola se queda para
+el reaper, que es trabajo que de verdad no cabe en una petición.
+
+**La subida y la confirmación son la MISMA petición.** Si fueran dos, entre una y otra habría un
+objeto en el almacenamiento que nadie ha mirado, y bastaría con no llamar a la segunda para dejarlo
+ahí. El `presign` sigue siendo un paso aparte: es el que reserva cuota y firma.
+
+**Se añadió un adaptador `fs` del puerto `Storage`.** No estaba en el plan, pero sin él
+`pnpm setup:local` siembra en un almacén en memoria que muere con el proceso de la siembra, y deja
+perfiles apuntando a bytes que ya no existen. Pon `STORAGE_DRIVER=fs` en tu `.env`.
+
 ## 3. Fallos conocidos
 
-Auditados el 2026-09-01. Tres se cerraron en D0 porque el propio salto a Node los empeoraba;
-los otros tres siguen abiertos y son el bloque D.
+Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los
+empeoraba, y tres en D.
 
 **Cerrados en D0**
 
@@ -89,17 +115,39 @@ los otros tres siguen abiertos y son el bloque D.
    `TRUST_PROXY=true`, y entonces se toma la última entrada, que es la que añade el proxy propio.
    Con `TRUST_PROXY=false` se ignora del todo. Cubierto por `test/client-ip.spec.ts`.
 
-**Abiertos — son el bloque D**
+**Cerrados en D**
 
-4. **IDOR entre inquilinos.** `MediaItemSchema` no restringe `key`; `/api/open/:token` firma
-   cualquier clave que haya en las secciones. Un usuario puede poner en su perfil la clave de otro
-   y servirla. La corrección es referenciar `media.id` con propiedad verificada en BD, nunca claves
-   de almacenamiento en un JSON del usuario.
-5. **Ambigüedad de concatenación en la firma**: el payload `key\npassId\nexp` no delimita campos y
-   `key` admite `\n`. Prefijo de longitud o hash por campo, y separar el dominio de firma de
-   lectura del de escritura.
-6. **La marca de agua no está en los píxeles**: hoy es un overlay CSS, así que "guardar imagen
-   como" descarga el archivo limpio. La corrección es Sharp al servir.
+4. ~~IDOR entre inquilinos.~~ El contenido guarda `mediaId`, y al guardar el perfil cada id se
+   contrasta contra `vistta.media`, donde consta de quién es; un id ajeno da 400 y no se guarda.
+   Encima hay una segunda puerta: `/m/*` exige que el medio esté en `pass_media`, la instantánea que
+   se tomó al crear el pase. Aunque alguien fabricase una firma válida, sin fila ahí no se sirve.
+   Las dos puertas tienen su test, y las dos se han verificado por mutación.
+5. ~~Ambigüedad de concatenación en la firma.~~ El payload lleva prefijo de longitud en bytes por
+   campo, así que el separador ya no significa nada: los campos `("a\nb","c")` y `("a","b\nc")`
+   producían el mismo mensaje y ahora no. Y hay dos dominios de firma —lectura y escritura—, así que
+   una firma de lectura no verifica como una de subida aunque el resto del payload coincida.
+6. ~~La marca de agua no está en los píxeles.~~ `/m/:mediaId` decodifica la imagen, le pinta encima
+   el identificador de la visita y la reencodifica a WebP: lo que sale por el socket no son los
+   bytes que subió el cliente. El overlay CSS del viewer se ha retirado. El vídeo y los PDF salen
+   tal cual —marcarlos obligaría a recodificar en cada visita— **y el panel lo dice con esas
+   palabras**, porque callarlo sería vender una protección que no existe.
+
+**Aviso para el bloque H**: la marca usa texto SVG, que en una imagen de contenedor mínima sin
+fontconfig saldría vacío. Por eso la capa lleva también una banda opaca: si faltan las fuentes, algo
+queda incrustado igual. Aun así, la imagen de producción tiene que traer fuentes.
+
+### Aprendizaje de D, que se suma al de D0
+
+La cuota es el segundo invariante de concurrencia del proyecto, y falla igual que el primero: sin
+bloquear la fila del perfil, dieciséis reservas simultáneas ven todas la misma suma y pasan doce
+(600 MB sobre una cuota de 200). La toma de trabajos de la cola, igual: con "leer y luego marcar",
+siete de dieciséis se llevan el mismo trabajo. Los dos tests son de ráfaga y los dos se han puesto
+rojos a propósito antes de darlos por buenos.
+
+Y un aviso sobre los tests que _no_ pinchan lo que parece: el caso "un contenido irreconocible se
+rechaza" sigue verde aunque desactives el detector de firmas, porque lo rechaza Sharp al no poder
+decodificarlo. Quien pincha el detector es el caso del PDF subido como imagen. Son dos defensas
+distintas y conviene no confundirlas al tocarlas.
 
 ### Aprendizaje de D0, que vale para todo lo que venga
 
@@ -126,8 +174,8 @@ rómpelo a propósito y comprueba que se pone rojo.
 - [x] P0: la suite arranca (33 tests verdes) y el CI pasa entero en local.
 - [x] D0: Node + Postgres + Argon2id, con el test de concurrencia del pase verde contra Postgres real
       **y verificado por mutación** (se rompe el consumo a propósito y el test se pone rojo).
-- [ ] D: subida con límites verificados sobre bytes reales; marca incrustada; dimensiones en BD;
-      los tres fallos que siguen abiertos en §3 corregidos y con test.
+- [x] D: subida con límites verificados sobre bytes reales; marca incrustada; dimensiones en BD;
+      los tres fallos del §3 corregidos y con test, verificados por mutación.
 - [ ] Planes/cuotas + cron de purga. [ ] Facturación + admin.
 - [ ] Frontend completo accesible. [ ] Legal (términos, AUP, RGPD) revisado.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.
