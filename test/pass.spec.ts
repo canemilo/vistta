@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass, ProfileNotFoundError } from "../src/lib/pass";
-import { call, callAs, resetDb, seedProfile } from "./helpers";
+import { call, callAs, crearCuenta, panelSession, resetDb, seedProfile } from "./helpers";
 
 beforeEach(resetDb);
 
@@ -52,7 +52,8 @@ describe("ciclo del pase", () => {
 
 describe("creación de pases (panel)", () => {
   it("requiere autenticación", async () => {
-    const profileId = await seedProfile();
+    const userId = await crearCuenta();
+    const profileId = await seedProfile("pro_1", { sections: [] }, userId);
     const noAuth = await call("/api/passes", {
       method: "POST",
       headers: JSON_HEADERS,
@@ -60,37 +61,57 @@ describe("creación de pases (panel)", () => {
     });
     expect(noAuth.status).toBe(401);
 
+    const sesion = await panelSession(userId);
     const ok = await call("/api/passes", {
       method: "POST",
-      headers: { ...JSON_HEADERS, authorization: "Bearer test-secret" },
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
       body: JSON.stringify({ profileId }),
     });
     expect(ok.status).toBe(201);
   });
 
-  it("rechaza una entrada no válida", async () => {
+  it("no se pueden generar pases del perfil de otra cuenta", async () => {
+    await crearCuenta("marina", "Marina");
+    await crearCuenta("otro", "Otro");
+    const ajeno = await seedProfile("pro_ajeno", { sections: [] }, "marina");
+    const sesion = await panelSession("otro");
     const res = await call("/api/passes", {
       method: "POST",
-      headers: { ...JSON_HEADERS, authorization: "Bearer test-secret" },
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
+      body: JSON.stringify({ profileId: ajeno }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("rechaza una entrada no válida", async () => {
+    const userId = await crearCuenta();
+    const sesion = await panelSession(userId);
+    const res = await call("/api/passes", {
+      method: "POST",
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
       body: JSON.stringify({ profileId: "", ttlSeconds: -1 }),
     });
     expect(res.status).toBe(400);
   });
 
   it("devuelve 404 si el perfil no existe", async () => {
+    const userId = await crearCuenta();
+    const sesion = await panelSession(userId);
     const res = await call("/api/passes", {
       method: "POST",
-      headers: { ...JSON_HEADERS, authorization: "Bearer test-secret" },
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
       body: JSON.stringify({ profileId: "no_existe" }),
     });
     expect(res.status).toBe(404);
   });
 
   it("el enlace devuelto se puede abrir una sola vez", async () => {
-    const profileId = await seedProfile();
+    const userId = await crearCuenta();
+    const profileId = await seedProfile("pro_1", { sections: [] }, userId);
+    const sesion = await panelSession(userId);
     const res = await call("/api/passes", {
       method: "POST",
-      headers: { ...JSON_HEADERS, authorization: "Bearer test-secret" },
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
       body: JSON.stringify({ profileId }),
     });
     const { url } = await res.json<{ url: string }>();

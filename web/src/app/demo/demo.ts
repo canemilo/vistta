@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { PassCard } from '../pass-card/pass-card';
 import type { MediaItem } from '../core/api';
 
 /** Portada: muestra el aspecto de un pase abierto, sin consumir ninguno. */
 @Component({
   selector: 'app-demo',
-  imports: [PassCard],
+  imports: [PassCard, RouterLink],
   templateUrl: './demo.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `

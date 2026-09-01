@@ -1,7 +1,6 @@
 name = "vistta-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
-compatibility_flags = ["nodejs_compat"]
 
 # Crea la base con `pnpm db:create` y pega aquí el database_id que te devuelva.
 [[d1_databases]]
@@ -15,10 +14,6 @@ migrations_dir = "migrations"
 binding = "MEDIA"
 bucket_name = "vistta-media"
 
-# BASE_URL es var pública. Los secretos NUNCA van aquí; se cargan con:
-#   wrangler secret put PANEL_PIN
-#   wrangler secret put PANEL_TOKEN
-#   wrangler secret put MEDIA_SIGNING_KEY
+# BASE_URL como var pública; PANEL_TOKEN va como secreto: `wrangler secret put PANEL_TOKEN`
 [vars]
-# Origen del viewer: es la base de los enlaces /v/:token que genera el panel.
-BASE_URL = "http://localhost:4200"
+BASE_URL = "http://localhost:8787"

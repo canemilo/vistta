@@ -4,12 +4,14 @@ import { securityHeaders } from "./lib/security";
 import { passes } from "./routes/passes";
 import { panel } from "./routes/panel";
 import { media } from "./routes/media";
+import { profiles } from "./routes/profiles";
 
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", securityHeaders());
 app.get("/health", (c) => c.json({ ok: true }));
 app.route("/", panel);
+app.route("/", profiles);
 app.route("/", passes);
 app.route("/", media);
 

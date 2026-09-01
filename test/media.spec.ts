@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
-import { call, callAs, resetDb, seedProfile } from "./helpers";
+import { call, callAs, crearCuenta, resetDb, seedProfile } from "./helpers";
 
 beforeEach(async () => {
   await resetDb();
@@ -11,13 +11,21 @@ beforeEach(async () => {
 });
 
 async function openPassWithMedia(ip: string) {
+  const propietario = await crearCuenta("dueno" + ip.replace(/\./g, ""), "Dueño");
   const profileId = await seedProfile("pro_media", {
-    bio: "demo",
-    media: [{ key: "obras/foto.jpg", type: "image", caption: "Obra 1" }],
-  });
+    intro: "demo",
+    sections: [
+      {
+        type: "galeria",
+        title: "Selección",
+        items: [{ key: "obras/foto.jpg", type: "image", caption: "Obra 1" }],
+      },
+    ],
+  }, propietario);
   const { token } = await createPass(env, { profileId });
   const res = await callAs(ip, "/api/open/" + token);
-  return res.json<{ media: { url: string; type: string }[] }>();
+  const body = await res.json<{ sections: { items: { url: string; type: string }[] }[] }>();
+  return { media: body.sections.flatMap((s) => s.items) };
 }
 
 describe("medios firmados", () => {

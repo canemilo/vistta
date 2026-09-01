@@ -1,29 +1,37 @@
-<div class="flex w-full flex-col items-center gap-5">
-  @if (titulo()) {
-    <p class="text-[12px] tracking-[0.25em] text-[#3f6570] uppercase">{{ titulo() }}</p>
+@switch (estado()) {
+  @case ('abierto') {
+    <app-pass-document
+      [profile]="vista()!.profile"
+      [secciones]="vista()!.sections"
+      [marca]="vista()!.watermark"
+      [enlace]="enlace()"
+    />
   }
 
-  <app-pass-card
-    class="w-full max-w-[420px]"
-    [enlace]="enlace()"
-    [estado]="estado()"
-    [medios]="medios()"
-    [marca]="marca()"
-  >
-    <span vacio>
-      @if (estado() === 'cargando') {
+  @case ('cargando') {
+    <div class="flex min-h-screen items-center justify-center px-6">
+      <p class="font-mono text-[12px] tracking-[0.28em] text-[#3f6570] uppercase">
         Abriendo el pase…
-      } @else {
-        Este enlace ya se usó o ha caducado.
-      }
-    </span>
-  </app-pass-card>
+      </p>
+    </div>
+  }
 
-  <p class="text-center text-[13px] text-[#6f8f93]">
-    @if (estado() === 'activo') {
-      Se abre una vez. Después, el enlace deja de existir.
-    } @else if (estado() === 'caducado') {
-      Pide un enlace nuevo a quien te lo envió.
-    }
-  </p>
-</div>
+  @default {
+    <div class="flex min-h-screen items-center justify-center px-6">
+      <div class="w-full max-w-[420px] rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6">
+        <div class="flex items-center gap-2.5">
+          <span class="h-2 w-2 rounded-full bg-slate-500/70"></span>
+          <p class="font-mono text-[10px] tracking-[0.28em] text-[#4f7079] uppercase">
+            Pase cerrado
+          </p>
+        </div>
+        <p class="mt-4 font-serif text-[16px] leading-[1.7] text-[#b9d2ce]">
+          Este enlace ya se usó o ha caducado.
+        </p>
+        <p class="mt-2 font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
+          Pide uno nuevo a quien te lo envió: cada pase se abre una sola vez.
+        </p>
+      </div>
+    </div>
+  }
+}

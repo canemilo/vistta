@@ -1,18 +1,25 @@
 import { Hono } from "hono";
 import type { Env } from "../env";
 import { CreatePassSchema } from "../schemas";
+import type { MediaItemInput, Section } from "../schemas";
 import { createPass, consumePass, ProfileNotFoundError } from "../lib/pass";
-import { isAuthorized } from "../lib/auth";
+import { usuarioDeLaSesion } from "../lib/auth";
 import { clientId, hitRateLimit } from "../lib/ratelimit";
-import { MediaItemSchema } from "../schemas";
 import { signMediaUrl, watermarkFor } from "../lib/media";
-import { z } from "zod";
 
 export const passes = new Hono<{ Bindings: Env }>();
 
 /** Apertura de pases: límite amplio, solo para frenar el sondeo automatizado. */
 const OPEN_RULE = { scope: "pass-open", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
 const CREATE_RULE = { scope: "pass-create", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
+
+/** Sección tal y como la recibe el viewer: las claves ya son URLs firmadas. */
+interface SectionView {
+  type: Section["type"];
+  title?: string;
+  body?: string;
+  items: { url: string; type: MediaItemInput["type"]; caption?: string }[];
+}
 
 // Generar un pase (panel).
 passes.post("/api/passes", async (c) => {
@@ -21,13 +28,20 @@ passes.post("/api/passes", async (c) => {
     c.header("Retry-After", String(limit.retryAfterSeconds));
     return c.json({ error: "demasiadas peticiones" }, 429);
   }
-  if (!(await isAuthorized(c))) return c.json({ error: "no autorizado" }, 401);
+  const usuario = await usuarioDeLaSesion(c);
+  if (!usuario) return c.json({ error: "no autorizado" }, 401);
 
   const body = await c.req.json().catch(() => null);
   const parsed = CreatePassSchema.safeParse(body);
   if (!parsed.success) {
     return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
   }
+
+  // Solo se generan pases del propio perfil.
+  const suyo = await c.env.DB.prepare(`SELECT id FROM profiles WHERE id = ?1 AND owner_id = ?2`)
+    .bind(parsed.data.profileId, usuario.id)
+    .first<{ id: string }>();
+  if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
 
   try {
     const { token, expiresAt } = await createPass(c.env, parsed.data);
@@ -37,15 +51,6 @@ passes.post("/api/passes", async (c) => {
     if (err instanceof ProfileNotFoundError) return c.json({ error: "perfil no encontrado" }, 404);
     throw err;
   }
-});
-
-// Listado de perfiles (panel) para elegir a quién presentar.
-passes.get("/api/profiles", async (c) => {
-  if (!(await isAuthorized(c))) return c.json({ error: "no autorizado" }, 401);
-  const { results } = await c.env.DB.prepare(
-    `SELECT id, display_name AS displayName FROM profiles ORDER BY display_name`
-  ).all<{ id: string; displayName: string }>();
-  return c.json({ profiles: results });
 });
 
 // Abrir un pase (cliente). Se consume en el primer acceso.
@@ -61,26 +66,33 @@ passes.get("/api/open/:token", async (c) => {
   if (!view) return c.json({ error: "Acceso denegado" }, 410);
 
   const secret = c.env.MEDIA_SIGNING_KEY;
-  const items = z.array(MediaItemSchema).safeParse(view.data.media ?? []);
-  const media =
-    secret && items.success
-      ? await Promise.all(
-          items.data.map(async (item) => ({
-            type: item.type,
-            caption: item.caption,
-            url: await signMediaUrl(secret, item, view.passId),
-          }))
-        )
-      : [];
+  const sections: SectionView[] = await Promise.all(
+    view.sections.map(async (section) => ({
+      type: section.type,
+      title: section.title,
+      body: "body" in section ? section.body : undefined,
+      items:
+        secret && "items" in section
+          ? await Promise.all(
+              section.items.map(async (item) => ({
+                type: item.type,
+                caption: item.caption,
+                url: await signMediaUrl(secret, item, view.passId),
+              }))
+            )
+          : [],
+    }))
+  );
 
   return c.json({
     profile: {
       id: view.profileId,
       displayName: view.displayName,
       brandColor: view.brandColor,
-      data: view.data,
+      tagline: view.tagline,
+      intro: view.intro,
     },
-    media,
+    sections,
     watermark: watermarkFor(view.passId),
   });
 });

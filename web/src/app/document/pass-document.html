@@ -1,0 +1,137 @@
+<!-- Barra de estado: la capa "máquina" que enmarca el trabajo del cliente. -->
+<div
+  class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md"
+>
+  <div class="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-6 py-3">
+    <div class="flex min-w-0 items-center gap-2.5">
+      <span
+        class="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(52,211,153,0.55)]"
+      ></span>
+      <span class="truncate font-mono text-[12px] text-[#8fb0b2]">{{ enlace() }}</span>
+    </div>
+    <span class="shrink-0 font-mono text-[10px] tracking-[0.24em] text-emerald-400">ACTIVO</span>
+  </div>
+</div>
+
+<article class="mx-auto max-w-[1040px] px-6 pb-24">
+  <!-- Hero: quién presenta y en qué condiciones se está viendo -->
+  <header class="surge border-b border-[#12262f] pt-16 pb-12 md:pt-24 md:pb-16">
+    <p class="font-mono text-[10px] tracking-[0.32em] text-emerald-400/80 uppercase">
+      Pase privado · una sola apertura
+    </p>
+    <h1
+      class="mt-5 font-mono text-[clamp(2rem,6vw,3.4rem)] leading-[1.05] font-medium tracking-[-0.03em] text-[#e6f4f1]"
+    >
+      {{ profile().displayName }}
+    </h1>
+    @if (profile().tagline) {
+      <p
+        class="mt-4 max-w-[46ch] font-serif text-[clamp(1.05rem,2.4vw,1.4rem)] leading-[1.5] text-[#9fbcbd] italic"
+      >
+        {{ profile().tagline }}
+      </p>
+    }
+    <p class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#4f7079] uppercase">
+      @if (hora()) {
+        <span>Abierto {{ hora() }}</span>
+        <span aria-hidden="true">·</span>
+      }
+      <span>{{ totalFotos() }} {{ totalFotos() === 1 ? 'foto' : 'fotos' }}</span>
+      <span aria-hidden="true">·</span>
+      <span>El enlace ya no existe</span>
+    </p>
+  </header>
+
+  @if (profile().intro) {
+    <p
+      class="surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-[#c2d9d5]"
+      style="animation-delay: 90ms"
+    >
+      {{ profile().intro }}
+    </p>
+  }
+
+  @for (seccion of secciones(); track $index) {
+    <section
+      class="surge mt-20 grid gap-x-10 gap-y-6 border-t border-[#12262f] pt-10 md:mt-24 md:grid-cols-[180px_1fr]"
+      [style.animation-delay]="120 + $index * 70 + 'ms'"
+    >
+      <!-- El título se queda anclado mientras se recorre el bloque -->
+      <div class="md:sticky md:top-20 md:self-start">
+        @if (seccion.title) {
+          <h2 class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-[#7fd8bd] uppercase">
+            {{ seccion.title }}
+          </h2>
+        }
+        @if (seccion.items.length) {
+          <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-[#3f6570]">
+            {{ seccion.items.length }} {{ seccion.items.length === 1 ? 'foto' : 'fotos' }}
+          </p>
+        }
+      </div>
+
+      <div class="min-w-0">
+        @if (seccion.body) {
+          <div class="max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-[#b9d2ce]">
+            @for (parrafo of seccion.body.split('\n\n'); track $index) {
+              <p>{{ parrafo }}</p>
+            }
+          </div>
+        }
+
+        @if (seccion.items.length) {
+          <div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6" [class.mt-0]="!seccion.body">
+            @for (foto of seccion.items; track foto.url) {
+              <figure class="group col-span-1 min-w-0 sm:col-span-1 {{ ancho($index) }}">
+                <div
+                  class="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-[#16303a] {{ proporcion($index) }}"
+                  [style.background-image]="fondo($index)"
+                >
+                  <img
+                    [src]="foto.url"
+                    [alt]="foto.caption ?? ''"
+                    loading="lazy"
+                    draggable="false"
+                    (error)="ocultar($event)"
+                    class="h-full w-full max-w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                  />
+                  <!-- Sello por visita: cada copia de esta foto lleva de quién es el pase.
+                       La sombra lo mantiene legible tanto sobre foto clara como oscura. -->
+                  <span
+                    class="pointer-events-none absolute inset-0 flex -rotate-12 flex-col items-center justify-center gap-10 select-none"
+                    aria-hidden="true"
+                  >
+                    @for (banda of [0, 1, 2]; track banda) {
+                      <span
+                        class="font-mono text-[9px] tracking-[0.34em] whitespace-nowrap text-white/25 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]"
+                      >
+                        {{ marca() }}
+                      </span>
+                    }
+                  </span>
+                </div>
+                @if (foto.caption) {
+                  <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#5c7d84]">
+                    {{ foto.caption }}
+                  </figcaption>
+                }
+              </figure>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  } @empty {
+    <p class="mt-20 font-mono text-[12px] text-[#4f7079]">Este pase todavía no tiene contenido.</p>
+  }
+
+  <!-- Sello de cierre: el documento termina declarando su propia caducidad -->
+  <footer class="surge mt-24 rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6">
+    <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">Pase cerrado</p>
+    <p class="mt-3 font-mono text-[12px] text-[#8fb0b2]">{{ marca() }}</p>
+    <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
+      Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas
+      volver a verlo, pide uno nuevo a quien te lo envió.
+    </p>
+  </footer>
+</article>

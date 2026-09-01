@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { call, callAs, resetDb } from "./helpers";
+import { CLAVE, call, callAs, crearCuenta, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 
@@ -24,37 +24,49 @@ describe("cabeceras de seguridad", () => {
 });
 
 describe("rate limit del login del panel", () => {
-  const login = (ip: string, pin: string) =>
+  const login = (ip: string, password: string, userId = "marina") =>
     callAs(ip, "/api/panel/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ pin }),
+      body: JSON.stringify({ userId, password }),
     });
 
   it("bloquea tras varios intentos fallidos", async () => {
+    await crearCuenta();
     const ip = "203.0.113.7";
-    for (let i = 0; i < 5; i++) expect((await login(ip, "000000")).status).toBe(401);
-    const blocked = await login(ip, "000000");
+    for (let i = 0; i < 5; i++) expect((await login(ip, "mal-mal-mal")).status).toBe(401);
+    const blocked = await login(ip, "mal-mal-mal");
     expect(blocked.status).toBe(429);
     expect(Number(blocked.headers.get("Retry-After"))).toBeGreaterThan(0);
-    // Aunque el PIN sea correcto, sigue bloqueado.
-    expect((await login(ip, "123456")).status).toBe(429);
+    // Aunque la contraseña sea correcta, sigue bloqueado.
+    expect((await login(ip, CLAVE)).status).toBe(429);
   });
 
   it("el bloqueo es por cliente, no global", async () => {
+    await crearCuenta();
     const ip = "203.0.113.8";
-    for (let i = 0; i < 6; i++) await login(ip, "000000");
-    expect((await login(ip, "123456")).status).toBe(429);
-    expect((await login("203.0.113.9", "123456")).status).toBe(201);
+    for (let i = 0; i < 6; i++) await login(ip, "mal-mal-mal");
+    expect((await login(ip, CLAVE)).status).toBe(429);
+    expect((await login("203.0.113.9", CLAVE)).status).toBe(201);
+  });
+
+  it("un id que no existe da el mismo error que una contraseña mala", async () => {
+    await crearCuenta();
+    const inexistente = await login("203.0.113.30", CLAVE, "no-existe");
+    const malaClave = await login("203.0.113.31", "mal-mal-mal");
+    expect(inexistente.status).toBe(401);
+    expect(malaClave.status).toBe(401);
+    expect(await inexistente.text()).toBe(await malaClave.text());
   });
 });
 
-describe("sesión del panel con PIN", () => {
-  it("un PIN válido abre sesión y autoriza la creación de pases", async () => {
+describe("sesión del panel", () => {
+  it("unas credenciales válidas abren sesión y autorizan el panel", async () => {
+    await crearCuenta();
     const res = await callAs("198.51.100.4", "/api/panel/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ pin: "123456" }),
+      body: JSON.stringify({ userId: "marina", password: CLAVE }),
     });
     expect(res.status).toBe(201);
     const { token, expiresAt } = await res.json<{ token: string; expiresAt: number }>();
@@ -71,10 +83,11 @@ describe("sesión del panel con PIN", () => {
 
   it("una sesión caducada deja de autorizar", async () => {
     const { env } = await import("cloudflare:test");
+    await crearCuenta();
     const res = await callAs("198.51.100.5", "/api/panel/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ pin: "123456" }),
+      body: JSON.stringify({ userId: "marina", password: CLAVE }),
     });
     const { token } = await res.json<{ token: string }>();
     await env.DB.prepare("UPDATE panel_sessions SET expires_at = ?")

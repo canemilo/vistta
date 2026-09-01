@@ -1,13 +1,15 @@
 import type { Env } from "../env";
 import { generateToken, hashToken } from "./token";
-import { ProfileDataSchema, type ProfileData } from "../schemas";
+import { ProfileDataSchema, type ProfileData, type Section } from "../schemas";
 
 export interface PassView {
   passId: string;
   profileId: string;
   displayName: string;
   brandColor: string | null;
-  data: ProfileData;
+  tagline?: string;
+  intro?: string;
+  sections: Section[];
 }
 
 export class ProfileNotFoundError extends Error {}
@@ -62,20 +64,31 @@ export async function consumePass(env: Env, token: string): Promise<PassView | n
     .first<{ id: string; display_name: string; brand_color: string | null; data: string }>();
   if (!profile) return null;
 
+  const data = parseProfileData(profile.data);
   return {
     passId: claimed.id,
     profileId: profile.id,
     displayName: profile.display_name,
     brandColor: profile.brand_color,
-    data: parseProfileData(profile.data),
+    tagline: data.tagline,
+    intro: data.intro ?? data.bio,
+    sections: normalizeSections(data),
   };
 }
 
-function parseProfileData(raw: string): ProfileData {
+export function parseProfileData(raw: string): ProfileData {
   try {
     const parsed = ProfileDataSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : {};
+    return parsed.success ? parsed.data : { sections: [] };
   } catch {
-    return {};
+    return { sections: [] };
   }
+}
+
+/** Un perfil guardado con el formato antiguo (bio + media) se ve como uno nuevo. */
+function normalizeSections(data: ProfileData): Section[] {
+  if (data.sections.length) return data.sections;
+  const heredadas: Section[] = [];
+  if (data.media?.length) heredadas.push({ type: "galeria", items: data.media });
+  return heredadas;
 }
