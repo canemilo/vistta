@@ -18,8 +18,20 @@ export default tseslint.config(
   {
     // Aquí console.log no es un olvido de depuración: son las herramientas de
     // línea de órdenes y el arranque del servidor, y su salida es la interfaz.
-    files: ["scripts/**/*.ts", "seed/**/*.ts", "src/server.ts", "src/migrate.ts"],
+    files: [
+      "scripts/**/*.ts",
+      "scripts/**/*.mjs",
+      "seed/**/*.ts",
+      "src/server.ts",
+      "src/migrate.ts",
+    ],
     rules: { "no-console": "off" },
+  },
+  {
+    // Los scripts .mjs los ejecuta `node` a secas, sin transpilador: usan los
+    // globales de Node y no pasan por la configuración de TypeScript.
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { process: "readonly", console: "readonly" } },
   },
   prettier
 );

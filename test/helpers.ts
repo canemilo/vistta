@@ -31,7 +31,19 @@ const CONFIG_DE_PRUEBAS: Config = Object.freeze({
   SUPABASE_MEDIA_BUCKET: "vistta-media",
   BIZUM_TELEFONO: "600000000",
   PAYPAL_DESTINO: "pagos@vistta.test",
+  // Sin configurar a propósito: es el estado de un despliegue recién montado, y
+  // hay una prueba que comprueba que la aplicación lo dice en vez de enseñar un
+  // aviso legal con huecos. test/legal.spec.ts monta otra app con los cuatro.
+  TITULAR_NOMBRE: undefined,
+  TITULAR_IDENTIFICACION: undefined,
+  TITULAR_DIRECCION: undefined,
+  CONTACTO_LEGAL: undefined,
 });
+
+/** La misma configuración con lo que se cambie, para probar otros despliegues. */
+export function configDePruebasCon(cambios: Partial<Config>): Config {
+  return Object.freeze({ ...CONFIG_DE_PRUEBAS, ...cambios });
+}
 
 const pool = createPool(TEST_DATABASE_URL);
 export const db: Db = createDb(pool);

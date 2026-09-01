@@ -8,6 +8,7 @@ import { mediaRoutes } from "./routes/media";
 import { profilesRoutes } from "./routes/profiles";
 import { adminRoutes } from "./routes/admin";
 import { billingRoutes } from "./routes/billing";
+import { legalRoutes } from "./routes/legal";
 
 /**
  * Monta la app con sus dependencias ya resueltas. En Workers esto era un módulo
@@ -41,6 +42,7 @@ export function createApp(deps: Deps) {
   app.route("/", mediaRoutes(deps));
   app.route("/", billingRoutes(deps));
   app.route("/", adminRoutes(deps));
+  app.route("/", legalRoutes(deps));
 
   // Sin PII en los logs: método, PATRÓN de ruta y tipo de error.
   // El patrón, no la URL: la ruta real es /api/open/<token>, y ese token es una

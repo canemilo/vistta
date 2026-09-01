@@ -2,7 +2,7 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F, G y H.** El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F, G, H e I.** El plan está completo. El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -108,7 +108,12 @@
       SigV4 sin SDK; `scripts/backup.sh` con verificación antes de rotar; el CI construye y ARRANCA
       las dos imágenes; runbook en `DESPLIEGUE.md`. Ver «Decisiones y desvíos en H», más abajo.
       **Queda probarlo contra R2 y un VPS de verdad**: sin cuenta con tarjeta no se puede.
-- [ ] **I — Cumplimiento**: RGPD (art. 28, RAT, EIPD), AUP + notice-and-takedown.
+- [x] **I — Cumplimiento** — cerrado el 2026-09-01. Seis documentos en `legal/`, escritos contra el
+      sistema real y no sobre plantilla: términos, privacidad, contrato de encargado del art. 28,
+      política de uso aceptable con notice-and-takedown, registro de actividades del art. 30 y
+      análisis del art. 35. La identidad del titular sale de la configuración (`GET /api/legal`) y
+      la página `/legal` los sirve desde su única versión. Ver «Decisiones y desvíos en I».
+      **Falta que un abogado los revise**, y las cuatro cosas de `legal/README.md`.
 
 ## 2.1. Desvíos del plan en D
 
@@ -332,6 +337,58 @@ con error y no borra nada: al revés, una noche con la base caída se llevaría 
 buenas. Se ha restaurado de verdad —11 tablas y las filas vuelven—, no solo generado. **Los medios no
 están en esas copias**: viven en R2.
 
+## 2.7. Decisiones y desvíos en I
+
+**Los documentos describen ESTE sistema.** No son una plantilla rellenada: el registro del art. 30
+se escribió leyendo el esquema tabla por tabla, y por eso dice cosas que una plantilla no diría —que
+no hay columna para el correo del cliente, que la IP se guarda hasheada, que la marca de agua no
+lleva ningún dato del que mira—. Cuando cambie el esquema, cambian ellos.
+
+**Tres hallazgos del inventario que conviene no perder**, porque son propiedades del diseño que hay
+que conservar y que un cambio inocente puede destruir:
+
+1. **No se almacena el correo ni el teléfono de los clientes.** No hay columna. Las cuentas las crea
+   un administrador y el contacto ocurre fuera del sistema. Es minimización real, no declarada.
+2. **La IP no se guarda en claro en ninguna tabla**: el límite de intentos guarda el SHA-256 de
+   `ámbito:identidad`. Los documentos dicen que eso es **seudonimización y no anonimización**,
+   porque el espacio de direcciones es enumerable. Decir lo contrario habría sido cómodo y falso.
+3. **Vistta no sabe quién abre un pase.** No guarda identidad, correo, IP ni dispositivo del
+   destinatario, y la marca de agua lleva el pase y la hora, no a la persona. Añadir analítica de
+   aperturas obliga a rehacer el RAT, el contrato del art. 28 y la EIPD, en ese orden.
+
+**La EIPD del art. 35 no es obligatoria, y el documento explica por qué.** Se examinan los tres
+supuestos del art. 35.3 y los criterios de la AEPD uno a uno. Lo útil no es la conclusión sino el
+razonamiento: la responsabilidad proactiva del art. 5.2 se demuestra con el análisis, no con el
+veredicto. El análisis de riesgos se hizo igualmente, y hay dos con riesgo residual que **no se
+puede bajar más**: que salga una copia del viewer (nada impide una captura) y que se suba contenido
+ilícito (no hay detección automática, y es una decisión consciente que hay que revisar si el
+servicio crece).
+
+**La identidad del titular sale de la configuración, no del texto.** Misma razón que el teléfono del
+Bizum: son datos del negocio, cambian sin que cambie el software y en el despliegue de otro no son
+los mismos. `GET /api/legal` es **pública y sin sesión**, a propósito: quien necesita avisar de un
+contenido suele ser alguien que no es cliente —la persona que aparece en una foto, o quien recibió
+el enlace—, y exigirle una cuenta convertiría el procedimiento de retirada en un trámite imposible.
+
+**Sin configurar, la aplicación lo dice.** Si faltan los cuatro datos, `/legal` avisa en grande de
+que los documentos no están en vigor y los huecos salen como «(pendiente de configurar)». Enseñar un
+aviso legal con los marcadores crudos parecería un error de programación; con el hueco relleno de
+nada, parecería un texto vigente. Las dos cosas son peores que decirlo.
+
+**Solo se publican cuatro de los seis.** El registro del art. 30 y el análisis del art. 35 son
+internos. El copiador los deja fuera **por nombre**, no filtrando por extensión: copiar todo lo que
+acabe en `.md` haría que el próximo documento interno que alguien escriba se publicase solo, sin que
+nadie tomara esa decisión. Hay dos pruebas: una falla si un interno aparece en la lista de públicos,
+y otra si se añade un documento a `legal/` sin clasificarlo en ninguna de las dos listas.
+
+**Un enlace muerto no cierra un aviso.** La AUP lo dice porque es una particularidad de este
+producto: un pase se abre una sola vez, así que cuando llegue una denuncia lo más probable es que el
+enlace ya no funcione. El contenido puede seguir en la cuenta y volver a enviarse. Se actúa sobre el
+contenido y sobre la cuenta, no sobre el enlace.
+
+**El enlace legal está en la pantalla del DESTINATARIO**, no solo en el panel. Quien más
+probablemente necesite el procedimiento de retirada es justamente quien no tiene cuenta.
+
 ## 3. Fallos conocidos
 
 Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los
@@ -449,5 +506,8 @@ rómpelo a propósito y comprueba que se pone rojo.
 - [x] Producción reproducible: las dos imágenes construyen y arrancan en el CI, la pila entera se
       ha levantado en local (Caddy con TLS, migraciones, API sana) y la copia de seguridad se ha
       restaurado de verdad. Falta el estreno contra R2 y un VPS.
-- [ ] Legal (términos, AUP, RGPD) revisado.
+- [~] Legal: los seis documentos existen, describen el sistema real y son coherentes con el código
+  (`legal/`). **Falta la revisión de un abogado** y las cuatro tareas previas al lanzamiento de
+  `legal/README.md`: rellenar el titular, fijar la jurisdicción del VPS y del bucket, guardar el
+  contrato de encargado de cada proveedor y decidir la retención del log de acceso de Caddy.
 - [ ] MVP validado (sin tarjeta) y, tras validar, producción en VPS + R2.

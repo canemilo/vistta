@@ -88,6 +88,24 @@ const ConfigSchema = z.object({
    */
   BIZUM_TELEFONO: opcional(z.string().min(1)),
   PAYPAL_DESTINO: opcional(z.string().min(1)),
+
+  /*
+   * Identidad del titular y contacto legal.
+   *
+   * Van en la configuración por la misma razón que el teléfono del Bizum: son
+   * datos del negocio que cambian sin que cambie el software, y en el
+   * despliegue de otro no son los mismos. Los documentos de `legal/` llevan
+   * marcadores y estos valores los sustituyen al mostrarlos.
+   *
+   * Son PÚBLICOS por definición: un aviso legal sin nombre ni dirección no es
+   * un aviso legal. `CONTACTO_LEGAL` es además la dirección a la que se avisa
+   * de un contenido, así que sin ella el procedimiento de retirada es papel
+   * mojado; la aplicación lo dice en vez de enseñar un documento con huecos.
+   */
+  TITULAR_NOMBRE: opcional(z.string().min(1)),
+  TITULAR_IDENTIFICACION: opcional(z.string().min(1)),
+  TITULAR_DIRECCION: opcional(z.string().min(1)),
+  CONTACTO_LEGAL: opcional(z.string().email()),
 });
 
 export type Config = Readonly<z.infer<typeof ConfigSchema>>;

@@ -164,6 +164,19 @@
       Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas volver
       a verlo, pide uno nuevo a quien te lo envió.
     </p>
+    <!--
+      El enlace legal va aquí, en la pantalla del DESTINATARIO, y no solo en el
+      panel. Quien más probablemente necesite avisar de un contenido es
+      justamente esta persona —o alguien que aparece en él—, y no tiene cuenta:
+      dejar el procedimiento de retirada solo detrás del login lo haría inútil.
+      `<a>` normal y no `routerLink`, para no meterle el router al bundle más
+      ligero de la aplicación.
+    -->
+    <p class="mt-4 font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">
+      <a href="/legal" class="underline hover:text-emerald-400">Aviso legal y privacidad</a>
+      <span aria-hidden="true"> · </span>
+      <a href="/legal" class="underline hover:text-emerald-400">Avisar de un contenido</a>
+    </p>
   </footer>
 </article>
 

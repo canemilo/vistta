@@ -77,6 +77,14 @@ Las que no se pueden olvidar:
   de medios ya emitidas**, incluidos los pases abiertos ahora mismo.
 - `STORAGE_DRIVER=r2` más las cuatro `R2_*`.
 
+Y las cuatro del aviso legal, que **no son opcionales si el servicio se abre al
+público**: `TITULAR_NOMBRE`, `TITULAR_IDENTIFICACION`, `TITULAR_DIRECCION` y
+`CONTACTO_LEGAL`. Sin las cuatro, la página `/legal` avisa de que el despliegue
+no está configurado y los documentos salen con los huecos marcados. Es
+deliberado: un aviso legal a medias que aparente estar en vigor es peor que no
+tenerlo, y sin `CONTACTO_LEGAL` el procedimiento de retirada de contenido no
+lleva a ninguna parte.
+
 Una variable opcional puede quedarse **vacía**: se trata como ausente. Antes no
 era así y la API entraba en bucle de reinicio quejándose de una URL de Supabase
 que nadie había pedido usar; hay una prueba que lo fija (`test/config.spec.ts`).
@@ -164,11 +172,31 @@ docker compose -f compose.prod.yml up -d       # `migrar` corre antes que `api`
 Los certificados sobreviven porque están en un volumen (`caddy_data`). Sin eso,
 cada despliegue pediría certificados nuevos y Let's Encrypt acabaría limitando.
 
+## Legal
+
+Los documentos viven en `legal/`, en Markdown, y **tienen una sola versión
+buena**: la del repositorio. La aplicación los sirve desde ahí; no hay una copia
+en el código del panel que pueda separarse de la original en la primera
+corrección.
+
+**Solo se publican cuatro**: términos, privacidad, contrato de encargado y uso
+aceptable. El registro de actividades (art. 30) y el análisis de riesgos
+(art. 35) son internos —se entregan a la autoridad de control si los pide— y el
+copiador los deja fuera por nombre, no por casualidad. Hay pruebas que fallan si
+alguien los mete en la lista de públicos o si añade un documento sin decidir a
+cuál de las dos listas pertenece.
+
+Antes de abrir al público, `legal/README.md` tiene la lista de lo que falta:
+rellenar el titular, fijar la jurisdicción del VPS y del bucket, guardar el
+contrato de encargado de cada proveedor, decidir la retención del registro de
+acceso de Caddy y **que un abogado revise los textos**.
+
 ## Qué comprobar después de desplegar
 
 ```bash
 curl -sI https://TU-DOMINIO/ | grep -i content-security-policy   # script-src 'self'
 curl -s  https://TU-DOMINIO/health                               # {"ok":true}
+curl -s  https://TU-DOMINIO/api/legal | grep '"completo":true'   # el aviso legal está puesto
 ```
 
 Y a ojo, una vez: abrir un pase de prueba y mirar que **la foto lleva la marca

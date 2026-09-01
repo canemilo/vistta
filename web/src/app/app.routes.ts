@@ -6,6 +6,9 @@ export const routes: Routes = [
   // El viewer va aparte para que su bundle sea mínimo.
   { path: 'v/:token', loadComponent: () => import('./viewer/viewer').then((m) => m.Viewer) },
   { path: 'demo', loadComponent: () => import('./demo/demo').then((m) => m.Demo) },
+  // Aparte y perezosa: el renderizador de Markdown solo se descarga si alguien
+  // entra aquí, y el bundle del viewer no se entera.
+  { path: 'legal', loadComponent: () => import('./legal/legal').then((m) => m.Legal) },
   // Administración. La ruta no está enlazada desde ninguna parte y el guardia de
   // verdad está en el servidor: a una sesión sin rol admin la API le responde
   // 404 en todo /api/admin/*, así que esta pantalla no le sirve de nada.

@@ -197,10 +197,23 @@ no se negocian:
 - La comprobación de fuentes de la marca de agua corre DENTRO de la construcción de la imagen: si el
   texto SVG no se dibuja, la imagen no llega a existir.
 
-## Cumplimiento
+## Cumplimiento (documentos desde I)
 
-- RGPD: usuario = responsable; Vistta = encargado (art. 28).
+- RGPD: usuario = responsable; Vistta = encargado (art. 28). Los dos papeles conviven y **no se
+  mezclan**: de los datos de la CUENTA Vistta sí es responsable.
 - AUP con notice-and-takedown; **tolerancia cero** a CSAM y a contenido no consentido.
+- Los documentos viven en `legal/` y **describen este sistema**, no una plantilla: se escribieron
+  leyendo el esquema. Cuando cambie el esquema, cambian ellos.
+- **Solo cuatro son públicos** (términos, privacidad, encargado, AUP). `rat.md` y `eipd.md` son
+  internos; `scripts/copiar-legal.mjs` los excluye **por nombre**, no por extensión, y hay pruebas
+  que fallan si alguien los publica o si añade un documento sin clasificar.
+- Tres propiedades del diseño que los documentos declaran y que **no se pueden romper sin rehacer
+  el RAT, el contrato del art. 28 y la EIPD**: no se guarda el correo ni el teléfono del cliente (no
+  hay columna), la IP solo se guarda hasheada, y **Vistta no sabe quién abre un pase** —la marca de
+  agua lleva el pase y la hora, nunca datos del que mira—.
+- La identidad del titular sale de la CONFIGURACIÓN (`GET /api/legal`, pública y sin sesión: quien
+  avisa de un contenido no suele ser cliente). Sin los cuatro datos, `/legal` dice que no está
+  configurado en vez de enseñar un aviso legal con huecos.
 
 ## Estructura del backend (desde D0)
 

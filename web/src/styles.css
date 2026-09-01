@@ -65,3 +65,105 @@ body {
   outline: 2px solid var(--color-acento);
   outline-offset: 3px;
 }
+
+/*
+ * Los documentos legales.
+ *
+ * Van en los estilos globales y no en el componente porque el HTML lo pinta
+ * `[innerHTML]`: la encapsulación de Angular marca con atributos lo que hay en
+ * la plantilla, y ese contenido no pasa por ahí. Un estilo de componente no lo
+ * alcanzaría.
+ */
+.documento {
+  max-width: 68ch;
+  color: #b9d2ce;
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  line-height: 1.8;
+}
+.documento h1,
+.documento h2,
+.documento h3 {
+  font-family: var(--font-mono);
+  color: #e6f4f1;
+  line-height: 1.3;
+  margin-top: 2.2em;
+  margin-bottom: 0.6em;
+}
+.documento h1 {
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+.documento h2 {
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  border-top: 1px solid #16303a;
+  padding-top: 1.6em;
+}
+.documento h3 {
+  font-size: 0.9rem;
+  color: #7fd8bd;
+}
+.documento p,
+.documento ul,
+.documento ol {
+  margin-bottom: 1.1em;
+}
+.documento ul,
+.documento ol {
+  padding-left: 1.4em;
+}
+.documento li {
+  margin-bottom: 0.4em;
+}
+.documento strong {
+  color: #cfe3e0;
+  font-weight: 600;
+}
+.documento code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: #8fb0b2;
+  background: #081420;
+  border: 1px solid #16303a;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.documento a {
+  color: var(--color-acento);
+  text-decoration: underline;
+}
+.documento blockquote {
+  border-left: 2px solid #1c3b44;
+  padding-left: 1.1em;
+  margin: 1.4em 0;
+  color: #8fb0b2;
+}
+/* Las tablas del RAT y de los plazos son anchas: que se desplacen ellas y no
+   la página entera. */
+.documento table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin-bottom: 1.4em;
+}
+.documento th,
+.documento td {
+  border: 1px solid #16303a;
+  padding: 0.6em 0.8em;
+  text-align: left;
+  vertical-align: top;
+}
+.documento th {
+  color: #8fb0b2;
+  background: #081420;
+  white-space: nowrap;
+}
+.documento hr {
+  border: 0;
+  border-top: 1px solid #16303a;
+  margin: 2.4em 0;
+}

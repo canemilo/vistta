@@ -57,6 +57,13 @@ services:
       SUPABASE_MEDIA_BUCKET: ${SUPABASE_MEDIA_BUCKET:-vistta-media}
       BIZUM_TELEFONO: ${BIZUM_TELEFONO:-}
       PAYPAL_DESTINO: ${PAYPAL_DESTINO:-}
+      # Identidad del titular y contacto de avisos. Sin los cuatro, la página
+      # /legal dice que el despliegue no está configurado en vez de enseñar un
+      # aviso legal con huecos.
+      TITULAR_NOMBRE: ${TITULAR_NOMBRE:-}
+      TITULAR_IDENTIFICACION: ${TITULAR_IDENTIFICACION:-}
+      TITULAR_DIRECCION: ${TITULAR_DIRECCION:-}
+      CONTACTO_LEGAL: ${CONTACTO_LEGAL:-}
     # Tampoco publica puerto: solo entra por Caddy.
     depends_on:
       db:

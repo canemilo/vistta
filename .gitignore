@@ -18,3 +18,6 @@ repomix-output.xml
 
 # Volcados de la base en el servidor. Nunca al repo.
 copias/
+
+# Copias de los documentos legales públicos; las genera scripts/copiar-legal.mjs.
+web/public/legal/
