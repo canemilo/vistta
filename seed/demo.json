@@ -107,5 +107,119 @@
         }
       ]
     }
+  },
+  "costavega": {
+    "displayName": "Costa Vega Inmobiliaria",
+    "brandColor": "#b4623a",
+    "data": {
+      "tagline": "Obra nueva y segunda mano en la franja de costa.",
+      "intro": "Marta, esta es la carpeta de la visita del jueves. Va en el orden en que las veremos: primero la del Camino Norte, que es la que más se ajusta a lo que me contaste, y después las dos alternativas por si esa no acaba de convencerte.",
+      "sections": [
+        {
+          "type": "texto",
+          "title": "Antes de la visita",
+          "body": "Quedamos a las 10:00 en la oficina y vamos juntas; son veinte minutos en coche entre la primera y la segunda.\n\nLa casa del Camino Norte está libre de cargas y la escritura al día. Precio de salida 268.000 €, y el propietario acepta aplazar parte de la entrada hasta septiembre. Trae el DNI: en la promoción piden firmar el registro de visitas."
+        },
+        {
+          "type": "proyecto",
+          "title": "Casa del Camino Norte",
+          "body": "Cuatro dormitorios, 180 m² en dos plantas y patio orientado al sur. Las fotos son de la semana pasada, con la casa habitada: verás muebles que no entran en la venta.",
+          "items": [
+            {
+              "key": "u/p_costavega/01.jpg",
+              "type": "image",
+              "caption": "Acceso desde el camino"
+            },
+            {
+              "key": "u/p_costavega/02.jpg",
+              "type": "image",
+              "caption": "Patio sur, media tarde"
+            },
+            {
+              "key": "u/p_costavega/03.jpg",
+              "type": "image",
+              "caption": "Salón, planta baja"
+            },
+            {
+              "key": "u/p_costavega/04.jpg",
+              "type": "image",
+              "caption": "Escalera y hueco de luz"
+            }
+          ]
+        },
+        {
+          "type": "galeria",
+          "title": "Las dos alternativas",
+          "items": [
+            {
+              "key": "u/p_costavega/05.jpg",
+              "type": "image",
+              "caption": "Nave rehabilitada, casco antiguo"
+            },
+            {
+              "key": "u/p_costavega/06.jpg",
+              "type": "image",
+              "caption": "Misma finca, fachada trasera"
+            },
+            {
+              "key": "u/p_costavega/07.jpg",
+              "type": "image",
+              "caption": "Adosado en la segunda línea"
+            },
+            {
+              "key": "u/p_costavega/08.jpg",
+              "type": "image",
+              "caption": "Su parcela, sin cerrar"
+            }
+          ]
+        },
+        {
+          "type": "texto",
+          "title": "Cómo seguimos",
+          "body": "Si alguna te encaja, redacto la hoja de reserva el mismo jueves y la dejamos firmada antes de que se mueva el precio.\n\nLos planos acotados, la nota simple y el certificado energético te los mando aparte por correo. Esta página es solo para que llegues a la visita sabiendo lo que vas a ver."
+        }
+      ]
+    }
+  },
+  "rama": {
+    "displayName": "Rama · masaje terapéutico",
+    "brandColor": "#6f8b74",
+    "data": {
+      "tagline": "Masaje terapéutico y readaptación al esfuerzo.",
+      "intro": "Elena, aquí tienes por escrito el plan que hablamos tras la valoración del lunes, con los tiempos y lo que toca en cada sesión. Si algo no encaja con tus horarios, lo movemos sin problema.",
+      "sections": [
+        {
+          "type": "texto",
+          "title": "Lo que vimos en la valoración",
+          "body": "Contractura en el trapecio derecho y rotación cervical limitada hacia ese lado. No hay signos de nada que requiera derivación: es sobrecarga mantenida, de origen postural.\n\nEl trabajo de camilla es la mitad del asunto. La otra mitad es subir el monitor a la altura de los ojos y hacer los tres ejercicios de casa. Sin eso, volveríamos a empezar en dos meses."
+        },
+        {
+          "type": "texto",
+          "title": "El plan, sesión a sesión",
+          "body": "Semanas 1 y 2 — dos sesiones de 50 minutos por semana. Descarga del trapecio y del elevador de la escápula, y movilización cervical suave al final.\n\nSemanas 3 y 4 — una sesión por semana. Se mantiene la descarga y entra trabajo activo: rotaciones controladas y fortalecimiento del romboides.\n\nA partir de la quinta — una sesión de mantenimiento cada tres semanas, si la movilidad se ha estabilizado.\n\nEs una estimación, no un contrato: si a la tercera sesión vas mejor de lo previsto, acortamos."
+        },
+        {
+          "type": "galeria",
+          "title": "El espacio",
+          "items": [
+            {
+              "key": "u/p_rama/01.jpg",
+              "type": "image",
+              "caption": "Sala de tratamiento"
+            },
+            {
+              "key": "u/p_rama/02.jpg",
+              "type": "image",
+              "caption": "Entrada y zona de espera"
+            }
+          ]
+        },
+        {
+          "type": "texto",
+          "title": "Horarios y condiciones",
+          "body": "Martes y jueves de 9:00 a 14:00 y de 16:00 a 20:00. Los sábados solo por la mañana y con cita cerrada la semana anterior.\n\nSesión suelta 45 €. Bono de cinco 200 €, con tres meses de validez. Las cancelaciones con menos de 24 horas de aviso cuentan como sesión dada."
+        }
+      ]
+    }
   }
 }

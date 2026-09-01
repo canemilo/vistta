@@ -35,11 +35,18 @@ y su **consumo atómico de un solo uso**.
     pnpm dev:all                   # API + frontend Angular a la vez
 
 `pnpm setup:local` hace de un tirón el `db:up`, el `db:migrate` y el contenido de
-demostración (dos cuentas, contraseña `demo-vistta-2026`).
+demostración: cuatro cuentas (`nordeste`, `marina`, `costavega`, `rama`), todas con
+contraseña `demo-vistta-2026`. Son cuatro oficios distintos a propósito —fotografía,
+inmobiliaria y masaje terapéutico— para ver que la plantilla no está atada a un sector.
 
 ## Pruebas
 
     pnpm test
+
+El `docker-compose` levanta **dos** bases en el mismo contenedor: `vistta` para
+desarrollo y `vistta_test` para las pruebas. Están separadas porque el arnés hace
+`TRUNCATE` entre tests: con una sola, `pnpm test` se llevaría por delante lo que
+acabas de sembrar con `pnpm db:seed:local`.
 
 Corren contra **PostgreSQL de verdad**, no contra un doble en memoria. No es
 capricho: el invariante del producto (un pase se consume una vez y solo una) es

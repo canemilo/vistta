@@ -10,13 +10,16 @@ services:
     environment:
       POSTGRES_USER: vistta
       POSTGRES_PASSWORD: vistta
-      POSTGRES_DB: vistta_test
+      # Base de desarrollo. La de pruebas (vistta_test) la crea el script de init:
+      # separadas porque el arnés hace TRUNCATE y se llevaría la siembra por delante.
+      POSTGRES_DB: vistta
     ports:
       - "5433:5432"
     volumes:
       - vistta-pgdata:/var/lib/postgresql/data
+      - ./docker/init-vistta-test.sql:/docker-entrypoint-initdb.d/init-vistta-test.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vistta -d vistta_test"]
+      test: ["CMD-SHELL", "pg_isready -U vistta -d vistta"]
       interval: 5s
       timeout: 5s
       retries: 20
