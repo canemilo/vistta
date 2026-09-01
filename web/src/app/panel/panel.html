@@ -2,7 +2,7 @@
   <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales) -->
   <div class="flex min-h-screen items-center justify-center px-6">
     <div class="w-full max-w-[420px] rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 p-6">
-      <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">vistta · panel</p>
+      <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">vistta · panel</p>
       <label
         class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
         for="usuario"
@@ -68,15 +68,24 @@
   />
 } @else {
   <!-- Edición del contenido -->
-  <div class="mx-auto max-w-[860px] px-6 pb-24">
+  <main id="contenido" class="mx-auto max-w-[860px] px-6 pb-24">
     <header
       class="flex flex-wrap items-center justify-between gap-4 border-b border-[#16303a] py-5"
     >
       <div>
-        <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">
+        <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">
           vistta · panel
         </p>
-        <p class="mt-1 font-mono text-[11px] text-emerald-400">Sesión abierta</p>
+        <p class="mt-1 font-mono text-[11px] text-emerald-400">
+          Sesión abierta ·
+          <button
+            type="button"
+            (click)="cambiandoClave.set(!cambiandoClave())"
+            class="underline hover:text-emerald-300"
+          >
+            cambiar contraseña
+          </button>
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <select
@@ -99,6 +108,87 @@
         </button>
       </div>
     </header>
+
+    <!--
+      Cambiar la propia contraseña.
+
+      Existe porque el administrador entrega una temporal y le dice al cliente
+      que la cambie al entrar: sin este formulario, esa instrucción no se puede
+      cumplir y la temporal se queda puesta para siempre.
+
+      Pide la actual aunque haya sesión abierta: un ordenador sin bloquear no
+      puede convertirse en un cambio de credenciales.
+    -->
+    @if (cambiandoClave()) {
+      <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+          Cambiar contraseña
+        </h2>
+        <div class="mt-4 grid gap-3 sm:max-w-[420px]">
+          <label
+            class="font-mono text-[10px] tracking-[0.2em] text-[#63848b] uppercase"
+            for="clave-actual"
+          >
+            Contraseña actual
+          </label>
+          <input
+            id="clave-actual"
+            type="password"
+            autocomplete="current-password"
+            [value]="claveActual"
+            (input)="claveActual = $any($event.target).value"
+            class="rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          />
+
+          <label
+            class="mt-1 font-mono text-[10px] tracking-[0.2em] text-[#63848b] uppercase"
+            for="clave-nueva"
+          >
+            Contraseña nueva
+          </label>
+          <input
+            id="clave-nueva"
+            type="password"
+            autocomplete="new-password"
+            [value]="claveNueva"
+            (input)="claveNueva = $any($event.target).value"
+            aria-describedby="clave-ayuda"
+            class="rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          />
+          <p id="clave-ayuda" class="font-mono text-[10px] leading-[1.7] text-[#63848b]">
+            Diez caracteres o más. Al cambiarla se cerrarán las demás sesiones abiertas; esta se
+            queda dentro.
+          </p>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            (click)="cambiarClave()"
+            [disabled]="ocupado() || !claveActual || claveNueva.length < 10"
+            class="rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+          >
+            CAMBIAR
+          </button>
+          <button
+            type="button"
+            (click)="cambiandoClave.set(false)"
+            class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+          >
+            CANCELAR
+          </button>
+          @if (errorClave()) {
+            <span class="font-mono text-[11px] text-rose-400" role="alert">{{ errorClave() }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Va fuera del bloque de arriba porque al cambiarla el formulario se
+         cierra, y el aviso tiene que sobrevivir a ese cierre. -->
+    @if (claveCambiada()) {
+      <p class="mt-6 font-mono text-[11px] text-emerald-400" role="status">{{ claveCambiada() }}</p>
+    }
 
     <!--
       El aviso de borrado.
@@ -171,7 +261,7 @@
               </li>
             }
           </ul>
-          <p class="mt-3 font-mono text-[10px] text-[#5c7d84]">
+          <p class="mt-3 font-mono text-[10px] text-[#63848b]">
             El plan se activa cuando comprobemos el ingreso, a mano. El código caduca el
             {{ fechaCorta(pago.expiresAt) }}.
           </p>
@@ -199,7 +289,7 @@
       @if (viendoPlanes()) {
         <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">
+            <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
               Elegir plan
             </p>
             <select
@@ -227,13 +317,13 @@
               </button>
             }
           </div>
-          <p class="mt-3 font-mono text-[10px] text-[#5c7d84]">
+          <p class="mt-3 font-mono text-[10px] text-[#63848b]">
             Se paga por Bizum o PayPal y lo comprobamos a mano: no hay tarjeta ni cobro automático.
           </p>
           <button
             type="button"
             (click)="viendoPlanes.set(false)"
-            class="mt-3 font-mono text-[10px] tracking-[0.16em] text-[#5c7d84] hover:text-[#8fb0b2]"
+            class="mt-3 font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
           >
             CERRAR
           </button>
@@ -244,7 +334,7 @@
     <!-- Lo que el plan permite y lo que va gastado. Sin esto, el cliente solo
          descubre sus límites al chocar con ellos. -->
     @if (plan(); as p) {
-      <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-[#5c7d84]">
+      <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-[#63848b]">
         Plan {{ p.nombre }} · {{ uso().perfilesActivos }}/{{ p.limites.perfiles }} perfiles ·
         {{ uso().pasesAbiertos }}/{{ p.limites.pasesSimultaneos ?? '∞' }} pases abiertos ·
         @if (p.limites.retencionMs === null) {
@@ -291,7 +381,8 @@
         [value]="contenido().tagline ?? ''"
         (input)="actualizar({ tagline: $any($event.target).value })"
         placeholder="Fotografía de arquitectura y espacio construido."
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+        aria-label="Frase de presentación del perfil"
+        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
       />
 
       <label
@@ -306,7 +397,8 @@
         [value]="contenido().intro ?? ''"
         (input)="actualizar({ intro: $any($event.target).value })"
         placeholder="A quién va dirigido este pase y qué va a encontrar."
-        class="resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+        aria-label="Introducción del pase"
+        class="resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
       ></textarea>
     </section>
 
@@ -323,7 +415,7 @@
                   : 'Proyecto'
             }}
           </span>
-          <div class="flex items-center gap-3 font-mono text-[11px] text-[#4f7079]">
+          <div class="flex items-center gap-3 font-mono text-[11px] text-[#63848d]">
             <button
               type="button"
               (click)="moverSeccion(si, -1)"
@@ -350,7 +442,8 @@
           [value]="seccion.title ?? ''"
           (input)="editarSeccion(si, { title: $any($event.target).value })"
           placeholder="Título del bloque"
-          class="mt-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-[#cfe3e0] uppercase outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+          [attr.aria-label]="'Título del bloque ' + (si + 1)"
+          class="mt-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-[#cfe3e0] uppercase outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
         />
 
         @if (seccion.type !== 'galeria') {
@@ -359,14 +452,15 @@
             [value]="$any(seccion).body ?? ''"
             (input)="editarSeccion(si, $any({ body: $any($event.target).value }))"
             placeholder="Escribe aquí. Una línea en blanco separa párrafos."
-            class="mt-3 w-full resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+            [attr.aria-label]="'Texto del bloque ' + (si + 1)"
+            class="mt-3 w-full resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
           ></textarea>
         }
 
         @if (seccion.type !== 'texto') {
           <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             @for (foto of itemsDe(si); track foto.mediaId) {
-              <figure class="min-w-0">
+              <figure class="group min-w-0">
                 <div
                   class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
                 >
@@ -377,19 +471,26 @@
                       class="h-full w-full object-cover"
                     />
                   }
+                  <!-- Los índices son (si, $index): la sección y la foto DENTRO
+                       de ella. Antes se pasaba $index en los dos sitios, así que
+                       tocar el pie de una foto de la tercera sección editaba la
+                       primera. Y el botón de quitar era sr-only: existía solo
+                       para un lector de pantalla, y ni siquiera bien. -->
                   <button
                     type="button"
-                    (click)="quitarFoto($index, $count - $count + $index * 0 + $index)"
-                    class="sr-only"
+                    (click)="quitarFoto(si, $index)"
+                    [attr.aria-label]="'Quitar la foto ' + ($index + 1) + ' de ' + seccion.title"
+                    class="absolute top-2 right-2 rounded border border-[#1c3b44] bg-[#081420]/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-red-400/60 hover:text-red-300 focus-visible:opacity-100 group-hover:opacity-100"
                   >
-                    Quitar
+                    QUITAR
                   </button>
                 </div>
                 <input
                   [value]="foto.caption ?? ''"
-                  (input)="editarFoto($index, $index, $any($event.target).value)"
+                  (input)="editarFoto(si, $index, $any($event.target).value)"
+                  [attr.aria-label]="'Pie de la foto ' + ($index + 1)"
                   placeholder="Pie de foto"
-                  class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-[#8fb0b2] outline-none placeholder:text-[#3f6570] focus:border-[#1c3b44]"
+                  class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-[#8fb0b2] outline-none placeholder:text-[#5e848f] focus:border-[#1c3b44]"
                 />
               </figure>
             }
@@ -416,7 +517,7 @@
             en cada apertura. Callarlo dejaría al cliente creyendo que su vídeo
             lleva una protección que no lleva, y de eso va la mitad del producto.
           -->
-          <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#5c7d84]">
+          <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
             Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y
             los PDF se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una
             captura de pantalla.
@@ -471,7 +572,7 @@
       >
         GENERAR ENLACE
       </button>
-      <span class="font-mono text-[11px] text-[#4f7079]">
+      <span class="font-mono text-[11px] text-[#63848d]">
         {{ totalFotos() }} {{ totalFotos() === 1 ? 'foto' : 'fotos' }}
       </span>
       @if (aviso()) {
@@ -500,9 +601,9 @@
           {{ copiado() ? 'COPIADO' : 'COPIAR' }}
         </button>
       </div>
-      <p class="mt-2 font-mono text-[11px] text-[#4f7079]">
+      <p class="mt-2 font-mono text-[11px] text-[#63848d]">
         Caduca a los 15 minutos y se cierra en cuanto lo abran.
       </p>
     }
-  </div>
+  </main>
 }

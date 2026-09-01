@@ -1,9 +1,14 @@
 <!-- Barra de estado: la capa "máquina" que enmarca el trabajo del cliente. -->
-<div class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md">
+<div
+  class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md"
+  role="complementary"
+  aria-label="Estado del pase"
+>
   <div class="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-6 py-3">
     <div class="flex min-w-0 items-center gap-2.5">
       <span
         class="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(52,211,153,0.55)]"
+        aria-hidden="true"
       ></span>
       <span class="truncate font-mono text-[12px] text-[#8fb0b2]">{{ enlace() }}</span>
     </div>
@@ -11,7 +16,7 @@
   </div>
 </div>
 
-<article class="mx-auto max-w-[1040px] px-6 pb-24">
+<article id="contenido" class="mx-auto max-w-[1040px] px-6 pb-24" role="main">
   <!-- Hero: quién presenta y en qué condiciones se está viendo -->
   <header class="surge border-b border-[#12262f] pt-16 pb-12 md:pt-24 md:pb-16">
     <p class="font-mono text-[10px] tracking-[0.32em] text-emerald-400/80 uppercase">
@@ -30,7 +35,7 @@
       </p>
     }
     <p
-      class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#4f7079] uppercase"
+      class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#63848d] uppercase"
     >
       @if (hora()) {
         <span>Abierto {{ hora() }}</span>
@@ -66,7 +71,7 @@
           </h2>
         }
         @if (seccion.items.length) {
-          <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-[#3f6570]">
+          <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-[#5e848f]">
             {{ seccion.items.length }} {{ seccion.items.length === 1 ? 'foto' : 'fotos' }}
           </p>
         }
@@ -82,29 +87,41 @@
         }
 
         @if (seccion.items.length) {
-          <div
-            class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6"
-            [class.mt-0]="!seccion.body"
-          >
+          <!-- Rejilla justificada: cada foto ocupa un ancho proporcional a lo
+               apaisada que sea, así que la fila cierra exacta y todas acaban
+               con la misma altura sin recortar ninguna. Ver `flex()`. -->
+          <div class="mt-8 flex flex-wrap gap-3" [class.mt-0]="!seccion.body">
             @for (foto of seccion.items; track foto.url) {
-              <figure class="group col-span-1 min-w-0 sm:col-span-1 {{ ancho($index) }}">
+              <figure
+                class="group min-w-[min(100%,220px)]"
+                [style.flex]="flex(foto)"
+                [style.max-width]="topeDeAncho(foto)"
+              >
                 <div
-                  class="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-[#16303a] {{
-                    proporcion($index)
-                  }}"
+                  class="relative w-full overflow-hidden rounded-lg border border-[#16303a]"
                   [style.background-image]="fondo($index, foto)"
                   [style.background-size]="'cover'"
                   [style.aspect-ratio]="relacion(foto)"
                 >
+                  <!--
+                    `alt` con el pie si lo hay, y si no una descripción de
+                    posición. Vacío sería declararla decorativa, y no lo es: es
+                    el trabajo que se está enseñando.
+
+                    Se quitó `draggable="false"`: no protege nada —la imagen se
+                    descarga igual— y estorba a quien quiere arrastrarla a una
+                    carpeta. La protección real es que los bytes servidos llevan
+                    la marca de la visita incrustada.
+                  -->
                   <img
                     [src]="foto.url"
-                    [alt]="foto.caption ?? ''"
+                    [alt]="foto.caption ?? 'Imagen ' + ($index + 1) + ' de ' + seccion.title"
                     [width]="foto.width"
                     [height]="foto.height"
                     loading="lazy"
-                    draggable="false"
+                    decoding="async"
                     (error)="ocultar($event)"
-                    class="h-full w-full max-w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                    class="h-full w-full max-w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                   />
                   <!-- Aquí había un sello superpuesto por CSS. Se ha quitado en el
                        bloque D, y no por estilo: no era una marca de agua. Estaba
@@ -114,7 +131,7 @@
                        /m/*, y por eso no hay nada que pintar por delante. -->
                 </div>
                 @if (foto.caption) {
-                  <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#5c7d84]">
+                  <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#63848b]">
                     {{ foto.caption }}
                   </figcaption>
                 }
@@ -125,12 +142,12 @@
       </div>
     </section>
   } @empty {
-    <p class="mt-20 font-mono text-[12px] text-[#4f7079]">Este pase todavía no tiene contenido.</p>
+    <p class="mt-20 font-mono text-[12px] text-[#63848d]">Este pase todavía no tiene contenido.</p>
   }
 
   <!-- Sello de cierre: el documento termina declarando su propia caducidad -->
   <footer class="surge mt-24 rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6">
-    <p class="font-mono text-[10px] tracking-[0.28em] text-[#3f6570] uppercase">Pase cerrado</p>
+    <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">Pase cerrado</p>
     <p class="mt-3 font-mono text-[12px] text-[#8fb0b2]">{{ marca() }}</p>
     <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
       Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas volver

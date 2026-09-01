@@ -9,21 +9,30 @@
   }
 
   @case ('cargando') {
-    <div class="flex min-h-screen items-center justify-center px-6">
-      <p class="font-mono text-[12px] tracking-[0.28em] text-[#3f6570] uppercase">
+    <!-- `role="status"` para que un lector de pantalla anuncie el cambio sin
+         robar el foco. Es una pantalla que muchos clientes abren desde el móvil
+         y una sola vez: si no se anuncia, no se enteran de que está pasando
+         algo. -->
+    <div class="flex min-h-screen items-center justify-center px-6" role="status">
+      <p class="font-mono text-[12px] tracking-[0.28em] text-[#5e848f] uppercase">
         Abriendo el pase…
       </p>
     </div>
   }
 
   @default {
-    <div class="flex min-h-screen items-center justify-center px-6">
-      <div class="w-full max-w-[420px] rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6">
+    <main class="flex min-h-screen items-center justify-center px-6">
+      <div
+        class="w-full max-w-[420px] rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6"
+        role="alert"
+      >
         <div class="flex items-center gap-2.5">
-          <span class="h-2 w-2 rounded-full bg-slate-500/70"></span>
-          <p class="font-mono text-[10px] tracking-[0.28em] text-[#4f7079] uppercase">
+          <!-- El punto es decorativo: el estado ya lo dice el texto de al lado.
+               Sin esto, un lector lo lee como una imagen sin descripción. -->
+          <span class="h-2 w-2 rounded-full bg-slate-500/70" aria-hidden="true"></span>
+          <h1 class="font-mono text-[10px] tracking-[0.28em] text-[#63848d] uppercase">
             Pase cerrado
-          </p>
+          </h1>
         </div>
         <p class="mt-4 font-serif text-[16px] leading-[1.7] text-[#b9d2ce]">
           Este enlace ya se usó o ha caducado.
@@ -32,6 +41,6 @@
           Pide uno nuevo a quien te lo envió: cada pase se abre una sola vez.
         </p>
       </div>
-    </div>
+    </main>
   }
 }

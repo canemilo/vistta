@@ -23,6 +23,18 @@ export const PanelLoginSchema = z.object({
  * bytes reales. Si lo declarase el cliente, un vídeo podría hacerse pasar por
  * imagen y entrar por el camino de Sharp.
  */
+/**
+ * Cambio de contraseña por el propio cliente.
+ *
+ * El mínimo de 10 es más alto que el del login (8) a propósito: al entrar hay
+ * que aceptar contraseñas viejas que ya existen, pero al poner una nueva no hay
+ * ninguna razón para admitir una peor de la que se puede exigir hoy.
+ */
+export const CambiarPasswordSchema = z.object({
+  actual: z.string().min(1).max(200),
+  nueva: z.string().min(10).max(200),
+});
+
 export const MediaItemSchema = z.object({
   mediaId: z.string().uuid(),
   caption: z.string().max(280).optional(),

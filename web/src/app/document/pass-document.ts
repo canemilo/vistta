@@ -55,34 +55,56 @@ export class PassDocument {
   });
 
   /**
-   * Mosaico de seis columnas: cada fila cierra a seis y las proporciones de las
-   * piezas que la componen casan en altura (3/2 junto a 3/4, o 3/2 y 3/2).
-   * El ancho va en la celda y la proporción en la caja de la foto, para que el
-   * pie de foto tenga su propio sitio debajo.
+   * Rejilla justificada, calculada con las proporciones REALES de cada foto.
+   *
+   * Antes esto era un ciclo fijo de anchos y proporciones —la foto 1 ocupa
+   * cuatro columnas, la 2 dos, y así— con la proporción real superpuesta encima.
+   * Tres reglas peleándose por la misma caja: ganaba la última y las otras dos
+   * sobraban, y una foto vertical acababa recortada dentro de un hueco
+   * apaisado.
+   *
+   * Ahora se hace como lo hace cualquier galería que se lea bien: cada foto
+   * ocupa un ancho PROPORCIONAL a lo apaisada que sea, y la fila se reparte
+   * entre las que caben. Como todas crecen en proporción a su ratio, todas
+   * acaban con la misma altura y la fila cierra exacta, sin recortar ninguna y
+   * sin dejar huecos. Es lo que el bloque D hizo posible al guardar `width` y
+   * `height` medidos de los bytes: sin eso, esto no se puede calcular.
+   *
+   * Todo en CSS, sin medir el contenedor ni escuchar el `resize`: reflota solo
+   * al cambiar el ancho de la ventana.
    */
-  private readonly ANCHOS = [
-    'md:col-span-4',
-    'md:col-span-2',
-    'md:col-span-2',
-    'md:col-span-4',
-    'md:col-span-3',
-    'md:col-span-3',
-  ];
-  private readonly PROPORCIONES = [
-    'md:aspect-3/2',
-    'md:aspect-3/4',
-    'md:aspect-3/4',
-    'md:aspect-3/2',
-    'md:aspect-3/2',
-    'md:aspect-3/2',
-  ];
+  private static readonly PROPORCION_POR_DEFECTO = 3 / 2;
 
-  protected ancho(i: number): string {
-    return this.ANCHOS[i % this.ANCHOS.length];
+  /** Alto al que se aspira por fila. Es un objetivo, no una imposición. */
+  private static readonly ALTO_OBJETIVO = 260;
+
+  /**
+   * Cuánto se deja estirar una foto por encima de su tamaño natural.
+   *
+   * Sin tope, una foto que se queda sola en la última fila crece hasta el ancho
+   * completo: una vertical de dos metros de alto en mitad del documento.
+   */
+  private static readonly ESTIRAMIENTO_MAXIMO = 1.6;
+
+  protected proporcionDe(foto: DocMedia): number {
+    if (!foto.width || !foto.height) return PassDocument.PROPORCION_POR_DEFECTO;
+    return foto.width / foto.height;
   }
 
-  protected proporcion(i: number): string {
-    return this.PROPORCIONES[i % this.PROPORCIONES.length];
+  /** El reparto de la fila: crece en proporción a lo ancha que sea la foto. */
+  protected flex(foto: DocMedia): string {
+    const r = this.proporcionDe(foto);
+    return `${r} 1 ${Math.round(r * PassDocument.ALTO_OBJETIVO)}px`;
+  }
+
+  protected topeDeAncho(foto: DocMedia): string {
+    const r = this.proporcionDe(foto);
+    return `${Math.round(r * PassDocument.ALTO_OBJETIVO * PassDocument.ESTIRAMIENTO_MAXIMO)}px`;
+  }
+
+  /** La proporción exacta de la caja, para que nada se recorte. */
+  protected relacion(foto: DocMedia): string {
+    return `${this.proporcionDe(foto)}`;
   }
 
   protected ocultar(event: Event): void {
@@ -102,13 +124,5 @@ export class PassDocument {
     const verde = 'linear-gradient(150deg, #24413f 0%, #2f5a4f 55%, #3a6b5c 100%)';
     const azul = 'linear-gradient(150deg, #22384a 0%, #2c4a63 55%, #375a76 100%)';
     return i % 3 === 1 ? azul : verde;
-  }
-
-  /**
-   * Proporción real de la foto, para que el hueco tenga ya la forma buena y la
-   * página no dé un salto al cargar. Sin dimensiones se cae a la rejilla fija.
-   */
-  protected relacion(foto: DocMedia): string | null {
-    return foto.width && foto.height ? `${foto.width} / ${foto.height}` : null;
   }
 }

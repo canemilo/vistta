@@ -12,3 +12,6 @@ dist/
 
 # Medios del driver 'fs' (desarrollo local).
 .medios-locales/
+
+# Volcado del repo para herramientas de IA. Es un artefacto, no fuente.
+repomix-output.xml

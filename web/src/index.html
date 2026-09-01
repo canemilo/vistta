@@ -5,6 +5,20 @@
     <title>Vistta</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Nada de esta aplicación debe indexarse. El pase es un enlace privado de un
+      solo uso; el panel y la administración son de sus dueños. La API ya manda
+      `X-Robots-Tag`, pero este HTML lo sirve el frontend por su cuenta —en
+      producción, Cloudflare Pages— y allí esa cabecera no llega. Sin esta
+      etiqueta, un buscador que encontrara un enlace de pase lo abriría, y
+      abrirlo lo consume.
+    -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta
+      name="description"
+      content="Vistta enseña tu trabajo a un cliente concreto mediante un enlace privado que caduca al abrirse."
+    />
+    <meta name="theme-color" content="#060e17" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
   </head>
   <body class="antialiased">

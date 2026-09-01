@@ -2,15 +2,16 @@
   <!-- Entrada. Deliberadamente sosa y sin decir que esto es administración:
        quien no tenga el rol recibe el mismo mensaje que quien se equivoca. -->
   <section class="mx-auto mt-32 max-w-sm px-6">
-    <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#5c7d84] uppercase">Vistta</h1>
+    <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#63848b] uppercase">Vistta</h1>
     <div class="mt-6 flex flex-col gap-3">
       <input
         [(ngModel)]="id"
         name="id"
         autocomplete="username"
         placeholder="Usuario"
+        aria-label="Usuario"
         (keyup.enter)="entrar()"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
       />
       <input
         [(ngModel)]="password"
@@ -18,8 +19,9 @@
         type="password"
         autocomplete="current-password"
         placeholder="Contraseña"
+        aria-label="Contraseña"
         (keyup.enter)="entrar()"
-        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+        class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
       />
       <button
         type="button"
@@ -35,10 +37,10 @@
     </div>
   </section>
 } @else {
-  <section class="mx-auto max-w-6xl px-6 py-10">
+  <main id="contenido" class="mx-auto max-w-6xl px-6 py-10">
     <header class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#5c7d84] uppercase">
+        <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#63848b] uppercase">
           Administración
         </h1>
         <p class="mt-1 font-serif text-[19px] text-[#cfe3e0]">
@@ -87,19 +89,21 @@
 
     <!-- Alta de cuenta -->
     <div class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">Nueva cuenta</p>
+      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">Nueva cuenta</p>
       <div class="mt-4 flex flex-wrap items-center gap-3">
         <input
           [(ngModel)]="nuevoId"
           name="nuevoId"
           placeholder="identificador"
-          class="w-44 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+          aria-label="Identificador de la cuenta nueva"
+          class="w-44 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
         />
         <input
           [(ngModel)]="nuevoNombre"
           name="nuevoNombre"
           placeholder="Nombre visible"
-          class="w-56 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#3f6570] focus:border-emerald-400/60"
+          aria-label="Nombre visible de la cuenta nueva"
+          class="w-56 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
         />
         <select
           [(ngModel)]="nuevoPlan"
@@ -119,7 +123,7 @@
           CREAR
         </button>
       </div>
-      <p class="mt-3 font-mono text-[10px] text-[#5c7d84]">
+      <p class="mt-3 font-mono text-[10px] text-[#63848b]">
         El identificador solo admite minúsculas, dígitos, guion y guion bajo. La contraseña la
         genera el servidor.
       </p>
@@ -129,7 +133,7 @@
          Va antes que las cuentas porque es lo único aquí que tiene una cola de
          trabajo: alguien ha pagado y está esperando a que se le active. -->
     <div class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
         Pagos por cotejar
         @if (pendientes().length) {
           <span class="text-emerald-400">· {{ pendientes().length }}</span>
@@ -148,12 +152,13 @@
                 {{ p.userId }} · {{ p.plan }} {{ p.periodo }} ·
                 <span class="text-[#cfe3e0]">{{ euros(p.importe) }}</span>
               </span>
-              <span class="font-mono text-[10px] text-[#5c7d84]">
+              <span class="font-mono text-[10px] text-[#63848b]">
                 pedido el {{ fecha(p.createdAt) }}
               </span>
               <select
                 [(ngModel)]="metodos[p.code]"
                 [name]="'metodo-' + p.code"
+                [attr.aria-label]="'Por dónde llegó el pago ' + p.code"
                 class="ml-auto rounded border border-[#1c3b44] bg-[#081420] px-2 py-1 font-mono text-[11px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
               >
                 <option value="">¿por dónde llegó?</option>
@@ -181,12 +186,12 @@
             </li>
           }
         </ul>
-        <p class="mt-3 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-[#5c7d84]">
+        <p class="mt-3 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
           Comprueba el código en el concepto del ingreso antes de darlo por cobrado. El código no
           demuestra nada por sí solo: viaja en el concepto de un Bizum y lo puede ver cualquiera.
         </p>
       } @else {
-        <p class="mt-3 font-mono text-[11px] text-[#3f6570]">Nada pendiente de cobrar.</p>
+        <p class="mt-3 font-mono text-[11px] text-[#5e848f]">Nada pendiente de cobrar.</p>
       }
     </div>
 
@@ -194,14 +199,14 @@
     <div class="mt-8 overflow-x-auto">
       <table class="w-full min-w-[880px] border-collapse text-left">
         <thead>
-          <tr class="font-mono text-[10px] tracking-[0.16em] text-[#5c7d84] uppercase">
-            <th class="border-b border-[#16303a] py-3 pr-4">Cuenta</th>
-            <th class="border-b border-[#16303a] py-3 pr-4">Plan</th>
-            <th class="border-b border-[#16303a] py-3 pr-4">Perfiles</th>
-            <th class="border-b border-[#16303a] py-3 pr-4">Pases</th>
-            <th class="border-b border-[#16303a] py-3 pr-4">Medios</th>
-            <th class="border-b border-[#16303a] py-3 pr-4">Estado</th>
-            <th class="border-b border-[#16303a] py-3">Acciones</th>
+          <tr class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] uppercase">
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Cuenta</th>
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Plan</th>
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Perfiles</th>
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Pases</th>
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Medios</th>
+            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Estado</th>
+            <th scope="col" class="border-b border-[#16303a] py-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -211,9 +216,10 @@
                 <input
                   [value]="c.displayName"
                   (change)="renombrar(c, $any($event.target).value)"
+                  [attr.aria-label]="'Nombre visible de ' + c.id"
                   class="w-44 rounded border border-transparent bg-transparent px-1 py-1 text-[12px] text-[#cfe3e0] outline-none focus:border-[#1c3b44]"
                 />
-                <span class="block px-1 text-[10px] text-[#5c7d84]">
+                <span class="block px-1 text-[10px] text-[#63848b]">
                   {{ c.id }}
                   @if (c.role === 'admin') {
                     <span class="text-emerald-400"> · admin</span>
@@ -224,6 +230,7 @@
                 <select
                   [value]="c.plan"
                   (change)="cambiarPlan(c, $any($event.target).value)"
+                  [attr.aria-label]="'Plan de ' + c.id"
                   [disabled]="ocupado()"
                   class="rounded border border-[#1c3b44] bg-[#081420] px-2 py-1 text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
                 >
@@ -291,6 +298,7 @@
                       <input
                         [(ngModel)]="confirmacion"
                         name="confirmacion"
+                        [attr.aria-label]="'Escribe ' + c.id + ' para confirmar el borrado'"
                         class="w-44 rounded border border-red-500/40 bg-[#0b1a24] px-2 py-1 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-red-400"
                       />
                       <button
@@ -320,7 +328,7 @@
 
     <!-- Auditoría -->
     <div class="mt-12">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#5c7d84] uppercase">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
         Registro de administración
       </p>
       <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.7] text-[#8fb0b2]">
@@ -330,19 +338,19 @@
       <ul class="mt-4 flex flex-col gap-1">
         @for (r of auditoria(); track r.id) {
           <li class="font-mono text-[11px] text-[#8fb0b2]">
-            <span class="text-[#5c7d84]">{{ fecha(r.createdAt) }}</span>
+            <span class="text-[#63848b]">{{ fecha(r.createdAt) }}</span>
             · {{ r.adminId }} → <span class="text-[#cfe3e0]">{{ r.accion }}</span>
             @if (r.objetivo) {
               · {{ r.objetivo }}
             }
             @if (detalle(r)) {
-              <span class="text-[#5c7d84]">({{ detalle(r) }})</span>
+              <span class="text-[#63848b]">({{ detalle(r) }})</span>
             }
           </li>
         } @empty {
-          <li class="font-mono text-[11px] text-[#3f6570]">Todavía no hay nada anotado.</li>
+          <li class="font-mono text-[11px] text-[#5e848f]">Todavía no hay nada anotado.</li>
         }
       </ul>
     </div>
-  </section>
+  </main>
 }

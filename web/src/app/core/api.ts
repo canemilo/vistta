@@ -187,6 +187,26 @@ export class Api {
     );
   }
 
+  /**
+   * El cliente cambia su propia contraseña.
+   *
+   * Existe porque el administrador entrega una temporal y le dice que la
+   * cambie: sin esto, esa instrucción no se puede cumplir.
+   */
+  cambiarPassword(
+    session: string,
+    actual: string,
+    nueva: string,
+  ): Promise<{ ok: boolean; sesionesCerradas: number }> {
+    return firstValueFrom(
+      this.http.put<{ ok: boolean; sesionesCerradas: number }>(
+        '/api/panel/password',
+        { actual, nueva },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
   logout(token: string): Promise<{ ok: boolean }> {
     return firstValueFrom(
       this.http.delete<{ ok: boolean }>('/api/panel/session', {

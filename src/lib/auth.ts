@@ -114,6 +114,46 @@ export async function usuarioDeLaSesion(db: Db, token: string | null): Promise<U
   return fila ? { id: fila.id, displayName: fila.display_name, role: fila.role } : null;
 }
 
+/**
+ * El propio cliente cambia su contraseña.
+ *
+ * Existe porque sin ella la contraseña temporal que entrega el administrador es
+ * una trampa: se le dice «cámbiala al entrar» y no hay dónde. Exige la actual
+ * —tener la sesión abierta no basta: un ordenador sin bloquear no puede
+ * convertirse en un cambio de credenciales— y devuelve false sin decir si falló
+ * por la contraseña o por la cuenta.
+ *
+ * Cierra TODAS las demás sesiones y deja viva la de quien la cambia. Si se
+ * cambia porque la cuenta estaba comprometida, dejar dentro al que entró no
+ * arregla nada; y echar de paso al legítimo sería castigarle por protegerse.
+ *
+ * Devuelve cuántas cerró, o null si la contraseña actual no era correcta. El
+ * número no es un adorno: enterarse de que había tres sesiones abiertas es
+ * justo lo que quiere saber quien cambia la contraseña porque sospecha algo.
+ */
+export async function cambiarPasswordPropia(
+  db: Db,
+  userId: string,
+  actual: string,
+  nueva: string,
+  tokenDeLaSesion: string | null,
+  coste: CosteArgon2 = COSTE_POR_DEFECTO
+): Promise<number | null> {
+  const usuario = await verificarCredenciales(db, userId, actual);
+  if (!usuario) return null;
+
+  const hash = await hashPassword(nueva, coste);
+  await db.query(`UPDATE vistta.users SET password_hash = $1 WHERE id = $2`, [hash, userId]);
+
+  const hashSesion = tokenDeLaSesion ? await hashToken(tokenDeLaSesion) : null;
+  const cerradas = await db.query(
+    `DELETE FROM vistta.panel_sessions
+     WHERE user_id = $1 AND ($2::text IS NULL OR token_hash <> $2)`,
+    [userId, hashSesion]
+  );
+  return cerradas.rowCount;
+}
+
 /** Cierra la sesión que trae ese token. */
 export async function cerrarSesion(db: Db, token: string | null): Promise<void> {
   if (!token) return;

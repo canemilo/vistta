@@ -1,0 +1,11 @@
+# Vistta no se indexa, y no es un descuido.
+#
+# El pase es un enlace privado de un solo uso: si un buscador lo encontrara y lo
+# abriera, lo consumiría, y el cliente al que iba dirigido se encontraría un
+# enlace muerto. El panel y la administración son de sus dueños.
+#
+# Esto se refuerza en dos sitios más, porque un robots.txt es una petición y no
+# una barrera: la etiqueta `robots` de index.html y la cabecera `X-Robots-Tag`
+# que manda la API.
+User-agent: *
+Disallow: /

@@ -40,6 +40,18 @@ export class Panel {
   /** Abre el bloque de mejora de plan. Cerrado por defecto: no es lo que vienen a hacer. */
   protected readonly viendoPlanes = signal(false);
   protected periodoElegido = 'mensual';
+
+  // --- contraseña -----------------------------------------------------------
+  protected readonly cambiandoClave = signal(false);
+  protected readonly claveCambiada = signal('');
+  /**
+   * El fallo se pinta en el propio formulario, no en el `error` compartido.
+   * Ese vive al final de una página larga: quien se equivoca de contraseña
+   * arriba del todo no vería nunca por qué no ha pasado nada.
+   */
+  protected readonly errorClave = signal('');
+  protected claveActual = '';
+  protected claveNueva = '';
   protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
 
   /** Los que están de camino a borrarse. Son los que el cliente debe ver primero. */
@@ -195,6 +207,36 @@ export class Panel {
       await this.elegirPerfil(id);
     } catch {
       this.error.set('No se pudo activar ese perfil.');
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
+  protected async cambiarClave(): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion) return;
+    this.ocupado.set(true);
+    this.errorClave.set('');
+    this.claveCambiada.set('');
+    try {
+      const { sesionesCerradas } = await this.api.cambiarPassword(
+        sesion,
+        this.claveActual,
+        this.claveNueva,
+      );
+      this.claveActual = '';
+      this.claveNueva = '';
+      this.cambiandoClave.set(false);
+      // Decir cuántas sesiones se han cerrado no es un detalle: quien cambia la
+      // contraseña porque sospecha algo quiere saber si había alguien dentro.
+      this.claveCambiada.set(
+        sesionesCerradas > 0
+          ? `Contraseña cambiada. Se han cerrado ${sesionesCerradas} sesiones abiertas en otros sitios.`
+          : 'Contraseña cambiada.',
+      );
+    } catch (err: unknown) {
+      const motivo = (err as { error?: { error?: string } }).error?.error;
+      this.errorClave.set(motivo ?? 'No se pudo cambiar la contraseña.');
     } finally {
       this.ocupado.set(false);
     }

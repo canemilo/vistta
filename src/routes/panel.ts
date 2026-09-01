@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
-import { PanelLoginSchema } from "../schemas";
+import { CambiarPasswordSchema, PanelLoginSchema } from "../schemas";
 import {
   LOGIN_RULE,
   bearer,
+  cambiarPasswordPropia,
   cerrarSesion,
   createSession,
   usuarioDeLaSesion,
@@ -58,6 +59,49 @@ export function panelRoutes({ db }: Deps) {
   panel.delete("/api/panel/session", async (c) => {
     await cerrarSesion(db, bearer(c.req.header("Authorization")));
     return c.json({ ok: true });
+  });
+
+  /**
+   * Cambiar la propia contraseña.
+   *
+   * Con límite y por CUENTA, no por IP: aquí no se está adivinando quién es
+   * nadie —ya hay sesión— sino la contraseña actual de esta cuenta concreta, y
+   * quien lo intente tendrá la misma IP toda la tarde.
+   */
+  panel.put("/api/panel/password", async (c) => {
+    const token = bearer(c.req.header("Authorization"));
+    const usuario = await usuarioDeLaSesion(db, token);
+    if (!usuario) return c.json({ error: "no autorizado" }, 401);
+
+    const limite = await hitRateLimit(db, { ...LOGIN_RULE, scope: "panel-password" }, usuario.id);
+    if (!limite.allowed) {
+      c.header("Retry-After", String(limite.retryAfterSeconds));
+      return c.json({ error: "demasiados intentos; inténtalo más tarde" }, 429);
+    }
+
+    const parsed = CambiarPasswordSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json({ error: "la contraseña nueva necesita 10 caracteres o más" }, 400);
+    }
+    if (parsed.data.actual === parsed.data.nueva) {
+      return c.json({ error: "la contraseña nueva tiene que ser distinta" }, 400);
+    }
+
+    const cerradas = await cambiarPasswordPropia(
+      db,
+      usuario.id,
+      parsed.data.actual,
+      parsed.data.nueva,
+      token
+    );
+    if (cerradas === null) {
+      return c.json({ error: "la contraseña actual no es correcta" }, 401);
+    }
+
+    await clearRateLimit(db, "panel-password", usuario.id);
+    // Cuántas sesiones se han cerrado: enterarse de que había tres abiertas es
+    // justo lo que quiere saber quien cambia la contraseña porque sospecha algo.
+    return c.json({ ok: true, sesionesCerradas: cerradas });
   });
 
   return panel;
