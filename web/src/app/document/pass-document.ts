@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  signal,
+  viewChild,
+  type ElementRef,
+} from '@angular/core';
 
 export interface DocMedia {
   url: string;
@@ -105,6 +113,76 @@ export class PassDocument {
   /** La proporción exacta de la caja, para que nada se recorte. */
   protected relacion(foto: DocMedia): string {
     return `${this.proporcionDe(foto)}`;
+  }
+
+  // --- ampliar una foto -----------------------------------------------------
+
+  /**
+   * Ver una foto en grande.
+   *
+   * El plan decía «viewer con CDK», y se ha hecho con el `<dialog>` nativo. No
+   * es pereza: el CDK entero entraría en el bundle del viewer, que es la única
+   * superficie que abre alguien que no es cliente nuestro y desde el móvil,
+   * probablemente con datos. `showModal()` ya trae lo que se necesitaba del
+   * CDK —atrapa el foco, cierra con Escape, tapa el fondo y devuelve el foco al
+   * botón de origen al cerrar— y cuesta cero bytes.
+   *
+   * Se navega por TODAS las fotos del documento, no por las de su sección: quien
+   * lo abre está leyendo de arriba abajo y espera que «siguiente» siga.
+   */
+  private readonly dialogo = viewChild<ElementRef<HTMLDialogElement>>('ampliador');
+
+  protected readonly ampliada = signal<DocMedia | null>(null);
+
+  /** Todas las fotos del documento en orden de lectura. */
+  protected readonly todas = computed(() => this.secciones().flatMap((s) => s.items));
+
+  protected ampliar(foto: DocMedia): void {
+    this.ampliada.set(foto);
+    // Después de que Angular pinte el contenido del diálogo, no antes.
+    queueMicrotask(() => this.dialogo()?.nativeElement.showModal());
+  }
+
+  protected cerrarAmpliada(): void {
+    this.dialogo()?.nativeElement.close();
+    this.ampliada.set(null);
+  }
+
+  /**
+   * Anterior o siguiente. No da la vuelta a propósito: en un documento con
+   * final, llegar al borde y quedarse quieto dice «se acabó» mejor que volver
+   * a empezar sin avisar.
+   */
+  protected mover(paso: number): void {
+    const fotos = this.todas();
+    const actual = this.ampliada();
+    if (!actual) return;
+    const i = fotos.indexOf(actual);
+    const siguiente = fotos[i + paso];
+    if (siguiente) this.ampliada.set(siguiente);
+  }
+
+  protected hayVecina(paso: number): boolean {
+    const actual = this.ampliada();
+    if (!actual) return false;
+    const fotos = this.todas();
+    return fotos[fotos.indexOf(actual) + paso] !== undefined;
+  }
+
+  /** El sitio de la foto en el documento, para anunciarlo al abrirla. */
+  protected posicionAmpliada = computed(() => {
+    const actual = this.ampliada();
+    return actual ? this.todas().indexOf(actual) + 1 : 0;
+  });
+
+  protected teclas(event: KeyboardEvent): void {
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.mover(1);
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.mover(-1);
+    }
   }
 
   protected ocultar(event: Event): void {

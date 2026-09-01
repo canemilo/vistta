@@ -97,8 +97,19 @@
                 [style.flex]="flex(foto)"
                 [style.max-width]="topeDeAncho(foto)"
               >
-                <div
-                  class="relative w-full overflow-hidden rounded-lg border border-[#16303a]"
+                <!--
+                  Es un `button` y no un `div` porque abre algo. Con un `div` y
+                  un `click`, quien navega con teclado no puede ampliar ni una
+                  sola foto del documento.
+                -->
+                <button
+                  type="button"
+                  (click)="ampliar(foto)"
+                  [attr.aria-label]="
+                    'Ampliar ' +
+                    (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
+                  "
+                  class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
                   [style.background-image]="fondo($index, foto)"
                   [style.background-size]="'cover'"
                   [style.aspect-ratio]="relacion(foto)"
@@ -129,7 +140,7 @@
                        descargaba el archivo original y limpio. La marca de esta
                        visita ahora viene incrustada en los píxeles que sirve
                        /m/*, y por eso no hay nada que pintar por delante. -->
-                </div>
+                </button>
                 @if (foto.caption) {
                   <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#63848b]">
                     {{ foto.caption }}
@@ -155,3 +166,72 @@
     </p>
   </footer>
 </article>
+
+<!--
+  Ver una foto en grande.
+
+  `<dialog>` nativo con `showModal()`: atrapa el foco, cierra con Escape, tapa
+  el fondo y devuelve el foco a la foto de la que salió. Todo eso venía en el
+  plan como «viewer con CDK», y el CDK habría pesado en el único bundle que
+  tiene que ser ligero.
+
+  Los bytes son los mismos que en la rejilla —una sola resolución, con la marca
+  de esta visita ya dentro—: ampliar no destapa una versión limpia.
+-->
+<dialog
+  #ampliador
+  (close)="ampliada.set(null)"
+  (keydown)="teclas($event)"
+  aria-label="Foto ampliada"
+  class="max-h-[100dvh] max-w-[100vw] bg-transparent p-0 backdrop:bg-[#040a11]/92 backdrop:backdrop-blur-sm"
+>
+  @if (ampliada(); as foto) {
+    <div class="flex max-h-[100dvh] flex-col items-center justify-center gap-3 p-4 sm:p-8">
+      <img
+        [src]="foto.url"
+        [alt]="foto.caption ?? 'Foto ' + posicionAmpliada() + ' de ' + todas().length"
+        class="max-h-[78dvh] w-auto max-w-full rounded-lg object-contain"
+      />
+
+      <div class="flex w-full max-w-[900px] flex-wrap items-center justify-between gap-3">
+        <p class="min-w-0 font-mono text-[11px] text-[#8fb0b2]">
+          @if (foto.caption) {
+            <span class="text-[#cfe3e0]">{{ foto.caption }}</span>
+            <span aria-hidden="true"> · </span>
+          }
+          <span class="text-[#63848b]">{{ posicionAmpliada() }} de {{ todas().length }}</span>
+        </p>
+
+        <div class="flex items-center gap-2">
+          <!-- No dan la vuelta: al llegar al final, el botón se apaga en vez de
+               devolverte al principio sin avisar. -->
+          <button
+            type="button"
+            (click)="mover(-1)"
+            [disabled]="!hayVecina(-1)"
+            aria-label="Foto anterior"
+            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300 disabled:opacity-30 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            (click)="mover(1)"
+            [disabled]="!hayVecina(1)"
+            aria-label="Foto siguiente"
+            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300 disabled:opacity-30 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+          >
+            →
+          </button>
+          <button
+            type="button"
+            (click)="cerrarAmpliada()"
+            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300"
+          >
+            CERRAR
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</dialog>

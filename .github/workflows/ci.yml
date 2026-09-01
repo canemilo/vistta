@@ -46,3 +46,5 @@ jobs:
       - run: pnpm format:check
       - run: pnpm test
       - run: pnpm --dir web run build
+      # El runner de ubuntu ya trae Chrome; Karma lo encuentra en el PATH.
+      - run: pnpm --dir web run test:ci
