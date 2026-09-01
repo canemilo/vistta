@@ -195,13 +195,17 @@
 
         @if (seccion.type !== 'texto') {
           <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            @for (foto of itemsDe(si); track foto.key) {
+            @for (foto of itemsDe(si); track foto.mediaId) {
               <figure class="min-w-0">
                 <div
                   class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
                 >
-                  @if (miniaturas()[foto.key]) {
-                    <img [src]="miniaturas()[foto.key]" alt="" class="h-full w-full object-cover" />
+                  @if (miniaturas()[foto.mediaId]) {
+                    <img
+                      [src]="miniaturas()[foto.mediaId]"
+                      alt=""
+                      class="h-full w-full object-cover"
+                    />
                   }
                   <button
                     type="button"
@@ -224,15 +228,29 @@
           <label
             class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
           >
-            AÑADIR FOTOS
+            AÑADIR ARCHIVOS
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/gif,application/pdf,video/mp4,video/webm"
               multiple
               class="hidden"
               (change)="subirFotos(si, $event)"
             />
           </label>
+
+          <!--
+            Esto tiene que estar escrito, y con estas palabras.
+
+            Las fotos salen marcadas con el identificador de cada visita metido
+            en los píxeles; el vídeo no, porque marcarlo obligaría a recodificarlo
+            en cada apertura. Callarlo dejaría al cliente creyendo que su vídeo
+            lleva una protección que no lleva, y de eso va la mitad del producto.
+          -->
+          <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#5c7d84]">
+            Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y
+            los PDF se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una
+            captura de pantalla.
+          </p>
         }
       </section>
     } @empty {

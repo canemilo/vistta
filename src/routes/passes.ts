@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import { CreatePassSchema } from "../schemas";
-import type { MediaItemInput, Section } from "../schemas";
 import { createPass, consumePass, ProfileNotFoundError } from "../lib/pass";
+import type { SeccionDePase } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { hitRateLimit } from "../lib/ratelimit";
 import { signMediaUrl, watermarkFor } from "../lib/media";
@@ -11,12 +11,23 @@ import { signMediaUrl, watermarkFor } from "../lib/media";
 const OPEN_RULE = { scope: "pass-open", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
 const CREATE_RULE = { scope: "pass-create", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
 
-/** Sección tal y como la recibe el viewer: las claves ya son URLs firmadas. */
+/**
+ * Sección tal y como la recibe el viewer: ya no hay ids ni claves, solo URLs
+ * firmadas para esta visita. Las dimensiones van con cada medio para que el
+ * viewer reserve el hueco antes de que llegue un solo byte de imagen.
+ */
 interface SectionView {
-  type: Section["type"];
+  type: SeccionDePase["type"];
   title?: string;
   body?: string;
-  items: { url: string; type: MediaItemInput["type"]; caption?: string }[];
+  items: {
+    url: string;
+    type: string;
+    caption?: string;
+    width: number | null;
+    height: number | null;
+    lqip: string | null;
+  }[];
 }
 
 export function passesRoutes({ config, db }: Deps) {
@@ -73,17 +84,17 @@ export function passesRoutes({ config, db }: Deps) {
       view.sections.map(async (section) => ({
         type: section.type,
         title: section.title,
-        body: "body" in section ? section.body : undefined,
-        items:
-          "items" in section
-            ? await Promise.all(
-                section.items.map(async (item) => ({
-                  type: item.type,
-                  caption: item.caption,
-                  url: await signMediaUrl(secret, item, view.passId),
-                }))
-              )
-            : [],
+        body: section.body,
+        items: await Promise.all(
+          section.items.map(async (item) => ({
+            type: item.kind,
+            caption: item.caption,
+            width: item.width,
+            height: item.height,
+            lqip: item.lqip,
+            url: await signMediaUrl(secret, item.mediaId, view.passId),
+          }))
+        ),
       }))
     );
 

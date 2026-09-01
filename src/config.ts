@@ -33,8 +33,16 @@ const ConfigSchema = z.object({
    */
   TRUST_PROXY: booleano,
 
-  /** De dónde salen los bytes de los medios. "memory" solo sirve para pruebas. */
-  STORAGE_DRIVER: z.enum(["supabase", "memory"]).default("supabase"),
+  /**
+   * De dónde salen los bytes de los medios.
+   *   supabase — el del MVP y el que se despliega.
+   *   fs       — disco local, para desarrollo: sobrevive a reiniciar el proceso.
+   *   memory   — solo pruebas; los medios mueren con el proceso.
+   */
+  STORAGE_DRIVER: z.enum(["supabase", "fs", "memory"]).default("supabase"),
+
+  /** Dónde deja los medios el driver `fs`. */
+  STORAGE_FS_DIR: z.string().min(1).default(".medios-locales"),
 
   SUPABASE_URL: z.string().url().optional(),
   /** Salta RLS: nunca sale del proceso Node, nunca a un log, nunca al navegador. */

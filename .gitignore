@@ -9,3 +9,6 @@ dist/
 .idea/*
 !.idea/runConfigurations/
 !.env.example
+
+# Medios del driver 'fs' (desarrollo local).
+.medios-locales/

@@ -6,6 +6,11 @@ export interface MediaItem {
   url: string;
   type?: 'image' | 'video' | 'doc';
   caption?: string;
+  /** Dimensiones reales, medidas en el servidor al subir. Nunca las declara el cliente. */
+  width?: number | null;
+  height?: number | null;
+  /** Miniatura minúscula en data URI para pintar el hueco mientras carga. */
+  lqip?: string | null;
 }
 
 export interface SectionView {
@@ -43,10 +48,23 @@ export interface ProfileRow {
   displayName: string;
 }
 
+/**
+ * Referencia a un medio dentro del contenido. Guarda un ID, no una clave de
+ * almacenamiento: la clave la conoce solo el servidor, que es quien sabe de
+ * quién es cada objeto.
+ */
 export interface MediaRef {
-  key: string;
-  type: 'image' | 'video' | 'doc';
+  mediaId: string;
   caption?: string;
+}
+
+/** Lo que el servidor sabe de un medio: dimensiones y tipo salen de los bytes. */
+export interface MediaInfo {
+  id: string;
+  kind: 'image' | 'video' | 'doc';
+  width: number | null;
+  height: number | null;
+  lqip: string | null;
 }
 
 export type EditableSection =
@@ -65,6 +83,9 @@ export interface ProfileDetail {
   displayName: string;
   brandColor: string | null;
   data: ProfileContent;
+  /** Los medios del perfil, aparte del contenido, que solo guarda ids. */
+  media: MediaInfo[];
+  quota: { usados: number; total: number };
 }
 
 /** Cliente de la API del Worker. En local lo sirve el proxy de `ng serve`. */
@@ -126,32 +147,48 @@ export class Api {
     );
   }
 
-  uploadMedia(session: string, profileId: string, file: File): Promise<MediaRef> {
-    const form = new FormData();
-    form.set('file', file);
-    form.set('profileId', profileId);
+  /**
+   * Sube un medio en dos pasos: primero se reserva y luego se mandan los bytes.
+   *
+   * La reserva es la que comprueba sesión, propiedad, tipo, tamaño y cuota, y
+   * solo entonces firma la URL de subida. El segundo paso manda el archivo tal
+   * cual (sin multipart: no hay más campos que mandar), y es donde el servidor
+   * mira los bytes de verdad: si no son lo que dijimos, se rechaza ahí.
+   */
+  async uploadMedia(session: string, profileId: string, file: File): Promise<MediaInfo> {
+    const auth = { authorization: `Bearer ${session}` };
+    const kind = tipoDeArchivo(file);
+
+    const reserva = await firstValueFrom(
+      this.http.post<{ mediaId: string; uploadUrl: string }>(
+        '/api/media/presign',
+        { profileId, kind, bytes: file.size },
+        { headers: auth },
+      ),
+    );
+
     return firstValueFrom(
-      this.http.post<MediaRef>('/api/media', form, {
-        headers: { authorization: `Bearer ${session}` },
+      this.http.put<MediaInfo>(reserva.uploadUrl, file, {
+        headers: { ...auth, 'content-type': file.type || 'application/octet-stream' },
       }),
     );
   }
 
   /**
    * Miniatura para el panel. El objeto solo se sirve con sesión, así que se pide
-   * con la cabecera y se convierte en URL local; se cachea por clave.
+   * con la cabecera y se convierte en URL local; se cachea por id.
    */
-  async preview(session: string, key: string): Promise<string> {
-    const cacheada = this.previews.get(key);
+  async preview(session: string, mediaId: string): Promise<string> {
+    const cacheada = this.previews.get(mediaId);
     if (cacheada) return cacheada;
     const blob = await firstValueFrom(
-      this.http.get(`/api/media/${key}`, {
+      this.http.get(`/api/media/${encodeURIComponent(mediaId)}`, {
         headers: { authorization: `Bearer ${session}` },
         responseType: 'blob',
       }),
     );
     const url = URL.createObjectURL(blob);
-    this.previews.set(key, url);
+    this.previews.set(mediaId, url);
     return url;
   }
 
@@ -166,4 +203,17 @@ export class Api {
       ),
     );
   }
+}
+
+/**
+ * De qué tipo es el archivo, según lo que dice el navegador.
+ *
+ * Sirve para elegir el hueco que se reserva, y para nada más: el servidor mira
+ * los bytes y, si no coinciden con esto, rechaza la subida. Aquí no se está
+ * validando nada, solo adivinando bien.
+ */
+function tipoDeArchivo(file: File): 'image' | 'video' | 'doc' {
+  if (file.type.startsWith('video/')) return 'video';
+  if (file.type === 'application/pdf') return 'doc';
+  return 'image';
 }

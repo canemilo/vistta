@@ -17,23 +17,19 @@
           "body": "La serie completa, en el orden en que se recorre la casa: acceso, patio, planta baja y la escalera que articula las dos alas.",
           "items": [
             {
-              "key": "u/p_nordeste/01.jpg",
-              "type": "image",
+              "foto": "01",
               "caption": "Acceso desde el camino norte"
             },
             {
-              "key": "u/p_nordeste/02.jpg",
-              "type": "image",
+              "foto": "02",
               "caption": "Patio interior, media tarde"
             },
             {
-              "key": "u/p_nordeste/03.jpg",
-              "type": "image",
+              "foto": "03",
               "caption": "Estar principal"
             },
             {
-              "key": "u/p_nordeste/04.jpg",
-              "type": "image",
+              "foto": "04",
               "caption": "Escalera, luz cenital"
             }
           ]
@@ -43,23 +39,19 @@
           "title": "Trabajo reciente",
           "items": [
             {
-              "key": "u/p_nordeste/05.jpg",
-              "type": "image",
+              "foto": "05",
               "caption": "Nave Lidice"
             },
             {
-              "key": "u/p_nordeste/06.jpg",
-              "type": "image",
+              "foto": "06",
               "caption": "Rehabilitación Karlín"
             },
             {
-              "key": "u/p_nordeste/07.jpg",
-              "type": "image",
+              "foto": "07",
               "caption": "Pabellón Stromovka"
             },
             {
-              "key": "u/p_nordeste/08.jpg",
-              "type": "image",
+              "foto": "08",
               "caption": "Estudio Holešovice"
             }
           ]
@@ -84,18 +76,15 @@
           "title": "Selección 2026",
           "items": [
             {
-              "key": "u/p_marina/01.jpg",
-              "type": "image",
+              "foto": "01",
               "caption": "Serie taller I"
             },
             {
-              "key": "u/p_marina/02.jpg",
-              "type": "image",
+              "foto": "02",
               "caption": "Serie taller II"
             },
             {
-              "key": "u/p_marina/03.jpg",
-              "type": "image",
+              "foto": "03",
               "caption": "Retrato en planta"
             }
           ]
@@ -126,23 +115,19 @@
           "body": "Cuatro dormitorios, 180 m² en dos plantas y patio orientado al sur. Las fotos son de la semana pasada, con la casa habitada: verás muebles que no entran en la venta.",
           "items": [
             {
-              "key": "u/p_costavega/01.jpg",
-              "type": "image",
+              "foto": "01",
               "caption": "Acceso desde el camino"
             },
             {
-              "key": "u/p_costavega/02.jpg",
-              "type": "image",
+              "foto": "02",
               "caption": "Patio sur, media tarde"
             },
             {
-              "key": "u/p_costavega/03.jpg",
-              "type": "image",
+              "foto": "03",
               "caption": "Salón, planta baja"
             },
             {
-              "key": "u/p_costavega/04.jpg",
-              "type": "image",
+              "foto": "04",
               "caption": "Escalera y hueco de luz"
             }
           ]
@@ -152,23 +137,19 @@
           "title": "Las dos alternativas",
           "items": [
             {
-              "key": "u/p_costavega/05.jpg",
-              "type": "image",
+              "foto": "05",
               "caption": "Nave rehabilitada, casco antiguo"
             },
             {
-              "key": "u/p_costavega/06.jpg",
-              "type": "image",
+              "foto": "06",
               "caption": "Misma finca, fachada trasera"
             },
             {
-              "key": "u/p_costavega/07.jpg",
-              "type": "image",
+              "foto": "07",
               "caption": "Adosado en la segunda línea"
             },
             {
-              "key": "u/p_costavega/08.jpg",
-              "type": "image",
+              "foto": "08",
               "caption": "Su parcela, sin cerrar"
             }
           ]
@@ -203,13 +184,11 @@
           "title": "El espacio",
           "items": [
             {
-              "key": "u/p_rama/01.jpg",
-              "type": "image",
+              "foto": "01",
               "caption": "Sala de tratamiento"
             },
             {
-              "key": "u/p_rama/02.jpg",
-              "type": "image",
+              "foto": "02",
               "caption": "Entrada y zona de espera"
             }
           ]

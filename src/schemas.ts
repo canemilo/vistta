@@ -11,12 +11,39 @@ export const PanelLoginSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+/**
+ * Referencia a un medio DENTRO del contenido del perfil.
+ *
+ * Guarda un id, no una clave de almacenamiento, y la diferencia no es de estilo:
+ * con claves, un usuario podía escribir en su perfil la clave de otro y el
+ * backend la firmaba sin más (el IDOR del §3 del HANDOFF). Con ids, cada
+ * referencia se contrasta contra `vistta.media`, donde consta de quién es.
+ *
+ * El tipo tampoco viaja aquí: sale de `media.kind`, que se decidió mirando los
+ * bytes reales. Si lo declarase el cliente, un vídeo podría hacerse pasar por
+ * imagen y entrar por el camino de Sharp.
+ */
 export const MediaItemSchema = z.object({
-  key: z.string().min(1).max(512),
-  type: z.enum(["image", "video", "doc"]).default("image"),
+  mediaId: z.string().uuid(),
   caption: z.string().max(280).optional(),
 });
 export type MediaItemInput = z.infer<typeof MediaItemSchema>;
+
+/**
+ * Una lista de medios, tolerante con lo que no reconoce.
+ *
+ * Los perfiles guardados antes del bloque D llevan `{ key: … }`, que ya no
+ * significa nada: esas entradas se caen y el resto del contenido sobrevive. La
+ * alternativa —fallar la validación entera— dejaría el perfil en blanco al
+ * abrirlo, que es mucho peor que perder unas fotos que de todas formas no se
+ * pueden servir.
+ */
+const listaDeMedios = (max: number) =>
+  z.preprocess(
+    (v) =>
+      Array.isArray(v) ? v.filter((i) => typeof i === "object" && i !== null && "mediaId" in i) : v,
+    z.array(MediaItemSchema).max(max)
+  );
 
 const titulo = z.string().max(160).optional();
 
@@ -27,12 +54,12 @@ const titulo = z.string().max(160).optional();
  */
 export const SectionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("texto"), title: titulo, body: z.string().max(5000) }),
-  z.object({ type: z.literal("galeria"), title: titulo, items: z.array(MediaItemSchema).max(60) }),
+  z.object({ type: z.literal("galeria"), title: titulo, items: listaDeMedios(60) }),
   z.object({
     type: z.literal("proyecto"),
     title: titulo,
     body: z.string().max(5000).optional(),
-    items: z.array(MediaItemSchema).max(60),
+    items: listaDeMedios(60),
   }),
 ]);
 export type Section = z.infer<typeof SectionSchema>;
@@ -44,7 +71,7 @@ export const ProfileDataSchema = z.object({
   sections: z.array(SectionSchema).max(30).default([]),
   // Formato antiguo: se sigue aceptando y se normaliza a secciones al abrir.
   bio: z.string().max(2000).optional(),
-  media: z.array(MediaItemSchema).max(200).optional(),
+  media: listaDeMedios(200).optional(),
 });
 export type ProfileData = z.infer<typeof ProfileDataSchema>;
 
@@ -57,3 +84,17 @@ export const UpdateProfileSchema = z.object({
     .optional(),
   data: ProfileDataSchema,
 });
+
+/** Reserva de subida: lo que el cliente declara ANTES de mandar un solo byte. */
+export const PresignSchema = z.object({
+  profileId: z.string().min(1).max(128),
+  kind: z.enum(["image", "video", "doc"]),
+  /** Tamaño declarado. No se cree; se usa para reservar y se contrasta luego. */
+  bytes: z.number().int().positive(),
+});
+
+/** Todos los ids de medio que aparecen en un contenido. */
+export function idsDeMedios(data: ProfileData): string[] {
+  const ids = data.sections.flatMap((s) => ("items" in s ? s.items.map((i) => i.mediaId) : []));
+  return [...new Set([...ids, ...(data.media ?? []).map((i) => i.mediaId)])];
+}

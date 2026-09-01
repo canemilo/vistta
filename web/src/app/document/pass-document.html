@@ -92,30 +92,26 @@
                   class="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-[#16303a] {{
                     proporcion($index)
                   }}"
-                  [style.background-image]="fondo($index)"
+                  [style.background-image]="fondo($index, foto)"
+                  [style.background-size]="'cover'"
+                  [style.aspect-ratio]="relacion(foto)"
                 >
                   <img
                     [src]="foto.url"
                     [alt]="foto.caption ?? ''"
+                    [width]="foto.width"
+                    [height]="foto.height"
                     loading="lazy"
                     draggable="false"
                     (error)="ocultar($event)"
                     class="h-full w-full max-w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                   />
-                  <!-- Sello por visita: cada copia de esta foto lleva de quién es el pase.
-                       La sombra lo mantiene legible tanto sobre foto clara como oscura. -->
-                  <span
-                    class="pointer-events-none absolute inset-0 flex -rotate-12 flex-col items-center justify-center gap-10 select-none"
-                    aria-hidden="true"
-                  >
-                    @for (banda of [0, 1, 2]; track banda) {
-                      <span
-                        class="font-mono text-[9px] tracking-[0.34em] whitespace-nowrap text-white/25 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]"
-                      >
-                        {{ marca() }}
-                      </span>
-                    }
-                  </span>
+                  <!-- Aquí había un sello superpuesto por CSS. Se ha quitado en el
+                       bloque D, y no por estilo: no era una marca de agua. Estaba
+                       encima de la foto, no dentro, así que "guardar imagen como"
+                       descargaba el archivo original y limpio. La marca de esta
+                       visita ahora viene incrustada en los píxeles que sirve
+                       /m/*, y por eso no hay nada que pintar por delante. -->
                 </div>
                 @if (foto.caption) {
                   <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#5c7d84]">

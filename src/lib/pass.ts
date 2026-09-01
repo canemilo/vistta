@@ -1,6 +1,26 @@
 import type { Db } from "../db";
 import { generateToken, hashToken } from "./token";
-import { ProfileDataSchema, type ProfileData, type Section } from "../schemas";
+import { ProfileDataSchema, idsDeMedios, type ProfileData, type Section } from "../schemas";
+import { mediosDelPerfil, type MedioRow } from "./media-store";
+import type { MediaKind } from "./sniff";
+
+/** Un medio ya resuelto contra la base: el cliente nunca dijo nada de esto. */
+export interface ItemDePase {
+  mediaId: string;
+  kind: MediaKind;
+  caption?: string;
+  /** Dimensiones reales, para que el viewer reserve el hueco antes de cargar. */
+  width: number | null;
+  height: number | null;
+  lqip: string | null;
+}
+
+export interface SeccionDePase {
+  type: Section["type"];
+  title?: string;
+  body?: string;
+  items: ItemDePase[];
+}
 
 export interface PassView {
   passId: string;
@@ -9,19 +29,27 @@ export interface PassView {
   brandColor: string | null;
   tagline?: string;
   intro?: string;
-  sections: Section[];
+  sections: SeccionDePase[];
 }
 
 export class ProfileNotFoundError extends Error {}
 
-/** Crea un pase pendiente y devuelve el token en claro (solo se ve aquí). */
+/**
+ * Crea un pase pendiente y devuelve el token en claro (solo se ve aquí).
+ *
+ * De paso toma la INSTANTÁNEA del contenido en `pass_media`. Es lo que da
+ * significado exacto a "cuota por pase" —lo que el pase enseña es esto, no lo
+ * que el perfil tenga el día que se abra— y, sobre todo, es la lista blanca de
+ * lo que ese pase podrá pedir después a `/m/*`.
+ */
 export async function createPass(
   db: Db,
   opts: { profileId: string; ttlSeconds?: number }
 ): Promise<{ id: string; token: string; expiresAt: number }> {
-  const profile = await db.one<{ id: string }>(`SELECT id FROM vistta.profiles WHERE id = $1`, [
-    opts.profileId,
-  ]);
+  const profile = await db.one<{ id: string; data: unknown }>(
+    `SELECT id, data FROM vistta.profiles WHERE id = $1`,
+    [opts.profileId]
+  );
   if (!profile) throw new ProfileNotFoundError(opts.profileId);
 
   const token = generateToken();
@@ -29,11 +57,30 @@ export async function createPass(
   const now = Date.now();
   const expiresAt = now + (opts.ttlSeconds ?? 900) * 1000; // 15 min por defecto para abrir
   const id = crypto.randomUUID();
-  await db.query(
-    `INSERT INTO vistta.passes (id, token_hash, profile_id, status, created_at, expires_at)
-     VALUES ($1, $2, $3, 'pending', $4, $5)`,
-    [id, tokenHash, opts.profileId, now, expiresAt]
+
+  // Solo entran medios del propio perfil y ya confirmados: la instantánea no es
+  // una copia del JSON del usuario, es el resultado de contrastarlo con la base.
+  const medios = await mediosDelPerfil(
+    db,
+    opts.profileId,
+    idsDeMedios(parseProfileData(profile.data))
   );
+
+  await db.tx(async (tx) => {
+    await tx.query(
+      `INSERT INTO vistta.passes (id, token_hash, profile_id, status, created_at, expires_at)
+       VALUES ($1, $2, $3, 'pending', $4, $5)`,
+      [id, tokenHash, opts.profileId, now, expiresAt]
+    );
+    if (medios.size > 0) {
+      await tx.query(
+        `INSERT INTO vistta.pass_media (pass_id, media_id)
+         SELECT $1, unnest($2::text[])`,
+        [id, [...medios.keys()]]
+      );
+    }
+  });
+
   return { id, token, expiresAt };
 }
 
@@ -73,6 +120,11 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
   if (!profile) return null;
 
   const data = parseProfileData(profile.data);
+  // Los medios salen de la instantánea del pase, no del JSON: si el perfil ha
+  // cambiado desde que se generó el enlace, el pase sigue enseñando lo que se
+  // le prometió al cliente, y solo eso.
+  const medios = await mediosDelPase(db, claimed.id);
+
   return {
     passId: claimed.id,
     profileId: profile.id,
@@ -80,8 +132,50 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     brandColor: profile.brand_color,
     tagline: data.tagline,
     intro: data.intro ?? data.bio,
-    sections: normalizeSections(data),
+    sections: resolverSecciones(normalizeSections(data), medios),
   };
+}
+
+/** Los medios que este pase tiene derecho a enseñar, por id. */
+async function mediosDelPase(db: Db, passId: string): Promise<Map<string, MedioRow>> {
+  const { rows } = await db.query<MedioRow>(
+    `SELECT m.id, m.profile_id, m.storage_key, m.kind, m.mime, m.bytes,
+            m.width, m.height, m.lqip, m.status
+     FROM vistta.pass_media pm
+     JOIN vistta.media m ON m.id = pm.media_id
+     WHERE pm.pass_id = $1 AND m.status = 'ready'`,
+    [passId]
+  );
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
+/**
+ * Cruza el contenido con los medios reales. Una referencia que no esté en la
+ * instantánea simplemente no aparece: mejor una galería con un hueco menos que
+ * una URL firmada para algo que no se ha comprobado de quién es.
+ */
+function resolverSecciones(sections: Section[], medios: Map<string, MedioRow>): SeccionDePase[] {
+  return sections.map((section) => ({
+    type: section.type,
+    title: section.title,
+    body: "body" in section ? section.body : undefined,
+    items: !("items" in section)
+      ? []
+      : section.items.flatMap((item) => {
+          const medio = medios.get(item.mediaId);
+          if (!medio) return [];
+          return [
+            {
+              mediaId: medio.id,
+              kind: medio.kind,
+              caption: item.caption,
+              width: medio.width,
+              height: medio.height,
+              lqip: medio.lqip,
+            },
+          ];
+        }),
+  }));
 }
 
 /**

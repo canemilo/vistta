@@ -1,4 +1,5 @@
 import { afterAll } from "vitest";
+import sharp from "sharp";
 import type { Hono } from "hono";
 import { createApp } from "../src/app";
 import { createDb, createPool } from "../src/db";
@@ -24,6 +25,7 @@ const CONFIG_DE_PRUEBAS: Config = Object.freeze({
   PORT: 8787,
   TRUST_PROXY: true,
   STORAGE_DRIVER: "memory",
+  STORAGE_FS_DIR: ".medios-locales",
   SUPABASE_URL: undefined,
   SUPABASE_SECRET_KEY: undefined,
   SUPABASE_MEDIA_BUCKET: "vistta-media",
@@ -87,6 +89,68 @@ export async function resetDb(): Promise<void> {
   // deja de importar.
   await db.query(
     `TRUNCATE vistta.passes, vistta.profiles, vistta.rate_limits,
-              vistta.panel_sessions, vistta.users CASCADE`
+              vistta.panel_sessions, vistta.users, vistta.media,
+              vistta.pass_media, vistta.jobs CASCADE`
   );
+}
+
+/**
+ * Un JPEG de verdad. Hace falta que lo sea: desde el bloque D el backend mira
+ * los bytes, así que un `new File(["foto"], …, { type: "image/jpeg" })` ya no
+ * cuela —ni debe—, y además Sharp tiene que poder abrirlo para incrustar la
+ * marca.
+ */
+export async function imagenJpeg(width = 320, height = 200): Promise<Uint8Array> {
+  const buffer = await sharp({
+    create: { width, height, channels: 3, background: { r: 180, g: 120, b: 60 } },
+  })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+  return new Uint8Array(buffer);
+}
+
+/** Un PDF mínimo, para probar el camino de los documentos. */
+export function documentoPdf(): Uint8Array {
+  return new TextEncoder().encode("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n%%EOF\n");
+}
+
+export interface MedioSubido {
+  mediaId: string;
+  bytes: Uint8Array;
+}
+
+/**
+ * Recorre la subida entera: reserva y confirma. Devuelve el id, que es lo único
+ * que el contenido del perfil puede referenciar.
+ */
+export async function subirMedio(
+  sesion: string,
+  profileId: string,
+  opts: { kind?: "image" | "video" | "doc"; bytes?: Uint8Array; ip?: string } = {}
+): Promise<MedioSubido> {
+  const kind = opts.kind ?? "image";
+  const bytes = opts.bytes ?? (await imagenJpeg());
+  const ip = opts.ip ?? "198.51.100.60";
+  const auth = { authorization: `Bearer ${sesion}` };
+
+  const reserva = await callAs(ip, "/api/media/presign", {
+    method: "POST",
+    headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ profileId, kind, bytes: bytes.byteLength }),
+  });
+  if (reserva.status !== 201) {
+    throw new Error(`presign devolvió ${reserva.status}: ${await reserva.text()}`);
+  }
+  const { mediaId, uploadUrl } = (await reserva.json()) as { mediaId: string; uploadUrl: string };
+
+  const subida = await callAs(ip, uploadUrl, { method: "PUT", headers: auth, body: bytes });
+  if (subida.status !== 201) {
+    throw new Error(`confirm devolvió ${subida.status}: ${await subida.text()}`);
+  }
+  return { mediaId, bytes };
+}
+
+/** Una galería de un solo medio, en la forma que guarda el perfil. */
+export function galeriaCon(mediaId: string, caption?: string) {
+  return { sections: [{ type: "galeria", title: "Selección", items: [{ mediaId, caption }] }] };
 }

@@ -2,31 +2,24 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import type { Db } from "../db";
-import { UpdateProfileSchema } from "../schemas";
+import { PresignSchema, UpdateProfileSchema, idsDeMedios } from "../schemas";
 import { parseProfileData } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
+import { signUploadUrl, verifyUploadSignature } from "../lib/media";
+import {
+  CUOTA_POR_PERFIL,
+  CuotaExcedidaError,
+  DemasiadasReservasError,
+  ReservaNoValidaError,
+  confirmarMedio,
+  cuotaUsada,
+  mediosDelPerfil,
+  reservarMedio,
+} from "../lib/media-store";
+import { LIMITE_ABSOLUTO, LIMITE_POR_TIPO } from "../lib/sniff";
+import { CuerpoDemasiadoGrandeError, leerCuerpoConTope } from "../lib/body";
 
-/** Tipos de imagen admitidos al subir. Nada de SVG: puede llevar script dentro. */
-const TIPOS = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-  ["image/avif", "avif"],
-  ["image/gif", "gif"],
-]);
-const MAX_BYTES = 15 * 1024 * 1024;
-
-/**
- * Forma exacta de una clave de medio: u/<perfil>/<archivo>.
- *
- * Es lo que corta el traversal, y se comprueba aquí y no en el proveedor a
- * propósito: con R2 una clave con ".." daba 404 por accidente, pero Supabase
- * Storage normaliza la ruta y ahí sí serviría el objeto de otro. La defensa no
- * puede depender de cómo trate las rutas el almacenamiento de turno.
- */
-const CLAVE_DE_MEDIO = /^u\/[A-Za-z0-9_-]{1,64}\/[A-Za-z0-9._-]{1,128}$/;
-
-export function profilesRoutes({ db, storage }: Deps) {
+export function profilesRoutes({ config, db, storage }: Deps) {
   const profiles = new Hono<AppEnv>();
 
   // Todo lo que hay aquí es del panel: exige sesión y deja el usuario en el contexto.
@@ -49,7 +42,7 @@ export function profilesRoutes({ db, storage }: Deps) {
     return c.json({ profiles: rows });
   });
 
-  // Contenido de un perfil, tal cual está guardado (con claves, no URLs firmadas).
+  // Contenido de un perfil, tal cual está guardado (con ids, no URLs firmadas).
   profiles.get("/api/profiles/:id", async (c) => {
     const row = await db.one<{
       id: string;
@@ -62,7 +55,23 @@ export function profilesRoutes({ db, storage }: Deps) {
       [c.req.param("id"), c.get("usuario").id]
     );
     if (!row) return c.json({ error: "perfil no encontrado" }, 404);
-    return c.json({ ...row, data: parseProfileData(row.data) });
+
+    const data = parseProfileData(row.data);
+    // El panel necesita las dimensiones para pintar la rejilla igual que el
+    // viewer; van aparte del contenido, porque el contenido solo guarda ids.
+    const medios = await mediosDelPerfil(db, row.id, idsDeMedios(data));
+    return c.json({
+      ...row,
+      data,
+      media: [...medios.values()].map((m) => ({
+        id: m.id,
+        kind: m.kind,
+        width: m.width,
+        height: m.height,
+        lqip: m.lqip,
+      })),
+      quota: { usados: await cuotaUsada(db, row.id), total: CUOTA_POR_PERFIL },
+    });
   });
 
   // Guardar el contenido que ha montado el cliente.
@@ -71,6 +80,26 @@ export function profilesRoutes({ db, storage }: Deps) {
     const parsed = UpdateProfileSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
+    }
+
+    const profileId = c.req.param("id");
+    if (!(await esSuyo(db, c, profileId))) return c.json({ error: "perfil no encontrado" }, 404);
+
+    /*
+     * Aquí se cierra el IDOR entre inquilinos.
+     *
+     * Cada id que viene en el JSON se contrasta contra `vistta.media`, donde
+     * consta de qué perfil es. Un id que no salga de esa consulta se rechaza en
+     * vez de guardarse: si se guardase, la apertura del pase acabaría firmando
+     * una URL para el medio de otro, que es justo el fallo que había.
+     */
+    const referenciados = idsDeMedios(parsed.data.data);
+    const propios = await mediosDelPerfil(db, profileId, referenciados);
+    const ajenos = referenciados.filter((id) => !propios.has(id));
+    if (ajenos.length > 0) {
+      // Sin decir cuál ni por qué: "no es tuyo" y "no existe" tienen que sonar
+      // igual, o el error se convierte en un buscador de ids ajenos.
+      return c.json({ error: "hay medios que no existen en este perfil" }, 400);
     }
 
     const res = await db.query(
@@ -83,7 +112,7 @@ export function profilesRoutes({ db, storage }: Deps) {
         JSON.stringify(parsed.data.data),
         parsed.data.displayName ?? null,
         parsed.data.brandColor ?? null,
-        c.req.param("id"),
+        profileId,
         c.get("usuario").id,
       ]
     );
@@ -92,45 +121,129 @@ export function profilesRoutes({ db, storage }: Deps) {
     return c.json({ ok: true });
   });
 
-  // Subir una foto. Devuelve la clave; el contenido nunca se sirve sin firma.
-  profiles.post("/api/media", async (c) => {
-    const form = await c.req.parseBody().catch(() => null);
-    const file = form?.["file"];
-    const profileId = String(form?.["profileId"] ?? "");
-    // En FormData el valor es File o string: descartamos el string y el vacío.
-    if (!file || typeof file === "string" || !profileId) {
-      return c.json({ error: "falta el archivo o el perfil" }, 400);
+  /**
+   * Paso 1 de la subida: reservar.
+   *
+   * Se comprueba sesión, propiedad del perfil, tipo, tamaño declarado y cuota
+   * ANTES de firmar nada. El orden importa: firmar primero y comprobar después
+   * es entregar una autorización que luego hay que retirar.
+   */
+  profiles.post("/api/media/presign", async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const parsed = PresignSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
     }
+    const { profileId, kind, bytes } = parsed.data;
 
     if (!(await esSuyo(db, c, profileId))) return c.json({ error: "perfil no encontrado" }, 404);
+    if (bytes > LIMITE_POR_TIPO[kind]) {
+      return c.json({ error: "archivo demasiado grande", limite: LIMITE_POR_TIPO[kind] }, 413);
+    }
 
-    const ext = TIPOS.get(file.type);
-    if (!ext) return c.json({ error: "formato no admitido" }, 415);
-    if (file.size > MAX_BYTES) return c.json({ error: "archivo demasiado grande" }, 413);
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    // El tamaño declarado no vale nada: se comprueba contra los bytes reales.
-    if (bytes.byteLength > MAX_BYTES) return c.json({ error: "archivo demasiado grande" }, 413);
-
-    const key = `u/${profileId}/${crypto.randomUUID()}.${ext}`;
-    await storage.put(key, bytes, file.type);
-    return c.json({ key, type: "image" as const }, 201);
+    try {
+      const { mediaId } = await reservarMedio(db, { profileId, kind, declaredBytes: bytes });
+      const { url, expiresAt } = await signUploadUrl(config.MEDIA_SIGNING_KEY, mediaId, profileId);
+      return c.json({ mediaId, uploadUrl: url, expiresAt }, 201);
+    } catch (err) {
+      if (err instanceof CuotaExcedidaError) {
+        return c.json({ error: "no queda cuota en el perfil" }, 413);
+      }
+      if (err instanceof DemasiadasReservasError) {
+        // 429 y no 413: no es que no quepa, es que hay demasiadas subidas a
+        // medias. Se resuelve solo en cuanto terminen o las recoja el reaper.
+        return c.json({ error: "demasiadas subidas sin terminar" }, 429);
+      }
+      if (err instanceof ReservaNoValidaError) {
+        return c.json({ error: "reserva no válida" }, 400);
+      }
+      throw err;
+    }
   });
 
-  // Vista previa para el panel: mismo objeto, pero autorizado por sesión en vez de firma.
-  profiles.get("/api/media/*", async (c) => {
-    const key = decodeURIComponent(new URL(c.req.url).pathname.slice("/api/media/".length));
-    if (!CLAVE_DE_MEDIO.test(key)) return c.json({ error: "no encontrado" }, 404);
+  /**
+   * Paso 2: los bytes.
+   *
+   * La subida y la confirmación son la MISMA petición a propósito. Si fueran
+   * dos, entre una y otra habría un objeto en el almacenamiento que nadie ha
+   * mirado, y bastaría con no llamar a la segunda para dejarlo ahí. Así el
+   * backend ve los bytes, los identifica y los mide antes de que existan como
+   * medio servible.
+   */
+  profiles.put("/api/media/confirm", async (c) => {
+    const mediaId = c.req.query("mid") ?? "";
+    const profileId = c.req.query("pf") ?? "";
+    const exp = Number(c.req.query("exp"));
+    const sig = c.req.query("sig") ?? "";
 
-    // Las claves son u/<perfil>/<archivo>: solo se sirve lo que es del usuario.
-    const perfilDeLaClave = key.split("/")[1] ?? "";
-    if (!(await esSuyo(db, c, perfilDeLaClave))) return c.json({ error: "no encontrado" }, 404);
+    const firmaOk = await verifyUploadSignature(
+      config.MEDIA_SIGNING_KEY,
+      mediaId,
+      profileId,
+      exp,
+      sig
+    );
+    if (!firmaOk) return c.json({ error: "subida no autorizada" }, 403);
+    // La firma dice qué se autorizó; la sesión, quién sube. Las dos: una firma
+    // filtrada no debe servirle a nadie más.
+    if (!(await esSuyo(db, c, profileId))) return c.json({ error: "perfil no encontrado" }, 404);
 
-    const objeto = await storage.get(key);
+    // Tope duro antes de nada: el mayor de los límites por tipo. El límite fino
+    // del tipo concreto lo aplica `confirmarMedio`, que ya sabe qué se reservó.
+    let cuerpo: Uint8Array;
+    try {
+      cuerpo = await leerCuerpoConTope(c.req.raw, LIMITE_ABSOLUTO);
+    } catch (err) {
+      if (err instanceof CuerpoDemasiadoGrandeError) {
+        return c.json({ error: "archivo demasiado grande" }, 413);
+      }
+      throw err;
+    }
+
+    const resultado = await confirmarMedio(db, storage, { mediaId, profileId, bytes: cuerpo });
+
+    if (!resultado.ok) {
+      switch (resultado.motivo) {
+        case "tipo":
+          return c.json({ error: "el contenido no es del tipo declarado" }, 415);
+        case "tamano":
+          return c.json({ error: "archivo demasiado grande" }, 413);
+        case "cuota":
+          return c.json({ error: "no queda cuota en el perfil" }, 413);
+        case "reserva":
+          return c.json({ error: "reserva no válida" }, 409);
+      }
+    }
+
+    // Misma forma que los medios del GET del perfil: el panel no tiene que
+    // saber de dónde viene cada uno para pintarlo.
+    const m = resultado.medio;
+    return c.json(
+      { id: m.id, kind: m.kind, width: m.width, height: m.height, lqip: m.lqip, bytes: m.bytes },
+      201
+    );
+  });
+
+  /**
+   * Vista previa para el panel: los mismos bytes, pero autorizados por sesión en
+   * vez de por firma, y buscados por id. La clave de almacenamiento no aparece
+   * en ninguna URL, así que no hay ruta que recorrer ni traversal que cortar.
+   */
+  profiles.get("/api/media/:id", async (c) => {
+    const medio = await db.one<{ storage_key: string; mime: string; profile_id: string }>(
+      `SELECT m.storage_key, m.mime, m.profile_id
+       FROM vistta.media m
+       JOIN vistta.profiles p ON p.id = m.profile_id
+       WHERE m.id = $1 AND p.owner_id = $2 AND m.status = 'ready'`,
+      [c.req.param("id"), c.get("usuario").id]
+    );
+    if (!medio) return c.json({ error: "no encontrado" }, 404);
+
+    const objeto = await storage.get(medio.storage_key);
     if (!objeto) return c.json({ error: "no encontrado" }, 404);
 
     return new Response(objeto.bytes, {
-      headers: { "Content-Type": objeto.contentType, "Cache-Control": "no-store" },
+      headers: { "Content-Type": medio.mime, "Cache-Control": "no-store" },
     });
   });
 

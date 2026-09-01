@@ -57,7 +57,7 @@ export class Panel {
       items:
         'items' in s
           ? s.items.map((it) => ({
-              url: this.miniaturas()[it.key] ?? '',
+              url: this.miniaturas()[it.mediaId] ?? '',
               caption: it.caption,
             }))
           : [],
@@ -136,13 +136,13 @@ export class Panel {
   private async cargarMiniaturas(): Promise<void> {
     const sesion = this.sesion();
     if (!sesion) return;
-    const claves = this.contenido()
-      .sections.flatMap((s) => ('items' in s ? s.items.map((i) => i.key) : []))
-      .filter((k) => !this.miniaturas()[k]);
-    for (const key of claves) {
+    const ids = this.contenido()
+      .sections.flatMap((s) => ('items' in s ? s.items.map((i) => i.mediaId) : []))
+      .filter((id) => !this.miniaturas()[id]);
+    for (const mediaId of ids) {
       try {
-        const url = await this.api.preview(sesion, key);
-        this.miniaturas.update((m) => ({ ...m, [key]: url }));
+        const url = await this.api.preview(sesion, mediaId);
+        this.miniaturas.update((m) => ({ ...m, [mediaId]: url }));
       } catch {
         // Una foto que ya no está en el almacén no debe romper la edición.
       }
@@ -202,18 +202,28 @@ export class Panel {
     this.error.set('');
     try {
       for (const file of Array.from(input.files)) {
-        const ref = await this.api.uploadMedia(sesion, this.perfilId(), file);
-        this.miniaturas.update((m) => ({ ...m, [ref.key]: URL.createObjectURL(file) }));
-        this.editarSeccion(i, { items: [...this.itemsDe(i), { ...ref, caption: '' }] });
+        const medio = await this.api.uploadMedia(sesion, this.perfilId(), file);
+        this.miniaturas.update((m) => ({ ...m, [medio.id]: URL.createObjectURL(file) }));
+        // En el contenido solo va el id: el tipo y las dimensiones los sabe el
+        // servidor, que es el único que ha mirado los bytes.
+        this.editarSeccion(i, {
+          items: [...this.itemsDe(i), { mediaId: medio.id, caption: '' }],
+        });
       }
     } catch (err: unknown) {
       const status = (err as { status?: number }).status;
+      // El 413 tiene dos causas —el archivo o la cuota— y el mensaje del
+      // servidor distingue cuál: repetirlo aquí a ciegas mandaría al cliente a
+      // reducir una foto cuando el problema es que ya no le queda sitio.
+      const motivo = (err as { error?: { error?: string } }).error?.error ?? '';
       this.error.set(
         status === 415
-          ? 'Ese formato no vale. Sube JPG, PNG, WebP, AVIF o GIF.'
+          ? 'Ese archivo no es lo que parece o no está admitido. Sube JPG, PNG, WebP, AVIF, GIF, PDF o vídeo MP4/WebM.'
           : status === 413
-            ? 'La foto pesa más de 15 MB.'
-            : 'No se pudo subir la foto.',
+            ? motivo.includes('cuota')
+              ? 'Este perfil ha llenado sus 200 MB. Quita algo para hacer sitio.'
+              : 'El archivo pasa del límite: 10 MB por imagen, 15 MB por PDF, 50 MB por vídeo.'
+            : 'No se pudo subir el archivo.',
       );
     } finally {
       input.value = '';
