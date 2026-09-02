@@ -2,7 +2,8 @@
 
 > Se lee junto con CLAUDE.md al inicio de cada sesión. Al cerrar un bloque, vuelca lo estable a CLAUDE.md.
 >
-> **Al día el 2026-09-01, tras cerrar P0, D0, D, E, F, G, H e I.** El plan está completo. El backend es Node + Hono + PostgreSQL con
+> **Al día el 2026-09-02, tras cerrar P0, D0, D, E, F, G, H e I.** El plan está completo, y
+> después se han cerrado callejones que solo aparecieron usando la aplicación (ver §2.8). El backend es Node + Hono + PostgreSQL con
 > Argon2id, los medios tienen fila propia y la marca de agua va incrustada en los píxeles. Antes de
 > P0 este archivo daba por cerrados los bloques B y C describiendo un backend que no existía en el
 > disco; ahora describe lo que hay.
@@ -15,9 +16,8 @@
 - **Pase de un solo uso atómico**: portado a Postgres, con `RETURNING` sobre el UPDATE condicional.
 - **Argon2id** (`@node-rs/argon2`) sustituye a PBKDF2. El hash PHC lleva salt y coste dentro, así
   que las columnas `salt` e `iterations` han desaparecido del esquema.
-- **Puerto `Storage`** con adaptador en memoria (pruebas) y de Supabase Storage por REST.
-- **Pruebas contra Postgres real**: 39 tests. `docker-compose.yml` en local, servicio de contenedor
-  en el CI.
+- **Puerto `Storage`** con cuatro adaptadores: R2, Supabase, disco (`fs`) y memoria.
+- **Pruebas contra Postgres real.** `docker-compose.yml` en local, servicio de contenedor en el CI.
 - Migraciones en dialecto PostgreSQL con `node-pg-migrate`, en el esquema `vistta` con RLS activada
   y sin políticas.
 - **Medios con fila propia** (`vistta.media`): el contenido del perfil guarda `mediaId`, no claves de
@@ -39,8 +39,18 @@
 - **Producción lista**: imagen de la API (bundle con esbuild, sin transpilador dentro), imagen del
   panel dentro de un Caddy, `compose.prod.yml` con base sin puerto publicado y migraciones en un
   servicio aparte, copias verificadas y restauradas, y adaptador de **R2** firmando SigV4 a mano.
-- **143 tests de backend** contra Postgres real y **6 de frontend** en Chrome de verdad (Karma), los
-  dos enganchados a `pnpm check` y al CI. Adaptador `fs` del puerto `Storage` para desarrollo local.
+- **El panel hace lo que el backend permite.** Se cerraron tres huecos en los que la capacidad
+  existía en la API y ninguna pantalla la llamaba: crear perfiles según el plan, cerrar sesión y
+  cambiar la contraseña. **Y el borrado de perfil**, que no existía en ninguna capa y convertía
+  crear en un callejón sin salida.
+- **Una cuenta de administrador no aterriza en el panel de cliente**: se la redirige a `/admin`,
+  que es el reverso de lo que el panel de administración ya hacía con una sesión de cliente.
+- **«He olvidado la contraseña»** por bandeja, no por correo: no se almacena el correo de nadie.
+- **Identidad de marca** en las dos entradas: logo, marco con esquinas y el hilo azul→verde.
+- **Documentación completa en `docs/`**: 11 documentos, 4 diagramas SVG y sus PDF, con
+  `pnpm docs:verificar` para que un PDF no se quede atrás del texto en silencio.
+- **166 tests de backend** contra Postgres real y **38 de frontend** en Chrome de verdad (Karma),
+  los dos enganchados a `pnpm check` y al CI.
 
 ## 1. Decisiones (Bloque A)
 
@@ -388,6 +398,38 @@ contenido y sobre la cuenta, no sobre el enlace.
 
 **El enlace legal está en la pantalla del DESTINATARIO**, no solo en el panel. Quien más
 probablemente necesite el procedimiento de retirada es justamente quien no tiene cuenta.
+
+## 2.8. Lo que apareció USANDO la aplicación
+
+Todo lo de esta sección salió después de dar el plan por completo, y ninguna de estas cosas se
+encuentra leyendo el código: hay que abrir el panel y usarlo.
+
+**El patrón que se repitió tres veces: capacidad sin pantalla.** El backend permitía algo, `Api` lo
+exponía, y ninguna plantilla lo llamaba. Pasó con el cambio de contraseña, con la creación de
+perfiles y con el cierre de sesión. La comprobación que lo detecta es mecánica y está hecha: cruzar
+los métodos de `Api` con sus usos, y los manejadores `protected` de cada componente con su
+plantilla. **Hoy no queda ninguno**, y conviene repetirla al añadir una función.
+
+**Crear sin poder deshacer es un callejón.** Al añadir la creación de perfiles quedó un límite que
+contaba perfiles ACTIVOS sin forma de liberar una plaza: un perfil creado por error la ocupaba para
+siempre, y con el plan Prueba encerraba la cuenta entera. Congelar no servía de sustituto porque la
+purga se lleva un congelado pasada la gracia: ofrecerlo habría sido programar su destrucción sin
+decirlo. Se añadió el borrado, con el nombre tecleado y avisando de que los pases ya enviados dejan
+de abrirse.
+
+**Un `<select>` con `[value]` no se sincroniza** cuando la opción acaba de aparecer: el perfil recién
+creado quedaba seleccionado en el componente y el desplegable seguía enseñando el anterior. Va con
+`ngModel`.
+
+**Una cuenta de administrador no tiene perfiles**, porque `admin:create` borra el del alta. Sin
+redirección, entrar por el panel de cliente montaba el editor sin nada detrás: se podía escribir y
+no se guardaba. De paso, `admin:create` **se niega ahora a promover una cuenta que tenga contenido**;
+antes lo dejaba sin ninguna pantalla desde la que llegar a él.
+
+**Un derivado commiteado se queda viejo en silencio.** Los PDF de `docs/pdf/` están en el
+repositorio, así que alguien puede corregir un documento y no regenerarlos, y semanas después enviar
+a un cliente un PDF que ya no dice lo que dice el texto. Lo detecta `pnpm docs:verificar`, que
+compara por hash del contenido —no por fecha, que git no conserva— y va dentro de `pnpm check`.
 
 ## 3. Fallos conocidos
 

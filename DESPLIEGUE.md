@@ -186,6 +186,11 @@ copiador los deja fuera por nombre, no por casualidad. Hay pruebas que fallan si
 alguien los mete en la lista de públicos o si añade un documento sin decidir a
 cuál de las dos listas pertenece.
 
+Los PDF de `docs/pdf/` están commiteados, así que pueden quedarse atrás del
+texto sin que nadie se entere. `pnpm docs:verificar` lo detecta comparando por
+hash del contenido, y va dentro de `pnpm check`: si cambias un documento y no
+regeneras con `pnpm docs:pdf`, el CI falla.
+
 Antes de abrir al público, `legal/README.md` tiene la lista de lo que falta:
 rellenar el titular, fijar la jurisdicción del VPS y del bucket, guardar el
 contrato de encargado de cada proveedor, decidir la retención del registro de

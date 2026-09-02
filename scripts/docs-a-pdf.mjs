@@ -21,6 +21,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { marked } from "marked";
+import { anotarHuella } from "./docs-verificar.mjs";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dirDocs = join(raiz, "docs");
@@ -181,5 +182,9 @@ for (const doc of documentos) {
     await rm(temporal, { force: true });
   }
 }
+
+// La huella deja constancia de CON QUÉ TEXTO se generaron estos PDF, para que
+// `pnpm docs:verificar` pueda decir si alguien los ha dejado atrás.
+await anotarHuella();
 
 console.log(`\n${documentos.length} documentos en docs/pdf/ (versión ${version}, ${fecha}).`);
