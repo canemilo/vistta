@@ -55,6 +55,7 @@ services:
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
       SUPABASE_MEDIA_BUCKET: ${SUPABASE_MEDIA_BUCKET:-vistta-media}
+      STORAGE_FS_DIR: /medios
       BIZUM_TELEFONO: ${BIZUM_TELEFONO:-}
       PAYPAL_DESTINO: ${PAYPAL_DESTINO:-}
       # Identidad del titular y contacto de avisos. Sin los cuatro, la página
@@ -64,6 +65,13 @@ services:
       TITULAR_IDENTIFICACION: ${TITULAR_IDENTIFICACION:-}
       TITULAR_DIRECCION: ${TITULAR_DIRECCION:-}
       CONTACTO_LEGAL: ${CONTACTO_LEGAL:-}
+    volumes:
+      # Solo lo usa STORAGE_DRIVER=fs, que sirve para estrenar el despliegue
+      # antes de tener cuenta de R2. Va en un volumen porque si no, los medios
+      # viven dentro del contenedor y el primer `up -d` que lo recree se los
+      # lleva: se perderían fotos de un cliente sin que nadie tocara nada.
+      # Con r2 o supabase este volumen se queda vacío y no estorba.
+      - medios:/medios
     # Tampoco publica puerto: solo entra por Caddy.
     depends_on:
       db:
@@ -91,5 +99,6 @@ services:
 
 volumes:
   pgdata:
+  medios:
   caddy_data:
   caddy_config:

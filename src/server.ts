@@ -19,8 +19,12 @@ function construirStorage(config: Config): Storage {
     return createMemoryStorage();
   }
   if (config.STORAGE_DRIVER === "fs") {
+    // Vale para desarrollo y para estrenar un despliegue antes de tener cuenta
+    // de almacenamiento, pero hay que decir lo que implica: `backup.sh` vuelca
+    // la BASE, no estos bytes. Si se pierde el disco, se pierden las fotos.
     console.warn(
-      `STORAGE_DRIVER=fs: los medios van a ${config.STORAGE_FS_DIR}. Solo para desarrollo.`
+      `STORAGE_DRIVER=fs: los medios van a ${config.STORAGE_FS_DIR}, ` +
+        `en el disco de esta máquina, y NO entran en las copias de seguridad.`
     );
     return createFsStorage(config.STORAGE_FS_DIR);
   }

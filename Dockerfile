@@ -50,6 +50,12 @@ RUN apt-get update \
  && fc-cache -f
 
 COPY --from=deps /app/node_modules ./node_modules
+# Además del servidor y las migraciones, `dist/` trae el alta de cuentas y la
+# concesión del rol de administrador. Así el primer administrador se crea desde
+# la propia imagen —`docker compose run --rm api node dist/crear-admin.js`— y no
+# hace falta instalar Node ni clonar el repositorio en el servidor. La regla no
+# cambia: el rol se sigue concediendo SOLO desde la máquina que tiene la base,
+# nunca por una ruta HTTP.
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 # Las migraciones son archivos, no código: `dist/migrar.js` las busca en ../migrations.
@@ -59,6 +65,12 @@ COPY migrations ./migrations
 # no se dibuja, esta imagen no llega a existir. Va compilada con el resto, para
 # no tener que meter un transpilador en la imagen solo para esto.
 RUN node dist/comprobar-fuentes.js
+
+# El directorio de los medios se crea AQUÍ y con su dueño puesto. Docker copia
+# el propietario del directorio de la imagen al crear el volumen; si no
+# existiera, el volumen nacería de root y el proceso, que corre como `node`, no
+# podría escribir: las subidas fallarían con un 500 y el log no diría por qué.
+RUN mkdir -p /medios && chown node:node /medios
 
 # El proceso no necesita ser root, y `node` ya viene creado en la imagen base.
 USER node
