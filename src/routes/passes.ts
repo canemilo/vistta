@@ -20,6 +20,7 @@ interface SectionView {
   type: SeccionDePase["type"];
   title?: string;
   body?: string;
+  display?: SeccionDePase["display"];
   items: {
     url: string;
     type: string;
@@ -92,6 +93,11 @@ export function passesRoutes({ config, db }: Deps) {
         type: section.type,
         title: section.title,
         body: section.body,
+        // Cómo se presentan las fotos. Se olvidó al añadirlo y el viewer
+        // enseñaba siempre la cuadrícula: esta lista se escribe campo a campo,
+        // así que lo que no se nombra aquí no llega, aunque esté en la base y
+        // el esquema lo valide.
+        display: section.display,
         items: await Promise.all(
           section.items.map(async (item) => ({
             type: item.kind,

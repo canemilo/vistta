@@ -708,6 +708,37 @@
           }
 
           @if (seccion.type !== 'texto') {
+            <!--
+              Cómo se presentarán estas fotos.
+
+              Va aquí, junto a las fotos que afecta, y no en un ajuste general
+              del perfil: la decisión es distinta para cada bloque —una serie de
+              verticales pide carrusel y una selección de apaisadas pide
+              cuadrícula— y verla al lado de lo que cambia evita tener que
+              recordar cuál era cuál.
+            -->
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <span class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] uppercase">
+                Presentación
+              </span>
+              @for (modo of PRESENTACIONES; track modo.valor) {
+                <button
+                  type="button"
+                  (click)="editarSeccion(si, $any({ display: modo.valor }))"
+                  [attr.aria-pressed]="presentacionDe(seccion) === modo.valor"
+                  [title]="modo.pista"
+                  class="rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em]"
+                  [class]="
+                    presentacionDe(seccion) === modo.valor
+                      ? 'border-emerald-400/60 bg-emerald-400/10 text-emerald-300'
+                      : 'border-[#1c3b44] text-[#8fb0b2] hover:border-emerald-400/40'
+                  "
+                >
+                  {{ modo.etiqueta }}
+                </button>
+              }
+            </div>
+
             <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               @for (foto of itemsDe(si); track foto.mediaId) {
                 <figure class="group min-w-0">

@@ -125,6 +125,9 @@ export class Panel {
       type: s.type,
       title: s.title,
       body: 'body' in s ? s.body : undefined,
+      // La vista previa tiene que enseñar la MISMA presentación que verá el
+      // cliente; si no, se elige a ciegas.
+      display: 'display' in s ? s.display : undefined,
       items:
         'items' in s
           ? s.items.map((it) => ({
@@ -443,6 +446,24 @@ export class Panel {
   protected actualizar(cambio: Partial<ProfileContent>): void {
     this.contenido.update((c) => ({ ...c, ...cambio }));
     this.aviso.set('');
+  }
+
+  /** Las dos formas de presentar fotos, con lo que las distingue de verdad. */
+  protected readonly PRESENTACIONES = [
+    {
+      valor: 'cuadricula' as const,
+      etiqueta: 'CUADRÍCULA',
+      pista: 'Filas ordenadas. Recorta para que las celdas cuadren.',
+    },
+    {
+      valor: 'carrusel' as const,
+      etiqueta: 'CARRUSEL',
+      pista: 'Tira horizontal. No recorta nada.',
+    },
+  ];
+
+  protected presentacionDe(seccion: EditableSection): string {
+    return 'display' in seccion && seccion.display ? seccion.display : 'cuadricula';
   }
 
   protected anadirSeccion(type: EditableSection['type']): void {

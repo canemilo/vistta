@@ -87,68 +87,100 @@
         }
 
         @if (seccion.items.length) {
-          <!-- Rejilla justificada: cada foto ocupa un ancho proporcional a lo
-               apaisada que sea, así que la fila cierra exacta y todas acaban
-               con la misma altura sin recortar ninguna. Ver `flex()`. -->
-          <div class="mt-8 flex flex-wrap gap-3" [class.mt-0]="!seccion.body">
-            @for (foto of seccion.items; track foto.url) {
-              <figure
-                class="group min-w-[min(100%,220px)]"
-                [style.flex]="flex(foto)"
-                [style.max-width]="topeDeAncho(foto)"
-              >
-                <!--
-                  Es un `button` y no un `div` porque abre algo. Con un `div` y
-                  un `click`, quien navega con teclado no puede ampliar ni una
-                  sola foto del documento.
-                -->
-                <button
-                  type="button"
-                  (click)="ampliar(foto)"
-                  [attr.aria-label]="
-                    'Ampliar ' +
-                    (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
-                  "
-                  class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
-                  [style.background-image]="fondo($index, foto)"
-                  [style.background-size]="'cover'"
-                  [style.aspect-ratio]="relacion(foto)"
-                >
-                  <!--
-                    `alt` con el pie si lo hay, y si no una descripción de
-                    posición. Vacío sería declararla decorativa, y no lo es: es
-                    el trabajo que se está enseñando.
+          @if (presentacion(seccion) === 'carrusel') {
+            <!--
+              Carrusel: una tira que se desliza en horizontal.
 
-                    Se quitó `draggable="false"`: no protege nada —la imagen se
-                    descarga igual— y estorba a quien quiere arrastrarla a una
-                    carpeta. La protección real es que los bytes servidos llevan
-                    la marca de la visita incrustada.
-                  -->
-                  <img
-                    [src]="foto.url"
-                    [alt]="foto.caption ?? 'Imagen ' + ($index + 1) + ' de ' + seccion.title"
-                    [width]="foto.width"
-                    [height]="foto.height"
-                    loading="lazy"
-                    decoding="async"
-                    (error)="ocultar($event)"
-                    class="h-full w-full max-w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                  />
-                  <!-- Aquí había un sello superpuesto por CSS. Se ha quitado en el
-                       bloque D, y no por estilo: no era una marca de agua. Estaba
-                       encima de la foto, no dentro, así que "guardar imagen como"
-                       descargaba el archivo original y limpio. La marca de esta
-                       visita ahora viene incrustada en los píxeles que sirve
-                       /m/*, y por eso no hay nada que pintar por delante. -->
-                </button>
-                @if (foto.caption) {
-                  <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#63848b]">
-                    {{ foto.caption }}
-                  </figcaption>
-                }
-              </figure>
-            }
-          </div>
+              No recorta nada —cada foto conserva su proporción— y por eso es la
+              alternativa a la cuadrícula: quien no quiera que se recorte su
+              trabajo tiene esta. `scroll-snap` para que pare encuadrada, y con
+              teclado se recorre igual porque cada foto es un botón.
+            -->
+            <div
+              class="mt-8 -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-3 md:mx-0 md:px-0"
+              [class.mt-0]="!seccion.body"
+              role="group"
+              [attr.aria-label]="'Carrusel de ' + (seccion.title ?? 'fotos')"
+            >
+              @for (foto of seccion.items; track foto.url) {
+                <figure class="group shrink-0 snap-start">
+                  <button
+                    type="button"
+                    (click)="ampliar(foto)"
+                    [attr.aria-label]="
+                      'Ampliar ' +
+                      (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
+                    "
+                    class="relative block h-[260px] cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
+                    [style.width.px]="260 * proporcionDe(foto)"
+                    [style.background-image]="fondo($index, foto)"
+                    [style.background-size]="'cover'"
+                  >
+                    <img
+                      [src]="foto.url"
+                      [alt]="foto.caption ?? 'Imagen ' + ($index + 1) + ' de ' + seccion.title"
+                      [width]="foto.width"
+                      [height]="foto.height"
+                      loading="lazy"
+                      decoding="async"
+                      (error)="ocultar($event)"
+                      class="h-full w-full object-cover"
+                    />
+                  </button>
+                  @if (foto.caption) {
+                    <figcaption
+                      class="mt-2 max-w-[260px] font-mono text-[10px] tracking-[0.06em] text-[#63848b]"
+                    >
+                      {{ foto.caption }}
+                    </figcaption>
+                  }
+                </figure>
+              }
+            </div>
+          } @else {
+            <!--
+              Cuadrícula: celdas iguales en filas regulares.
+
+              Todas las celdas tienen la misma proporción, así que las filas
+              cierran a la misma altura pase lo que pase con las fotos. Eso
+              RECORTA —`object-cover`—, y es el precio de que se vea ordenado;
+              quien no quiera recorte tiene el carrusel, y en cualquier caso al
+              pulsar una foto se abre entera.
+            -->
+            <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3" [class.mt-0]="!seccion.body">
+              @for (foto of seccion.items; track foto.url) {
+                <figure class="group min-w-0">
+                  <button
+                    type="button"
+                    (click)="ampliar(foto)"
+                    [attr.aria-label]="
+                      'Ampliar ' +
+                      (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
+                    "
+                    class="relative block aspect-4/3 w-full cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
+                    [style.background-image]="fondo($index, foto)"
+                    [style.background-size]="'cover'"
+                  >
+                    <img
+                      [src]="foto.url"
+                      [alt]="foto.caption ?? 'Imagen ' + ($index + 1) + ' de ' + seccion.title"
+                      [width]="foto.width"
+                      [height]="foto.height"
+                      loading="lazy"
+                      decoding="async"
+                      (error)="ocultar($event)"
+                      class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  </button>
+                  @if (foto.caption) {
+                    <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#63848b]">
+                      {{ foto.caption }}
+                    </figcaption>
+                  }
+                </figure>
+              }
+            </div>
+          }
         }
       </div>
     </section>

@@ -118,16 +118,92 @@ describe('PassDocument · ampliar una foto', () => {
     expect(ampliadaSrc()).toBeNull();
   });
 
-  it('la caja de cada foto lleva su proporción real, así que no se recorta', () => {
-    // El navegador normaliza `aspect-ratio: 1.5` a `1.5 / 1`, de ahí el parseo.
-    const proporcion = (el: HTMLElement) => {
-      const [ancho, alto] = getComputedStyle(el).aspectRatio.split('/');
-      return Number(ancho) / Number(alto ?? 1);
-    };
-    const cajas = fotos();
-    // 1600/1067 apaisada y 1000/1500 vertical: si la rejilla impusiera una
-    // proporción fija por posición, las dos saldrían iguales.
-    expect(proporcion(cajas[0])).toBeGreaterThan(1);
-    expect(proporcion(cajas[1])).toBeLessThan(1);
+  it('la foto ampliada no se recorta', async () => {
+    // Aquí es donde vive ahora esa promesa. En la cuadrícula del documento SÍ
+    // se recorta, a propósito, para que las filas cierren iguales; quien no
+    // quiera recorte tiene el carrusel. Pero al ampliar se ve entera siempre,
+    // venga del modo que venga.
+    fotos()[1].click(); // la vertical
+    await estabiliza();
+
+    const img = fixture.nativeElement.querySelector('dialog img') as HTMLImageElement;
+    expect(img.className).toContain('object-contain');
+    expect(img.className).not.toContain('object-cover');
+  });
+});
+
+describe('PassDocument · cómo se presentan las fotos', () => {
+  let fixture: ComponentFixture<PassDocument>;
+
+  function monta(secciones: DocSection[]): void {
+    fixture = TestBed.createComponent(PassDocument);
+    fixture.componentRef.setInput('profile', { displayName: 'Marina' });
+    fixture.componentRef.setInput('secciones', secciones);
+    fixture.detectChanges();
+  }
+
+  const cuadricula = () => fixture.nativeElement.querySelector('.grid.grid-cols-2');
+  const carrusel = () => fixture.nativeElement.querySelector('[role="group"].snap-x');
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [PassDocument] }).compileComponents();
+  });
+
+  it('sin decir nada, cuadrícula', () => {
+    // Todo el contenido anterior a esta función no trae el campo. Que el valor
+    // por defecto sea la cuadrícula es lo que hace que siga viéndose ordenado.
+    monta([{ type: 'galeria', title: 'X', items: SECCIONES[0].items }]);
+    expect(cuadricula()).not.toBeNull();
+    expect(carrusel()).toBeNull();
+  });
+
+  it('en cuadrícula, todas las celdas tienen la misma proporción', () => {
+    monta([{ type: 'galeria', title: 'X', display: 'cuadricula', items: SECCIONES[0].items }]);
+    const cajas = Array.from(
+      fixture.nativeElement.querySelectorAll('figure button'),
+    ) as HTMLElement[];
+    // Es lo que arregla el fallo original: antes cada caja llevaba la
+    // proporción REAL de su foto, así que una vertical al lado de una apaisada
+    // dejaba la fila desigual.
+    expect(cajas.length).toBe(2);
+    expect(cajas[0].className).toContain('aspect-4/3');
+    expect(cajas[1].className).toContain('aspect-4/3');
+  });
+
+  it('en carrusel, cada foto conserva su proporción', () => {
+    monta([{ type: 'galeria', title: 'X', display: 'carrusel', items: SECCIONES[0].items }]);
+    expect(carrusel()).not.toBeNull();
+    expect(cuadricula()).toBeNull();
+
+    // 1600/1067 apaisada y 1000/1500 vertical: si el carrusel recortara, las
+    // dos medirían lo mismo. No recortar es su razón de existir.
+    const cajas = Array.from(
+      fixture.nativeElement.querySelectorAll('figure button'),
+    ) as HTMLElement[];
+    const ancho = (el: HTMLElement) => parseFloat(el.style.width);
+    expect(ancho(cajas[0])).toBeGreaterThan(ancho(cajas[1]));
+  });
+
+  it('en los dos modos se puede ampliar con el teclado', () => {
+    for (const display of ['cuadricula', 'carrusel'] as const) {
+      monta([{ type: 'galeria', title: 'X', display, items: SECCIONES[0].items }]);
+      const botones = Array.from(
+        fixture.nativeElement.querySelectorAll('figure button'),
+      ) as HTMLButtonElement[];
+      expect(botones.length).withContext(display).toBe(2);
+      for (const b of botones) {
+        expect(b.tagName).withContext(display).toBe('BUTTON');
+        expect(b.getAttribute('aria-label')).withContext(display).toBeTruthy();
+      }
+    }
+  });
+
+  it('cada bloque elige por su cuenta', () => {
+    monta([
+      { type: 'galeria', title: 'Uno', display: 'cuadricula', items: SECCIONES[0].items },
+      { type: 'galeria', title: 'Dos', display: 'carrusel', items: SECCIONES[1].items },
+    ]);
+    expect(cuadricula()).not.toBeNull();
+    expect(carrusel()).not.toBeNull();
   });
 });

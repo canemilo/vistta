@@ -80,14 +80,34 @@ const titulo = z.string().max(160).optional();
  * el tipo de bloque son toda la estructura que necesita decidir; el diseño lo
  * monta el viewer.
  */
+/**
+ * Cómo se presentan las fotos de un bloque.
+ *
+ *   cuadricula — filas ordenadas, todas las celdas iguales. Es el que da
+ *                sensación de orden y el que se usa si no se dice nada.
+ *   carrusel   — una tira que se desliza en horizontal, sin recortar nada.
+ *
+ * Es OPCIONAL, y por eso el contenido que ya existe sigue siendo válido: al
+ * leerlo, un bloque sin este campo se presenta en cuadrícula. Si fuera
+ * obligatorio, guardar un perfil viejo empezaría a fallar.
+ */
+export const PresentacionSchema = z.enum(["cuadricula", "carrusel"]);
+export type Presentacion = z.infer<typeof PresentacionSchema>;
+
 export const SectionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("texto"), title: titulo, body: z.string().max(5000) }),
-  z.object({ type: z.literal("galeria"), title: titulo, items: listaDeMedios(60) }),
+  z.object({
+    type: z.literal("galeria"),
+    title: titulo,
+    items: listaDeMedios(60),
+    display: PresentacionSchema.optional(),
+  }),
   z.object({
     type: z.literal("proyecto"),
     title: titulo,
     body: z.string().max(5000).optional(),
     items: listaDeMedios(60),
+    display: PresentacionSchema.optional(),
   }),
 ]);
 export type Section = z.infer<typeof SectionSchema>;

@@ -395,3 +395,88 @@ describe("subida de medios", () => {
     expect(segunda.status).toBe(409);
   });
 });
+
+describe("cómo se presentan las fotos de un bloque", () => {
+  /**
+   * El campo `display` viaja desde el JSON del perfil hasta el documento que ve
+   * el cliente. Se prueba de PUNTA A PUNTA porque el fallo que tuvo no estaba
+   * ni en el esquema ni en el dominio: la ruta de apertura recompone las
+   * secciones campo a campo, y lo que no se nombra ahí no llega aunque esté
+   * guardado y validado. Una prueba de la capa de abajo lo habría dado por
+   * bueno.
+   */
+  it("llega hasta el documento del pase", async () => {
+    await crearCuenta();
+    const sesion = await panelSession();
+    const perfil = await seedProfile("p_pres", { sections: [] }, "marina");
+    const { mediaId } = await subirMedio(sesion, perfil);
+
+    await callAs("198.51.100.70", `/api/profiles/${perfil}`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        data: {
+          sections: [
+            { type: "galeria", title: "Con carrusel", display: "carrusel", items: [{ mediaId }] },
+          ],
+        },
+      }),
+    });
+
+    const pase = await callAs("198.51.100.71", "/api/passes", {
+      method: "POST",
+      headers: { authorization: `Bearer ${sesion}`, "content-type": "application/json" },
+      body: JSON.stringify({ profileId: perfil }),
+    });
+    const { url } = (await pase.json()) as { url: string };
+    const abierto = await callAs("198.51.100.72", `/api/open/${url.split("/v/")[1]}`);
+    const vista = (await abierto.json()) as { sections: { display?: string }[] };
+
+    expect(vista.sections[0].display).toBe("carrusel");
+  });
+
+  it("un bloque sin presentación sigue siendo válido: se guarda y se abre", async () => {
+    // Todo el contenido que ya existía no tiene el campo. Si fuera obligatorio,
+    // guardar un perfil viejo empezaría a fallar.
+    await crearCuenta();
+    const sesion = await panelSession();
+    const perfil = await seedProfile("p_sinpres", { sections: [] }, "marina");
+    const { mediaId } = await subirMedio(sesion, perfil, { ip: "198.51.100.73" });
+
+    const guardar = await callAs("198.51.100.74", `/api/profiles/${perfil}`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        data: { sections: [{ type: "galeria", title: "Sin decir nada", items: [{ mediaId }] }] },
+      }),
+    });
+    expect(guardar.status).toBe(200);
+
+    const pase = await callAs("198.51.100.75", "/api/passes", {
+      method: "POST",
+      headers: { authorization: `Bearer ${sesion}`, "content-type": "application/json" },
+      body: JSON.stringify({ profileId: perfil }),
+    });
+    const { url } = (await pase.json()) as { url: string };
+    const abierto = await callAs("198.51.100.76", `/api/open/${url.split("/v/")[1]}`);
+    const vista = (await abierto.json()) as { sections: { display?: string }[] };
+
+    // Ausente, no vacío: el viewer decide que ausente significa cuadrícula.
+    expect(vista.sections[0].display).toBeUndefined();
+  });
+
+  it("una presentación inventada se rechaza", async () => {
+    await crearCuenta();
+    const sesion = await panelSession();
+    const perfil = await seedProfile("p_malapres", { sections: [] }, "marina");
+
+    const res = await callAs("198.51.100.77", `/api/profiles/${perfil}`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        data: { sections: [{ type: "galeria", title: "X", display: "mosaico", items: [] }] },
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+});

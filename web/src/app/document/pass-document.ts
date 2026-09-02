@@ -19,11 +19,15 @@ export interface DocMedia {
   lqip?: string | null;
 }
 
+export type Presentacion = 'cuadricula' | 'carrusel';
+
 export interface DocSection {
   type: 'texto' | 'galeria' | 'proyecto';
   title?: string;
   body?: string;
   items: DocMedia[];
+  /** Cómo se presentan las fotos. Ausente = cuadrícula. */
+  display?: Presentacion;
 }
 
 export interface DocProfile {
@@ -63,54 +67,36 @@ export class PassDocument {
   });
 
   /**
-   * Rejilla justificada, calculada con las proporciones REALES de cada foto.
+   * Cómo se presentan las fotos de un bloque.
    *
-   * Antes esto era un ciclo fijo de anchos y proporciones —la foto 1 ocupa
-   * cuatro columnas, la 2 dos, y así— con la proporción real superpuesta encima.
-   * Tres reglas peleándose por la misma caja: ganaba la última y las otras dos
-   * sobraban, y una foto vertical acababa recortada dentro de un hueco
-   * apaisado.
+   * Antes había una sola forma: una rejilla «justificada» que repartía cada
+   * fila en proporción a lo apaisada que fuera cada foto. La idea era buena y
+   * el resultado no: el tope de ancho que impedía que una foto suelta creciera
+   * hasta el ancho completo ROMPÍA esa proporción, así que una vertical
+   * quedaba pequeña al lado de una apaisada y las filas salían desiguales. Se
+   * midió sobre el documento real: seis fotos daban cuatro filas irregulares.
    *
-   * Ahora se hace como lo hace cualquier galería que se lea bien: cada foto
-   * ocupa un ancho PROPORCIONAL a lo apaisada que sea, y la fila se reparte
-   * entre las que caben. Como todas crecen en proporción a su ratio, todas
-   * acaban con la misma altura y la fila cierra exacta, sin recortar ninguna y
-   * sin dejar huecos. Es lo que el bloque D hizo posible al guardar `width` y
-   * `height` medidos de los bytes: sin eso, esto no se puede calcular.
+   * Ahora hay dos, y las elige quien monta el perfil:
    *
-   * Todo en CSS, sin medir el contenedor ni escuchar el `resize`: reflota solo
-   * al cambiar el ancho de la ventana.
+   *   cuadrícula — celdas iguales en filas regulares. Es el que da sensación
+   *                de orden, y el que se aplica si no se dice nada.
+   *   carrusel   — una tira horizontal que se desliza, sin recortar nada.
+   *
+   * La cuadrícula RECORTA para que las celdas cuadren; el carrusel no recorta
+   * nada. Entre las dos está cubierto el compromiso, y en cualquier caso al
+   * pulsar una foto se abre entera.
    */
-  private static readonly PROPORCION_POR_DEFECTO = 3 / 2;
+  protected presentacion(seccion: DocSection): Presentacion {
+    return seccion.display ?? 'cuadricula';
+  }
 
-  /** Alto al que se aspira por fila. Es un objetivo, no una imposición. */
-  private static readonly ALTO_OBJETIVO = 260;
-
-  /**
-   * Cuánto se deja estirar una foto por encima de su tamaño natural.
-   *
-   * Sin tope, una foto que se queda sola en la última fila crece hasta el ancho
-   * completo: una vertical de dos metros de alto en mitad del documento.
-   */
-  private static readonly ESTIRAMIENTO_MAXIMO = 1.6;
-
+  /** Proporción real de la foto. Sin dimensiones, se asume apaisada 3:2. */
   protected proporcionDe(foto: DocMedia): number {
-    if (!foto.width || !foto.height) return PassDocument.PROPORCION_POR_DEFECTO;
+    if (!foto.width || !foto.height) return 3 / 2;
     return foto.width / foto.height;
   }
 
-  /** El reparto de la fila: crece en proporción a lo ancha que sea la foto. */
-  protected flex(foto: DocMedia): string {
-    const r = this.proporcionDe(foto);
-    return `${r} 1 ${Math.round(r * PassDocument.ALTO_OBJETIVO)}px`;
-  }
-
-  protected topeDeAncho(foto: DocMedia): string {
-    const r = this.proporcionDe(foto);
-    return `${Math.round(r * PassDocument.ALTO_OBJETIVO * PassDocument.ESTIRAMIENTO_MAXIMO)}px`;
-  }
-
-  /** La proporción exacta de la caja, para que nada se recorte. */
+  /** La proporción exacta de la caja, para que el carrusel no recorte nada. */
   protected relacion(foto: DocMedia): string {
     return `${this.proporcionDe(foto)}`;
   }

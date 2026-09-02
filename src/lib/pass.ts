@@ -1,5 +1,6 @@
 import type { Db } from "../db";
 import { generateToken, hashToken } from "./token";
+import type { Presentacion } from "../schemas";
 import { ProfileDataSchema, idsDeMedios, type ProfileData, type Section } from "../schemas";
 import { mediosDelPerfil, type MedioRow } from "./media-store";
 import type { MediaKind } from "./sniff";
@@ -21,6 +22,8 @@ export interface SeccionDePase {
   title?: string;
   body?: string;
   items: ItemDePase[];
+  /** Cómo se presentan las fotos. Ausente = cuadrícula. */
+  display?: Presentacion;
 }
 
 export interface PassView {
@@ -200,6 +203,7 @@ function resolverSecciones(sections: Section[], medios: Map<string, MedioRow>): 
     type: section.type,
     title: section.title,
     body: "body" in section ? section.body : undefined,
+    display: "display" in section ? section.display : undefined,
     items: !("items" in section)
       ? []
       : section.items.flatMap((item) => {

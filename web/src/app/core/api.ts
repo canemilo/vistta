@@ -145,10 +145,13 @@ export interface MediaInfo {
   lqip: string | null;
 }
 
+/** Cómo se presentan las fotos de un bloque. Ausente = cuadrícula. */
+export type Presentacion = 'cuadricula' | 'carrusel';
+
 export type EditableSection =
   | { type: 'texto'; title?: string; body: string }
-  | { type: 'galeria'; title?: string; items: MediaRef[] }
-  | { type: 'proyecto'; title?: string; body?: string; items: MediaRef[] };
+  | { type: 'galeria'; title?: string; items: MediaRef[]; display?: Presentacion }
+  | { type: 'proyecto'; title?: string; body?: string; items: MediaRef[]; display?: Presentacion };
 
 export interface ProfileContent {
   tagline?: string;
