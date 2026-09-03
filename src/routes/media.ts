@@ -49,7 +49,10 @@ export function mediaRoutes({ config, db, storage }: Deps) {
      * lleva una marca que no lleva.
      */
     if (medio.kind === "image") {
-      const marcada = await marcarImagen(objeto.bytes, watermarkFor(pid));
+      const marcada = await marcarImagen(
+        objeto.bytes,
+        watermarkFor(pid, new Date(), medio.destinatario_ref)
+      );
       return new Response(marcada.bytes, {
         headers: {
           "Content-Type": marcada.mime,

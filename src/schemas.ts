@@ -15,6 +15,16 @@ export const CreatePassSchema = z
       .max(7 * 24 * 3600)
       .optional(),
     modo: z.enum(["unico", "accesos", "ventana"]).default("unico"),
+    /**
+     * A quién se le enseña. Lo escribe el cliente y va DENTRO de la imagen.
+     *
+     * Es un dato personal de un tercero: el tope de longitud está también en la
+     * base, y lo que se dibuja se trunca aparte (`REFERENCIA_MAXIMA`), porque
+     * caber en la imagen y ser aceptable son dos cosas distintas.
+     */
+    destinatarioRef: z.string().trim().min(1).max(120).optional(),
+    /** Nota privada del cliente para reconocer el pase. No se pinta nunca. */
+    destinatarioNota: z.string().trim().min(1).max(120).optional(),
     maxAccesos: z.number().int().min(ACCESOS_MINIMOS).max(100).optional(),
     ventanaMs: z.number().int().positive().optional(),
   })

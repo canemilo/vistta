@@ -141,15 +141,31 @@ escala de categorías especiales.
 
 Lo que Vistta trata del **destinatario** del enlace:
 
-|                   |                                                                                                                                                          |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Se guarda**     | Que el pase se consumió y cuándo. Nada más.                                                                                                              |
-| **NO se guarda**  | Quién lo abrió, su nombre, su correo, su IP ni su dispositivo. Vistta **no sabe** a quién envió su cliente el enlace: lo envía el cliente por su cuenta. |
-| **Marca de agua** | Lleva el prefijo del identificador del pase y la hora UTC. **No contiene ningún dato del que mira.** Identifica la visita, no a la persona.              |
+|                       |                                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Se guarda**         | Que el pase se consumió, cuándo, y cuántas aperturas lleva. Y, **solo si el cliente la escribe**, la referencia del destinatario (`destinatario_ref`) y una nota privada suya. |
+| **NO se guarda**      | Quién lo abrió de verdad, su nombre, su correo, su IP ni su dispositivo. Nada llega del navegador que abre.                                                                    |
+| **Marca de agua**     | Identificador del pase, hora UTC y, si existe, la referencia del destinatario. Se incrusta en los píxeles, por visita.                                                         |
+| **Origen de la ref.** | **El cliente**, no el destinatario. Vistta no la obtiene, no la verifica y no la usa para nada más que dibujarla.                                                              |
+| **Conservación**      | Vive en la fila del pase y se borra con ella: al purgar el pase, al borrar el perfil o al borrar la cuenta. No se copia a ninguna otra tabla.                                  |
 
-> Esto importa para el art. 28: un encargado que supiera quién es el destinatario
-> tendría que decirlo. Vistta no lo sabe, y esa es una propiedad del diseño que
-> hay que conservar. Añadir analítica de aperturas cambiaría este registro, el
+> **La distinción que sostiene todo lo demás, y que hay que leer despacio:**
+> Vistta sigue sin saber **quién abre** un pase. Lo que puede saber, si el cliente
+> lo escribe, es **a quién dijo su cliente que se lo mandaba**. No es lo mismo: un
+> enlace reenviado lo abre otra persona, y la marca seguirá diciendo el nombre del
+> destinatario previsto. La marca es trazabilidad de a quién se le entregó, no
+> identificación de quién miró.
+>
+> `destinatario_ref` es **dato personal de un tercero** que introduce el cliente.
+> El cliente es su responsable y declara, al escribirlo, que tiene base para
+> tratarlo; Vistta es encargado también de ese dato. Por eso el campo es opcional,
+> la interfaz lo dice en el momento de escribirlo, y el dato no sale de ahí: no va
+> a los logs, no se expone a nadie más que al dueño del pase y no se conserva
+> aparte.
+>
+> Para el art. 28 esto cambia lo que hay que declarar, y por eso está escrito aquí
+> antes que en ningún otro sitio. Lo que **sigue vetado** es registrar quién abre:
+> identidad, IP o huella del dispositivo. Añadir eso cambiaría este registro, el
 > contrato del art. 28 y la política de privacidad, en ese orden.
 
 ---

@@ -163,7 +163,7 @@ export function passesRoutes({ config, db }: Deps) {
         intro: view.intro,
       },
       sections,
-      watermark: watermarkFor(view.passId),
+      watermark: watermarkFor(view.passId, new Date(), view.destinatarioRef),
     });
   });
 

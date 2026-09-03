@@ -143,6 +143,8 @@ export interface PaseListado {
   validoHasta: number | null;
   accesosUsados: number;
   maxAccesos: number | null;
+  destinatarioRef: string | null;
+  destinatarioNota: string | null;
 }
 
 /** Lo que se pide al crear un pase. Sin `modo`, sale de un solo uso. */
@@ -150,6 +152,10 @@ export interface OpcionesDePase {
   modo?: ModoDePase;
   maxAccesos?: number;
   ventanaMs?: number;
+  /** A quién se le enseña. Va DENTRO de la imagen, en cada visita. */
+  destinatarioRef?: string;
+  /** Nota privada para reconocer el pase. No se pinta en ninguna imagen. */
+  destinatarioNota?: string;
 }
 
 export interface EstadoDeCuenta {

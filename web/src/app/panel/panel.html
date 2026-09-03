@@ -924,6 +924,41 @@
             }
           }
 
+          <div class="mt-3 border-t border-[#1c3b44] pt-3">
+            <label class="block font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+              A QUIÉN SE LO ENSEÑAS (opcional)
+              <input
+                type="text"
+                maxlength="120"
+                [(ngModel)]="destinatarioRef"
+                name="destinatarioRef"
+                placeholder="ana@ejemplo.com o 600 123 456"
+                class="mt-1 w-full rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1.5 font-sans text-[13px] text-[#c7dbdc] placeholder:text-[#3f5a63]"
+              />
+            </label>
+            <p class="mt-1.5 font-mono text-[11px] leading-relaxed text-[#63848d]">
+              Se escribe <span class="text-[#8fb0b2]">dentro de las fotos</span>, en cada visita. No
+              impide una captura de pantalla ni una filtración: hace que una copia que salga de aquí
+              lleve escrito a quién se le enseñó. Escríbelo solo si tienes motivo para tratar ese
+              dato.
+            </p>
+
+            <label class="mt-2 block font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+              NOTA PARA TI (opcional)
+              <input
+                type="text"
+                maxlength="120"
+                [(ngModel)]="destinatarioNota"
+                name="destinatarioNota"
+                placeholder="piso de la calle mayor"
+                class="mt-1 w-full rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1.5 font-sans text-[13px] text-[#c7dbdc] placeholder:text-[#3f5a63]"
+              />
+            </label>
+            <p class="mt-1.5 font-mono text-[11px] text-[#63848d]">
+              Solo la ves tú, en esta lista. No se pinta en ninguna imagen.
+            </p>
+          </div>
+
           @if (modosDisponibles().length === 1) {
             <p class="mt-2 font-mono text-[11px] text-[#63848d]">
               Tu plan genera enlaces de un solo uso. Los enlaces con varios accesos o con ventana de
@@ -967,6 +1002,11 @@
           <ul class="mt-2 space-y-1">
             @for (p of pases(); track p.id) {
               <li class="flex flex-wrap items-baseline gap-x-3 text-[13px] text-[#c7dbdc]">
+                @if (p.destinatarioNota || p.destinatarioRef) {
+                  <span class="text-[13px] text-[#c7dbdc]">
+                    {{ p.destinatarioNota || p.destinatarioRef }}
+                  </span>
+                }
                 <span class="font-mono text-[11px] text-[#8fb0b2]">
                   @switch (p.modo) {
                     @case ('unico') {

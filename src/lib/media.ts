@@ -99,11 +99,42 @@ async function verificar(
 }
 
 /**
- * Texto de marca de agua por visita: identifica el pase y la hora de apertura.
+ * Cuánto de la referencia del destinatario cabe en la marca.
+ *
+ * No es un tope de validación: es cuánto se puede DIBUJAR. El texto se compone
+ * en diagonal por toda la imagen y en una banda abajo; una referencia larga se
+ * sale de la banda o se solapa consigo misma, y entonces no se lee ni la
+ * referencia ni el pase. Se trunca con puntos suspensivos para que se note que
+ * está cortada, en vez de dejar una dirección de correo a medias que parezca
+ * entera.
+ */
+export const REFERENCIA_MAXIMA = 28;
+
+/**
+ * Texto de marca de agua por visita: identifica el pase y la hora de apertura,
+ * y —si el cliente la escribió— a quién se le enseñó.
+ *
  * Se deja corto a propósito (tiene que caber incrustado sobre la imagen); la
  * fecha completa queda en passes.consumed_at.
+ *
+ * Sin destinatario, el texto es EXACTAMENTE el de siempre. Esa
+ * retrocompatibilidad no es cortesía con las llamadas viejas: es que la mayoría
+ * de los pases no llevan destinatario y su marca no tiene por qué cambiar.
+ *
+ * Lo que esto hace y lo que no: NO impide una captura ni una filtración. Hace
+ * que una copia que salga de aquí lleve escrito a quién se le enseñó. Es
+ * trazabilidad, y disuade; no es un candado.
  */
-export function watermarkFor(passId: string, openedAt = new Date()): string {
+export function watermarkFor(
+  passId: string,
+  openedAt = new Date(),
+  destinatario?: string | null
+): string {
   const hora = openedAt.toISOString().slice(11, 16); // HH:MM en UTC
-  return `PASE · ${passId.slice(0, 8)} · ${hora}`;
+  const base = `PASE · ${passId.slice(0, 8)} · ${hora}`;
+
+  const ref = destinatario?.trim();
+  if (!ref) return base;
+  const corta = ref.length > REFERENCIA_MAXIMA ? `${ref.slice(0, REFERENCIA_MAXIMA - 1)}…` : ref;
+  return `${corta} · ${base}`;
 }

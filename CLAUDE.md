@@ -234,8 +234,13 @@ no se negocian:
   que fallan si alguien los publica o si añade un documento sin clasificar.
 - Tres propiedades del diseño que los documentos declaran y que **no se pueden romper sin rehacer
   el RAT, el contrato del art. 28 y la EIPD**: no se guarda el correo ni el teléfono del cliente (no
-  hay columna), la IP solo se guarda hasheada, y **Vistta no sabe quién abre un pase** —la marca de
-  agua lleva el pase y la hora, nunca datos del que mira—.
+  hay columna), la IP solo se guarda hasheada, y **Vistta no sabe QUIÉN ABRE un pase** —del navegador
+  que abre no llega nada: ni identidad, ni IP, ni huella—.
+- Ojo con la tercera, que se afinó al añadir el destinatario: el cliente **sí puede escribir a quién
+  dice que se lo manda** (`passes.destinatario_ref`), y eso se incrusta en la marca. No es lo mismo
+  que saber quién miró —un enlace reenviado lo abre otro y la marca sigue diciendo lo escrito—. Es
+  dato personal de un TERCERO que introduce el cliente: opcional, nunca en logs, solo visible para el
+  dueño del pase, y se borra con el pase. Registrar quién abre sigue vetado.
 - La identidad del titular sale de la CONFIGURACIÓN (`GET /api/legal`, pública y sin sesión: quien
   avisa de un contenido no suele ser cliente). Sin los cuatro datos, `/legal` dice que no está
   configurado en vez de enseñar un aviso legal con huecos.

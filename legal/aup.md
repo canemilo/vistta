@@ -97,12 +97,17 @@ Dicho aquí para que nadie se lleve una sorpresa:
 
 - Vistta **no puede recuperar** un contenido que ya ha caducado por la retención
   de tu plan ni uno que ya se ha purgado.
-- Vistta **no sabe quién abrió un pase**. No guarda identidad, ni correo, ni IP
-  del destinatario. Si lo que buscas es saber quién vio algo, Vistta no lo tiene
-  y no puede conseguirlo.
-- La marca de agua incrustada identifica **la visita** —el pase y la hora—, no a
-  la persona. Ante un requerimiento judicial, permite decir de qué pase salió una
-  copia, y de ahí, qué cuenta lo generó. No más.
+- Vistta **no sabe quién abrió un pase**. No recibe ni guarda identidad, ni
+  correo, ni IP, ni huella del dispositivo de quien abre. Si lo que buscas es
+  saber quién vio algo, Vistta no lo tiene y no puede conseguirlo.
+- Lo que sí puede constar, **si quien generó el enlace lo escribió**, es a quién
+  dijo que se lo mandaba: una referencia que el propio cliente teclea y que se
+  incrusta en la marca de agua. No es lo mismo que saber quién miró —un enlace
+  reenviado lo abre otra persona y la marca sigue diciendo lo que se escribió—.
+- La marca de agua incrustada identifica **la visita** —el pase, la hora y, si
+  existe, esa referencia—. Ante un requerimiento judicial, permite decir de qué
+  pase salió una copia, a quién se dijo que se le entregaba y qué cuenta lo
+  generó. No más.
 - **Nada impide una captura de pantalla.** Vistta no promete lo contrario.
 
 ## 8. Requerimientos de autoridades

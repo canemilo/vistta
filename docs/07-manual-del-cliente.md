@@ -132,7 +132,18 @@ No. Vistta no registra quién abre un pase ni desde dónde. Lo que sí sabes es 
 si el enlace ya no le funciona a él, es que alguien lo abrió.
 
 **¿Puedo mandar el mismo pase a dos personas?**
-No: lo abriría la primera. Genera un pase por persona.
+No: lo abriría la primera. Genera un pase por persona. Y con la referencia del
+destinatario, además, cada copia lleva escrito a quién se le enseñó.
+
+**¿Para qué sirve escribir a quién se lo enseño?**
+Para que la marca de agua de esa foto lleve esa referencia dentro de los píxeles.
+Si esa imagen aparece donde no debe, se sabe de qué entrega salió. **No impide
+que la copien**: hace que la copia sea atribuible. Es opcional, y si la escribes
+estás tratando un dato de otra persona: hazlo solo si tienes motivo.
+
+**¿Y la nota?**
+Solo la ves tú, en tu lista de enlaces, para reconocer cuál es cuál. No se pinta
+en ninguna imagen ni la ve quien abre el pase.
 
 **¿Y si mi cliente dice que no le abre?**
 Lo más probable es que ya se abriera —a veces lo previsualiza su propio gestor

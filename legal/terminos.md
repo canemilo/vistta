@@ -79,6 +79,14 @@ Lo que hace, de verdad:
 - Las imágenes salen con una **marca de agua incrustada en los píxeles**,
   distinta en cada visita. No es una capa superpuesta: guardar la imagen guarda
   la marca.
+- Al generar un enlace puedes escribir **a quién se lo enseñas**, y esa
+  referencia se incrusta en la marca. Al escribirla **declaras que tienes base
+  para tratar ese dato**: es un dato personal de un tercero, tú eres su
+  responsable y Vistta solo lo dibuja. Es opcional; sin ella, la marca lleva el
+  pase y la hora, como siempre.
+- Eso **no impide** una captura de pantalla ni una filtración, y no lo vendemos
+  como tal: hace que una copia que salga de aquí lleve escrito a quién se le
+  entregó. Disuade y permite rastrear; no cierra nada.
 - Los medios solo se sirven por URL firmada y efímera, y tras tres comprobaciones.
 
 **Lo que NO promete, y no lo va a prometer nunca:**

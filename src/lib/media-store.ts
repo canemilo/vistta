@@ -283,12 +283,16 @@ export async function medioDelPase(
   db: Db,
   passId: string,
   mediaId: string
-): Promise<MedioRow | null> {
-  return db.one<MedioRow>(
+): Promise<(MedioRow & { destinatario_ref: string | null }) | null> {
+  // La referencia del destinatario sale en la MISMA consulta, y no en otra: por
+  // aquí pasa cada visita a cada foto, y cada una relee el original para
+  // marcarlo. Una segunda ida a la base por imagen se nota.
+  return db.one<MedioRow & { destinatario_ref: string | null }>(
     `SELECT m.id, m.profile_id, m.storage_key, m.kind, m.mime, m.bytes,
-            m.width, m.height, m.lqip, m.status
+            m.width, m.height, m.lqip, m.status, ps.destinatario_ref
      FROM vistta.pass_media pm
-     JOIN vistta.media m ON m.id = pm.media_id
+     JOIN vistta.media m   ON m.id = pm.media_id
+     JOIN vistta.passes ps ON ps.id = pm.pass_id
      WHERE pm.pass_id = $1 AND pm.media_id = $2 AND m.status = 'ready'`,
     [passId, mediaId]
   );

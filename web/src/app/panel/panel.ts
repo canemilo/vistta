@@ -67,6 +67,10 @@ export class Panel {
   protected readonly modoPase = signal<ModoDePase>('unico');
   protected accesosPase = 3;
   protected ventanaHoras = 24;
+  /** A quién se le enseña. Se pinta dentro de la foto, en cada visita. */
+  protected destinatarioRef = '';
+  /** Para reconocer el pase en la lista. No se pinta en ninguna parte. */
+  protected destinatarioNota = '';
   protected readonly pases = signal<PaseListado[]>([]);
 
   /** Los modos que da el plan. Sin plan (perfil sin dueño), solo el de siempre. */
@@ -616,6 +620,8 @@ export class Panel {
         modo,
         maxAccesos: modo === 'accesos' ? this.accesosPase : undefined,
         ventanaMs: modo === 'ventana' ? this.ventanaHoras * 3_600_000 : undefined,
+        destinatarioRef: this.destinatarioRef.trim() || undefined,
+        destinatarioNota: this.destinatarioNota.trim() || undefined,
       });
       this.enlace.set(url);
       await this.cargarPases();

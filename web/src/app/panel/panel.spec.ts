@@ -5,6 +5,7 @@ import {
   Api,
   type EstadoDeCuenta,
   type LimitesDePlan,
+  type OpcionesDePase,
   type PaseListado,
   type ProfileRow,
   type Usuario,
@@ -109,13 +110,9 @@ class ApiFalsa {
 
   /** Enlaces ya generados y opciones con las que se pidió el último. */
   pases: PaseListado[] = [];
-  ultimoPasePedido: { modo?: string; maxAccesos?: number; ventanaMs?: number } | null = null;
+  ultimoPasePedido: OpcionesDePase | null = null;
 
-  createPass = (
-    _s: string,
-    _perfil: string,
-    opciones: { modo?: string; maxAccesos?: number; ventanaMs?: number } = {},
-  ) => {
+  createPass = (_s: string, _perfil: string, opciones: OpcionesDePase = {}) => {
     this.ultimoPasePedido = opciones;
     return Promise.resolve({
       url: 'https://vistta.example/v/abc',
@@ -600,6 +597,8 @@ describe('Panel · cómo caduca el enlace', () => {
         validoHasta: Date.now() + 6 * 3_600_000,
         accesosUsados: 2,
         maxAccesos: 3,
+        destinatarioRef: 'ana@example.com',
+        destinatarioNota: 'piso de la calle mayor',
       },
     ];
     // Se recarga el perfil para que el panel pida la lista.
@@ -609,5 +608,31 @@ describe('Panel · cómo caduca el enlace', () => {
     const texto = (fixture.nativeElement.textContent ?? '') as string;
     expect(texto).toContain('2 de 3 accesos');
     expect(texto).toContain('caduca en unas 6 h');
+    // La nota privada es lo que ayuda a reconocer el enlace en la lista.
+    expect(texto).toContain('piso de la calle mayor');
+  });
+
+  it('el destinatario viaja al generar, y la nota también', async () => {
+    const ref = fixture.nativeElement.querySelector(
+      'input[name="destinatarioRef"]',
+    ) as HTMLInputElement;
+    ref.value = 'ana@example.com';
+    ref.dispatchEvent(new Event('input'));
+    await estabiliza();
+
+    boton('GENERAR ENLACE')!.click();
+    await estabiliza();
+    expect(api.ultimoPasePedido!.destinatarioRef).toBe('ana@example.com');
+  });
+
+  /*
+   * La línea honesta del producto, puesta donde se toma la decisión. Si alguien
+   * la cambia por «evita filtraciones», esto se pone rojo: no las evita, las
+   * hace atribuibles.
+   */
+  it('el panel no promete que impida nada', async () => {
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('No impide una captura de pantalla');
+    expect(texto.toLowerCase()).not.toContain('evita filtraciones');
   });
 });

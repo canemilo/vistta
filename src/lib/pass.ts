@@ -34,6 +34,8 @@ export interface SeccionDePase {
 
 export interface PassView {
   passId: string;
+  /** A quién se le enseña, si el cliente lo escribió. Va en la marca de agua. */
+  destinatarioRef: string | null;
   profileId: string;
   displayName: string;
   brandColor: string | null;
@@ -103,6 +105,10 @@ export interface OpcionesDePase {
   modo?: ModoDePase;
   maxAccesos?: number;
   ventanaMs?: number;
+  /** A quién se le enseña. Se pinta DENTRO de la imagen, en cada visita. */
+  destinatarioRef?: string;
+  /** Nota privada de quien manda el pase. No sale del panel de su dueño. */
+  destinatarioNota?: string;
 }
 
 export async function createPass(
@@ -202,8 +208,8 @@ export async function createPass(
     await tx.query(
       `INSERT INTO vistta.passes
          (id, token_hash, profile_id, status, created_at, expires_at,
-          modo, max_accesos, ventana_ms)
-       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8)`,
+          modo, max_accesos, ventana_ms, destinatario_ref, destinatario_nota)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10)`,
       [
         id,
         tokenHash,
@@ -213,6 +219,8 @@ export async function createPass(
         modo,
         modo === "accesos" ? (opts.maxAccesos ?? null) : null,
         ventanaMs,
+        opts.destinatarioRef ?? null,
+        opts.destinatarioNota ?? null,
       ]
     );
     if (medios.size > 0) {
@@ -250,7 +258,11 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
   const tokenHash = await hashToken(token);
   const now = Date.now();
 
-  const claimed = await db.one<{ id: string; profile_id: string }>(
+  const claimed = await db.one<{
+    id: string;
+    profile_id: string;
+    destinatario_ref: string | null;
+  }>(
     `UPDATE vistta.passes AS p SET
        accesos_usados      = p.accesos_usados + 1,
        -- La ventana se calcula AL ABRIR, no al crear: cuenta desde que el
@@ -271,7 +283,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
                              END
      WHERE p.token_hash = $2
        AND ${pasAbribleSql("p", "$1")}
-     RETURNING p.id, p.profile_id`,
+     RETURNING p.id, p.profile_id, p.destinatario_ref`,
     [now, tokenHash]
   );
 
@@ -304,6 +316,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
 
   return {
     passId: claimed.id,
+    destinatarioRef: claimed.destinatario_ref,
     profileId: profile.id,
     displayName: profile.display_name,
     brandColor: profile.brand_color,
@@ -326,6 +339,13 @@ export interface PaseListado {
   validoHasta: number | null;
   accesosUsados: number;
   maxAccesos: number | null;
+  /**
+   * Solo para el dueño del pase. La ruta que sirve esto ya comprueba que el
+   * perfil es suyo; si algún día se expusiera en otro sitio, estos dos campos
+   * son datos personales de un tercero y no pueden viajar.
+   */
+  destinatarioRef: string | null;
+  destinatarioNota: string | null;
 }
 
 /**
@@ -352,10 +372,12 @@ export async function pasesDelPerfil(
     valido_hasta: number | null;
     accesos_usados: number;
     max_accesos: number | null;
+    destinatario_ref: string | null;
+    destinatario_nota: string | null;
     abrible: boolean;
   }>(
     `SELECT p.id, p.modo, p.status, p.created_at, p.expires_at, p.valido_hasta,
-            p.accesos_usados, p.max_accesos,
+            p.accesos_usados, p.max_accesos, p.destinatario_ref, p.destinatario_nota,
             (${pasAbribleSql("p", "$2")}) AS abrible
      FROM vistta.passes AS p
      WHERE p.profile_id = $1
@@ -373,6 +395,8 @@ export async function pasesDelPerfil(
     validoHasta: r.valido_hasta === null ? null : Number(r.valido_hasta),
     accesosUsados: r.accesos_usados,
     maxAccesos: r.max_accesos,
+    destinatarioRef: r.destinatario_ref,
+    destinatarioNota: r.destinatario_nota,
   }));
 }
 
