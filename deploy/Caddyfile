@@ -14,6 +14,18 @@
 # confianza, y aquí queremos justo lo contrario: que `{remote_host}` sea siempre
 # el par real del socket, que nadie puede falsear.
 
+# `www` no sirve el sitio: redirige al dominio sin www, que es el canónico y el
+# que se usa en BASE_URL y en los enlaces de los pases. Hace falta un bloque
+# propio porque Caddy pide un certificado POR NOMBRE: sin esto, quien escriba
+# www se encuentra un error de TLS, no un 404, porque el fallo ocurre antes de
+# que haya una respuesta HTTP que dar.
+#
+# Requiere que `www` tenga su registro A apuntando aquí; si no lo tiene, Caddy
+# reintentará el certificado y fallará, sin afectar al dominio principal.
+www.{$DOMINIO} {
+	redir https://{$DOMINIO}{uri} permanent
+}
+
 {$DOMINIO} {
 	encode zstd gzip
 

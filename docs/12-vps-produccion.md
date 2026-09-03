@@ -250,22 +250,26 @@ los intentos que ya gastaste.
 
 ### Sobre `www`
 
-**El `deploy/Caddyfile` de hoy solo atiende `{$DOMINIO}`.** No hay bloque para `www`, así que
-si apuntas `www.vistta.es` al VPS, quien la escriba se encontrará un error de TLS: Caddy no
-tiene certificado para ese nombre y no sabe qué servir. Dos salidas, y hay que elegir una:
+`www.vistta.es` **redirige** al dominio sin `www`, que es el canónico y el que se usa en
+`BASE_URL` y en los enlaces de los pases. Lo hace un bloque propio del `deploy/Caddyfile`:
 
-- **No crear el registro `www`** apuntando al VPS. Sencillo, pero quien teclee `www` no llega.
-- **Añadir un bloque de redirección** al `Caddyfile`, que es lo normal en un sitio público:
+```
+www.{$DOMINIO} {
+    redir https://{$DOMINIO}{uri} permanent
+}
+```
 
-  ```
-  www.{$DOMINIO} {
-      redir https://{$DOMINIO}{uri} permanent
-  }
-  ```
+Hace falta un bloque aparte porque **Caddy pide un certificado por nombre**: sin él, quien
+escriba `www` no se encuentra un 404 sino un error de TLS, porque el fallo ocurre antes de que
+haya una respuesta HTTP que dar.
 
-> **Pendiente de decisión, y por eso no está hecho:** tocar el `Caddyfile` es un cambio de
-> configuración del despliegue, no de este documento. Mientras no se decida, **no apuntes
-> `www` al VPS**.
+Comprobado de verdad, no solo que el archivo valide: `https://www.../v/abc` responde **301**
+hacia `https://.../v/abc`. **La ruta se conserva**, así que un enlace de pase que alguien
+escriba con `www` sigue llegando a su pase.
+
+Por eso **sí hay que crear el registro `A` de `www`** apuntando al VPS. Si no lo creas, el
+bloque no estorba: Caddy no consigue el certificado de ese nombre, lo reintenta, y el dominio
+principal no se ve afectado.
 
 ### Una cosa que se vio de camino, y que no es de este despliegue
 
@@ -278,14 +282,14 @@ estar en el panel del DNS, es el momento de mirarlo.
 
 ## Cuando algo falla
 
-| Síntoma                                          | Causa probable                                  | Qué hacer                                            |
-| ------------------------------------------------ | ----------------------------------------------- | ---------------------------------------------------- |
-| Sigues entrando por contraseña tras ponerlo `no` | Un fragmento de `sshd_config.d/` lo sobrescribe | `sudo sshd -T \| grep passwordauthentication`        |
-| `docker` pide `sudo`                             | El grupo no se aplica a la sesión en curso      | Sal y vuelve a entrar por SSH                        |
-| Caddy no consigue certificado                    | El DNS no apunta aquí todavía                   | `dig +short vistta.es`; espera y reinicia Caddy      |
-| `www` da error de TLS                            | El `Caddyfile` no atiende `www`                 | Ver el apartado de arriba: es una decisión pendiente |
-| El correo deja de llegar                         | Se borró el `A` de `mail` al limpiar el parking | Recrear `mail` → `82.98.134.111`                     |
-| La máquina va a tirones                          | _Steal time_ del vecino                         | `top`, columna `st`. Es el proveedor, no tu código   |
+| Síntoma                                          | Causa probable                                                        | Qué hacer                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Sigues entrando por contraseña tras ponerlo `no` | Un fragmento de `sshd_config.d/` lo sobrescribe                       | `sudo sshd -T \| grep passwordauthentication`                   |
+| `docker` pide `sudo`                             | El grupo no se aplica a la sesión en curso                            | Sal y vuelve a entrar por SSH                                   |
+| Caddy no consigue certificado                    | El DNS no apunta aquí todavía                                         | `dig +short vistta.es`; espera y reinicia Caddy                 |
+| `www` da error de TLS                            | Falta el registro `A` de `www`, o su certificado aún no se ha emitido | `dig +short www.vistta.es`; `logs caddy \| grep -i certificate` |
+| El correo deja de llegar                         | Se borró el `A` de `mail` al limpiar el parking                       | Recrear `mail` → `82.98.134.111`                                |
+| La máquina va a tirones                          | _Steal time_ del vecino                                               | `top`, columna `st`. Es el proveedor, no tu código              |
 
 ## Y a partir de aquí
 
