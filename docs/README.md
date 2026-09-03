@@ -34,6 +34,8 @@ documento.
 | `08-operacion-y-mantenimiento.md` | Técnico           | Despliegue, copias, incidencias y niveles de servicio |
 | `09-acuerdos-y-encargos.md`       | Cliente           | Alcance, soporte, cómo se piden cambios               |
 | `10-metricas.md`                  | Todos             | Estado medido del proyecto y qué medir del producto   |
+| `11-puesta-en-produccion.md`      | Técnico           | Del dominio a Vistta funcionando, paso a paso         |
+| `12-vps-produccion.md`            | Técnico           | El VPS concreto: acceso, endurecimiento, Docker y DNS |
 
 ## Lo que NO está aquí
 
