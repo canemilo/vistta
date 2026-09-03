@@ -35,6 +35,8 @@ function construirStorage(config: Config): Storage {
       accessKeyId: config.R2_ACCESS_KEY_ID!,
       secretAccessKey: config.R2_SECRET_ACCESS_KEY!,
       bucket: config.R2_BUCKET!,
+      // Sin poner, el adaptador usa el endpoint estándar de la cuenta.
+      endpoint: config.R2_ENDPOINT,
     });
   }
   // loadConfig ya ha garantizado que estas dos existen con este driver.

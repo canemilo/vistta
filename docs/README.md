@@ -36,6 +36,7 @@ documento.
 | `10-metricas.md`                  | Todos             | Estado medido del proyecto y qué medir del producto   |
 | `11-puesta-en-produccion.md`      | Técnico           | Del dominio a Vistta funcionando, paso a paso         |
 | `12-vps-produccion.md`            | Técnico           | El VPS concreto: acceso, endurecimiento, Docker y DNS |
+| `13-migracion-a-r2.md`            | Técnico           | Bucket, token, verificación y migración de los medios |
 
 ## Lo que NO está aquí
 

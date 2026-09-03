@@ -54,6 +54,35 @@ describe("configuración", () => {
     ).not.toThrow();
   });
 
+  it("el endpoint de R2 se puede fijar, para la jurisdicción UE", () => {
+    // Un bucket con jurisdicción `eu` no vive en <cuenta>.r2.cloudflarestorage.com
+    // sino en <cuenta>.eu.r2.cloudflarestorage.com. Sin poder fijarlo, elegir la
+    // jurisdicción que garantiza la residencia de datos dejaba el bucket
+    // inalcanzable, con un NoSuchBucket que señalaba al sitio equivocado.
+    const con = loadConfig({
+      ...MINIMO,
+      STORAGE_DRIVER: "r2",
+      R2_ACCOUNT_ID: "cuenta",
+      R2_ACCESS_KEY_ID: "llave",
+      R2_SECRET_ACCESS_KEY: "secreto",
+      R2_BUCKET: "vistta-medios",
+      R2_ENDPOINT: "https://cuenta.eu.r2.cloudflarestorage.com",
+    });
+    expect(con.R2_ENDPOINT).toBe("https://cuenta.eu.r2.cloudflarestorage.com");
+
+    // Y sin poner sigue sin estar: el adaptador usa entonces el estándar.
+    const sin = loadConfig({
+      ...MINIMO,
+      STORAGE_DRIVER: "r2",
+      R2_ACCOUNT_ID: "cuenta",
+      R2_ACCESS_KEY_ID: "llave",
+      R2_SECRET_ACCESS_KEY: "secreto",
+      R2_BUCKET: "vistta-medios",
+      R2_ENDPOINT: "",
+    });
+    expect(sin.R2_ENDPOINT).toBeUndefined();
+  });
+
   it("supabase sin credenciales tampoco", () => {
     expect(() => loadConfig({ ...MINIMO, STORAGE_DRIVER: "supabase" })).toThrow(ConfigError);
   });

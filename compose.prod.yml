@@ -52,6 +52,8 @@ services:
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
       R2_BUCKET: ${R2_BUCKET:-}
+      # Solo con jurisdicción `eu`, cuyo endpoint no es el estándar de la cuenta.
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
       SUPABASE_MEDIA_BUCKET: ${SUPABASE_MEDIA_BUCKET:-vistta-media}

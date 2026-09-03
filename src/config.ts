@@ -71,6 +71,16 @@ const ConfigSchema = z.object({
   R2_ACCESS_KEY_ID: opcional(z.string().min(1)),
   R2_SECRET_ACCESS_KEY: opcional(z.string().min(1)),
   R2_BUCKET: opcional(z.string().min(1)),
+  /**
+   * Endpoint de R2. Se deja sin poner salvo un caso, y ese caso importa: un
+   * bucket creado con JURISDICCIÓN `eu` —la que garantiza que los bytes no
+   * salen de la Unión Europea— no vive en `<cuenta>.r2.cloudflarestorage.com`
+   * sino en `<cuenta>.eu.r2.cloudflarestorage.com`. Sin esta variable, elegir
+   * la jurisdicción que pide la residencia de datos dejaba el bucket
+   * inalcanzable, y el error que se veía era un NoSuchBucket que apuntaba a
+   * otro sitio. También sirve para probar contra un servidor compatible con S3.
+   */
+  R2_ENDPOINT: opcional(z.string().url()),
 
   SUPABASE_URL: opcional(z.string().url()),
   /** Salta RLS: nunca sale del proceso Node, nunca a un log, nunca al navegador. */

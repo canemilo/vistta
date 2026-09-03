@@ -164,6 +164,10 @@ R2_BUCKET=vistta-medios
 En el panel de Cloudflare: crea el bucket **privado y sin dominio público**, y un
 token de API de tipo _Object Read & Write_ **limitado a ese bucket**.
 
+El procedimiento entero —bucket, token, la comprobación del ciclo completo y
+cómo mover los medios que ya estén en el disco— está en
+`13-migracion-a-r2.md`.
+
 > **Aviso honesto: el adaptador de R2 nunca ha hablado con R2 de verdad.** Está
 > verificado contra MinIO, que valida la firma igual, y por mutación. Pero el
 > estreno contra R2 es el primer sitio donde puede aparecer una sorpresa, así
