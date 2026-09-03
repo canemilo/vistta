@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ACCESOS_MINIMOS, VENTANA_MINIMA_MS } from "./lib/planes";
+import { EVENTOS_POR_ENVIO, MS_VISIBLE_MAXIMO } from "./lib/eventos";
 
 export const CreatePassSchema = z
   .object({
@@ -66,6 +67,28 @@ export const CreatePassSchema = z
     }
   });
 export type CreatePassInput = z.infer<typeof CreatePassSchema>;
+
+/**
+ * Lo que manda el viewer con la telemetría de una lectura.
+ *
+ * Todo con tope, porque el que envía es un navegador que puede estar
+ * manipulado: sin esto, un cliente listo podría inyectar «cuatro horas en la
+ * sección Planos» y el panel se lo enseñaría a su dueño como si fuera verdad.
+ */
+export const EventosSchema = z.object({
+  /** Testigo firmado que se emitió al abrir el pase. No es el token del pase. */
+  testigo: z.string().min(1).max(400),
+  eventos: z
+    .array(
+      z.object({
+        tipo: z.enum(["apertura", "seccion", "medio", "cierre"]),
+        seccionIdx: z.number().int().min(0).max(100).optional(),
+        mediaId: z.string().min(1).max(128).optional(),
+        msVisible: z.number().int().min(0).max(MS_VISIBLE_MAXIMO).optional(),
+      })
+    )
+    .max(EVENTOS_POR_ENVIO),
+});
 
 export const PanelLoginSchema = z.object({
   userId: z.string().min(1).max(64),

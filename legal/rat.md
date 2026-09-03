@@ -168,6 +168,37 @@ Lo que Vistta trata del **destinatario** del enlace:
 > identidad, IP o huella del dispositivo. Añadir eso cambiaría este registro, el
 > contrato del art. 28 y la política de privacidad, en ese orden.
 
+### B.2 Actividad de lectura del destinatario
+
+**Esto es un tratamiento nuevo y de conducta.** Se declara aparte porque no es un
+matiz del B.1: mide cuánto mira una persona identificada —el pase lleva
+destinatario desde el bloque anterior— y eso pesa más que saber que el enlace se
+abrió.
+
+|                         |                                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Responsable**         | El cliente de Vistta que genera el pase. Vistta es encargado.                                                                                                                            |
+| **Fin**                 | Que quien envía el enlace sepa si su destinatario lo miró y qué le interesó.                                                                                                             |
+| **Interesado**          | El destinatario del enlace.                                                                                                                                                              |
+| **Categorías de datos** | Tiempo visible **agregado** por apartado y por medio, y marcas de apertura y cierre. Nada más.                                                                                           |
+| **NO se trata**         | IP, user-agent, dispositivo, resolución, ubicación ni identificador de navegador. **No hay columnas para eso en `vistta.pass_events`**, y hay una prueba que falla si alguien las añade. |
+| **Granularidad**        | Sumas por apartado, no una traza de instantes. El navegador agrega antes de enviar y el servidor solo guarda esas sumas.                                                                 |
+| **Transparencia**       | El propio documento se lo dice a quien lo lee, en el pie: que quien se lo envió verá cuánto miró cada apartado, y que no se registra su nombre, su IP ni su dispositivo.                 |
+| **Conservación**        | **30 días** (`RETENCION_EVENTOS_MS`), y además se borran con el pase (clave ajena en cascada). Manda el plazo que se cumpla antes.                                                       |
+| **Ámbito**              | Solo en los planes de pago. En Prueba no se emite el testigo que permite enviar eventos, así que no se mide.                                                                             |
+| **Acceso**              | Solo el dueño del pase, y ya agregado: el panel no recibe eventos en crudo.                                                                                                              |
+
+> **Lo que sigue vetado, y no ha cambiado:** registrar QUIÉN abre. Del navegador
+> que abre no llega identidad, ni IP, ni huella. Lo que se mide es cuánto se ha
+> mirado en esa lectura, atribuido al pase; a quién se le entregó ese pase lo
+> dice el propio cliente (B.1), no el navegador.
+>
+> Si algún día se quisiera medir con más finura —instantes, orden de lectura,
+> repeticiones—, deja de ser esto: habría que rehacer este punto, la EIPD y el
+> aviso del documento antes de escribir una línea.
+
+---
+
 ---
 
 ## C. Registros técnicos (logs)

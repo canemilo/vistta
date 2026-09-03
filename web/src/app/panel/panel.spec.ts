@@ -7,6 +7,7 @@ import {
   type LimitesDePlan,
   type OpcionesDePase,
   type PaseListado,
+  type ResumenDeLectura,
   type ProfileRow,
   type Usuario,
 } from '../core/api';
@@ -122,6 +123,9 @@ class ApiFalsa {
   };
 
   listPasses = () => Promise.resolve({ passes: this.pases });
+
+  lectura: ResumenDeLectura = { hayDatos: false, msTotales: 0, secciones: [], medios: [] };
+  lecturaDelPase = () => Promise.resolve(this.lectura);
 }
 
 describe('Panel · perfiles y cierre de sesión', () => {
@@ -623,6 +627,71 @@ describe('Panel · cómo caduca el enlace', () => {
     boton('GENERAR ENLACE')!.click();
     await estabiliza();
     expect(api.ultimoPasePedido!.destinatarioRef).toBe('ana@example.com');
+  });
+
+  it('la lectura se enseña redondeada, no al segundo', async () => {
+    api.pases = [
+      {
+        id: 'p1',
+        modo: 'unico',
+        estado: 'agotado',
+        creadoEn: Date.now(),
+        expiraEn: Date.now() + 3_600_000,
+        validoHasta: null,
+        accesosUsados: 1,
+        maxAccesos: null,
+        destinatarioRef: null,
+        destinatarioNota: null,
+      },
+    ];
+    api.lectura = {
+      hayDatos: true,
+      msTotales: 254_000,
+      secciones: [{ seccionIdx: 0, msVisible: 41_000 }],
+      medios: [],
+    };
+    fixture.componentInstance['elegirPerfil']('p_uno');
+    await estabiliza();
+
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').includes('ver lectura'))!
+      .click();
+    await estabiliza();
+
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    // 254 s son 4,2 minutos: se enseña «unos 4 min», no «4 min 14 s».
+    expect(texto).toContain('unos 4 min');
+    expect(texto).not.toContain('254');
+    expect(texto).not.toMatch(/\d+ min \d+ s/);
+  });
+
+  it('sin datos dice «aún sin abrir», y no un cero inventado', async () => {
+    api.pases = [
+      {
+        id: 'p1',
+        modo: 'unico',
+        estado: 'agotado',
+        creadoEn: Date.now(),
+        expiraEn: Date.now() + 3_600_000,
+        validoHasta: null,
+        accesosUsados: 1,
+        maxAccesos: null,
+        destinatarioRef: null,
+        destinatarioNota: null,
+      },
+    ];
+    api.lectura = { hayDatos: false, msTotales: 0, secciones: [], medios: [] };
+    fixture.componentInstance['elegirPerfil']('p_uno');
+    await estabiliza();
+
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').includes('ver lectura'))!
+      .click();
+    await estabiliza();
+
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('aún sin abrir');
+    expect(texto).not.toContain('unos 0');
   });
 
   /*

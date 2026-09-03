@@ -1027,6 +1027,34 @@
                 >
                   {{ estadoDelPase(p) }}
                 </span>
+                <button
+                  type="button"
+                  (click)="verLectura(p.id)"
+                  class="font-mono text-[11px] text-[#63848d] underline decoration-dotted hover:text-emerald-400"
+                >
+                  {{ lectura()?.passId === p.id ? 'ocultar lectura' : 'ver lectura' }}
+                </button>
+
+                @if (lectura()?.passId === p.id) {
+                  <div class="mt-1 w-full pl-3 text-[13px] text-[#8fb0b2]">
+                    @if (!lectura()!.resumen.hayDatos) {
+                      <!-- Sin datos se dice sin datos. Un cero inventado haría
+                           creer que lo abrió y no miró nada. -->
+                      <p class="font-mono text-[11px] text-[#63848d]">aún sin abrir</p>
+                    } @else {
+                      <p class="font-mono text-[11px]">
+                        en total, {{ enLectura(lectura()!.resumen.msTotales) }}
+                      </p>
+                      <ul class="mt-1 space-y-0.5">
+                        @for (s of lectura()!.resumen.secciones; track s.seccionIdx) {
+                          <li class="font-mono text-[11px] text-[#63848d]">
+                            apartado {{ s.seccionIdx + 1 }} · {{ enLectura(s.msVisible) }}
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
               </li>
             }
           </ul>

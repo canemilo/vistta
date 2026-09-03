@@ -67,6 +67,14 @@ export interface LimitesDePlan {
    * que su comportamiento no cambie ni un poco.
    */
   plazoPrimeraAperturaMaxMs: number;
+  /**
+   * Si el plan registra actividad de lectura del destinatario.
+   *
+   * Fuera de Prueba a propósito: es donde entra quien viene a mirar el producto,
+   * y medir la conducta de lectura de un tercero por defecto, en la cuenta de
+   * alguien que solo está probando, es el sitio donde menos aporta y más pesa.
+   */
+  metricasDeLectura: boolean;
 }
 
 /** Aperturas mínimas en modo `accesos`: con una sola, el modo es `unico`. */
@@ -92,6 +100,16 @@ export const PLAZO_UNICO_MAX_MS = 24 * 60 * 60 * 1000;
 export const PLAZO_NUEVOS_POR_DEFECTO_MS = 72 * 60 * 60 * 1000;
 
 /**
+ * Cuánto se guarda la actividad de lectura de un pase.
+ *
+ * Treinta días, y es un plazo declarado en `legal/rat.md`: cambiarlo es cambiar
+ * el registro de tratamiento, no una constante. Los eventos se van ADEMÁS con
+ * su pase (clave ajena en cascada), así que en la práctica manda el que ocurra
+ * antes de los dos.
+ */
+export const RETENCION_EVENTOS_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
  * Cifras fijadas por el cliente el 2026-09-01.
  *
  * Un aviso para quien las cambie: la cuota de Prueba (70 MB) es menor que la
@@ -113,6 +131,7 @@ export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
     maxAccesos: null,
     ventanaMaxMs: null,
     plazoPrimeraAperturaMaxMs: PLAZO_UNICO_MAX_MS,
+    metricasDeLectura: false,
   },
   pro: {
     perfiles: 3,
@@ -123,6 +142,7 @@ export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
     maxAccesos: 5,
     ventanaMaxMs: 2 * DIA,
     plazoPrimeraAperturaMaxMs: 7 * DIA,
+    metricasDeLectura: true,
   },
   boveda: {
     perfiles: 10,
@@ -138,6 +158,7 @@ export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
     // más corta abre la puerta a un pase que sobrevive a sus propias fotos.
     ventanaMaxMs: 7 * DIA,
     plazoPrimeraAperturaMaxMs: 7 * DIA,
+    metricasDeLectura: true,
   },
 });
 

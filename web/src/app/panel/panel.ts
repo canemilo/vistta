@@ -9,6 +9,7 @@ import {
   type MediaRef,
   type ModoDePase,
   type PaseListado,
+  type ResumenDeLectura,
   type ProfileContent,
   type ProfileRow,
   type Usuario,
@@ -72,6 +73,8 @@ export class Panel {
   /** Para reconocer el pase en la lista. No se pinta en ninguna parte. */
   protected destinatarioNota = '';
   protected readonly pases = signal<PaseListado[]>([]);
+  /** La lectura del pase que se ha desplegado, si se ha desplegado alguno. */
+  protected readonly lectura = signal<{ passId: string; resumen: ResumenDeLectura } | null>(null);
 
   /** Los modos que da el plan. Sin plan (perfil sin dueño), solo el de siempre. */
   protected readonly modosDisponibles = computed<ModoDePase[]>(
@@ -668,6 +671,39 @@ export class Panel {
         : `caduca en ${this.enTiempo(restanMs)}`,
     );
     return partes.join(' · ');
+  }
+
+  /**
+   * Abre (o cierra) el detalle de lectura de un pase.
+   *
+   * Se pide al desplegar y no con la lista: la mayoría de los enlaces no se
+   * miran nunca en detalle, y esto es una consulta de agregación por pase.
+   */
+  protected async verLectura(passId: string): Promise<void> {
+    if (this.lectura()?.passId === passId) {
+      this.lectura.set(null);
+      return;
+    }
+    const sesion = this.sesion();
+    if (!sesion) return;
+    try {
+      this.lectura.set({ passId, resumen: await this.api.lecturaDelPase(sesion, passId) });
+    } catch {
+      this.lectura.set(null);
+    }
+  }
+
+  /**
+   * Tiempo de lectura, REDONDEADO a propósito.
+   *
+   * «Unos 4 minutos» es lo que alguien necesita saber para decidir si llamar.
+   * «4 min 12 s» sugiere una vigilancia que ni es exacta —el navegador mide a
+   * ojo— ni es sana enseñar de una persona identificada.
+   */
+  protected enLectura(ms: number): string {
+    if (ms < 15_000) return 'unos segundos';
+    if (ms < 90_000) return `unos ${Math.round(ms / 15_000) * 15} s`;
+    return `unos ${Math.round(ms / 60_000)} min`;
   }
 
   private enTiempo(ms: number): string {

@@ -152,6 +152,35 @@ consentido.
 - _Riesgo residual:_ **bajo**. Con acceso directo a la base, cualquier control de
   la aplicación es superable: eso lo cubre el control de acceso al servidor.
 
+### Riesgo: se mide la conducta de lectura de una persona identificada
+
+**Escenario:** el cliente activa un pase con destinatario y el sistema registra
+cuánto miró cada apartado. Quien lee es una persona concreta y no ha pedido que
+la midan.
+
+- _Probabilidad:_ alta cuando el cliente usa la función; es su propósito.
+- _Impacto:_ medio. No revela categorías especiales, pero sí interés y atención,
+  que en una negociación tienen valor y pueden usarse en contra de quien lee.
+- **Mitigaciones, y son de diseño, no de política:**
+  - **No se recoge nada del dispositivo.** No hay columnas para IP, user-agent ni
+    huella en `vistta.pass_events`; hay una prueba que falla si alguien las añade.
+    Lo que no está en el esquema no se empieza a guardar un martes.
+  - **Se agrega antes de salir del navegador.** Sumas por apartado, no una traza
+    de instantes: «unos 4 minutos en Planos», no el minuto en que miró cada cosa.
+  - **Se le dice a quien lee**, en el propio documento, que verán cuánto miró
+    cada apartado y que no se registra su nombre, su IP ni su dispositivo.
+  - **Se enseña redondeado** al que lo pidió: «unos 4 min». La precisión al
+    segundo sugeriría una exactitud que no existe y una vigilancia que no toca.
+  - **30 días**, y antes si se borra el pase.
+  - **Solo en planes de pago**: donde alguien solo está probando el producto, no
+    se mide a nadie.
+- _Riesgo residual:_ **bajo-medio**. Queda que el destinatario no puede oponerse
+  desde el propio enlace; se entera, pero no lo desactiva. Se asume a conciencia,
+  y la vía es el contacto del aviso legal, como para el resto de derechos.
+- **Limitación honesta:** el tiempo lo mide un navegador. Una pestaña abierta y
+  desatendida cuenta como lectura, y una manipulada puede mentir dentro de los
+  topes. No es una medida fiable de atención y el panel no la presenta como tal.
+
 ## 4. Consulta previa a la AEPD (art. 36)
 
 **No procede.** No queda ningún riesgo alto sin mitigar.
@@ -161,10 +190,14 @@ consentido.
 Cualquiera de estas cosas obliga a repetir la evaluación **antes** de
 implementarla:
 
-1. Registrar quién abre un pase (identidad, correo, IP o dispositivo).
-2. Cualquier análisis del contenido de las imágenes: reconocimiento facial,
+1. Registrar quién abre un pase (identidad, correo, IP o dispositivo). **Esto
+   sigue vetado**: la actividad de lectura que ya se mide va atada al pase y no
+   al que mira, y no toca nada del dispositivo.
+2. Medir la lectura con más finura que las sumas por apartado: instantes, orden,
+   número de vueltas, o cualquier cosa que reconstruya el recorrido.
+3. Cualquier análisis del contenido de las imágenes: reconocimiento facial,
    etiquetado automático, moderación por modelo.
-3. Admitir categorías especiales del art. 9.
-4. Retención indefinida por defecto, o quitar la caducidad del contenido.
-5. Un aumento de escala que convierta «pocos clientes» en «gran escala».
-6. Ceder datos a un tercero con fines propios.
+4. Admitir categorías especiales del art. 9.
+5. Retención indefinida por defecto, o quitar la caducidad del contenido.
+6. Un aumento de escala que convierta «pocos clientes» en «gran escala».
+7. Ceder datos a un tercero con fines propios.

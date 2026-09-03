@@ -30,6 +30,11 @@ export interface PassView {
   };
   sections: SectionView[];
   watermark: string;
+  /**
+   * Testigo para mandar la telemetría de esta lectura. `null` si el plan de
+   * quien generó el pase no registra actividad: entonces el viewer no mide.
+   */
+  eventos: string | null;
 }
 
 export interface Usuario {
@@ -145,6 +150,14 @@ export interface PaseListado {
   maxAccesos: number | null;
   destinatarioRef: string | null;
   destinatarioNota: string | null;
+}
+
+/** Lo que el dueño del pase ve de la lectura. Ya sumado por el servidor. */
+export interface ResumenDeLectura {
+  hayDatos: boolean;
+  msTotales: number;
+  secciones: { seccionIdx: number; msVisible: number }[];
+  medios: { mediaId: string; msVisible: number }[];
 }
 
 /** Lo que se pide al crear un pase. Sin `modo`, sale de un solo uso. */
@@ -545,6 +558,14 @@ export class Api {
         { profileId, ...opciones },
         { headers: { authorization: `Bearer ${session}` } },
       ),
+    );
+  }
+
+  lecturaDelPase(session: string, passId: string): Promise<ResumenDeLectura> {
+    return firstValueFrom(
+      this.http.get<ResumenDeLectura>(`/api/passes/${passId}/lectura`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
     );
   }
 

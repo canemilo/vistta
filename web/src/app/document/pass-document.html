@@ -57,7 +57,11 @@
   }
 
   @for (seccion of secciones(); track $index) {
+    <!-- `data-seccion` es lo que el viewer observa para medir cuánto se mira
+         cada bloque. Va aquí y no en el viewer porque es este componente el que
+         sabe dónde empieza y acaba una sección. Sin métricas, no lo mira nadie. -->
     <section
+      [attr.data-seccion]="$index"
       class="surge mt-20 grid gap-x-10 gap-y-6 border-t border-[#12262f] pt-10 md:mt-24 md:grid-cols-[180px_1fr]"
       [style.animation-delay]="120 + $index * 70 + 'ms'"
     >

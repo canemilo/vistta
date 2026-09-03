@@ -1,7 +1,8 @@
 import type { Db } from "../db";
 import type { Storage } from "../storage/port";
-import { GRACIA_CONGELADO_MS, PLANES, type Plan } from "./planes";
+import { GRACIA_CONGELADO_MS, PLANES, RETENCION_EVENTOS_MS, type Plan } from "./planes";
 import { pasAbribleSql } from "./pass";
+import { purgarEventos } from "./eventos";
 
 /**
  * La parte irreversible del bloque E: aquí se borra contenido de clientes.
@@ -31,6 +32,7 @@ export interface ResultadoPurga {
   mediosCaducados: number;
   perfilesBorrados: number;
   cuentasBorradas: number;
+  eventosBorrados: number;
 }
 
 interface FilaMedio {
@@ -47,6 +49,10 @@ export async function purgar(
     mediosCaducados: await purgarMediosCaducados(db, storage, ahora),
     perfilesBorrados: await purgarCongelados(db, storage, ahora),
     cuentasBorradas: await purgarSuspendidas(db, storage, ahora),
+    // Los eventos de lectura ya se van con su pase (clave ajena en cascada);
+    // esto es el OTRO plazo, el que declara `legal/rat.md`: aunque el pase siga
+    // ahí, la actividad de lectura de una persona no se guarda para siempre.
+    eventosBorrados: await purgarEventos(db, RETENCION_EVENTOS_MS, ahora),
   };
 }
 

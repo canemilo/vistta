@@ -236,6 +236,10 @@ no se negocian:
   el RAT, el contrato del art. 28 y la EIPD**: no se guarda el correo ni el teléfono del cliente (no
   hay columna), la IP solo se guarda hasheada, y **Vistta no sabe QUIÉN ABRE un pase** —del navegador
   que abre no llega nada: ni identidad, ni IP, ni huella—.
+- **Métricas de lectura** (`vistta.pass_events`): tiempo visible AGREGADO por apartado, 30 días,
+  solo en planes de pago, y el viewer se lo dice a quien lee. **No hay columnas** para IP, user-agent
+  ni dispositivo, y hay una prueba que falla si alguien las añade. Medir con más finura —instantes,
+  orden, vueltas— obliga a rehacer la EIPD antes de escribir una línea.
 - Ojo con la tercera, que se afinó al añadir el destinatario: el cliente **sí puede escribir a quién
   dice que se lo manda** (`passes.destinatario_ref`), y eso se incrusta en la marca. No es lo mismo
   que saber quién miró —un enlace reenviado lo abre otro y la marca sigue diciendo lo escrito—. Es

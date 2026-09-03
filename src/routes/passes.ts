@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
-import { CreatePassSchema } from "../schemas";
+import { CreatePassSchema, EventosSchema } from "../schemas";
 import {
   createPass,
   consumePass,
@@ -13,11 +13,25 @@ import {
 import type { SeccionDePase } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { hitRateLimit } from "../lib/ratelimit";
-import { signMediaUrl, watermarkFor } from "../lib/media";
+import { signEventsToken, signMediaUrl, verifyEventsToken, watermarkFor } from "../lib/media";
+import { registrarEventos, resumenDeLectura } from "../lib/eventos";
 
 /** Apertura de pases: límite amplio, solo para frenar el sondeo automatizado. */
 const OPEN_RULE = { scope: "pass-open", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
 const CREATE_RULE = { scope: "pass-create", max: 60, windowMs: 60_000, blockMs: 60_000 } as const;
+/**
+ * Telemetría: límite propio y generoso.
+ *
+ * Propio porque compartirlo con la apertura significaría que mirar mucho un
+ * dossier acaba impidiendo abrirlo, y eso convertiría una función accesoria en
+ * un fallo del producto.
+ */
+const EVENTOS_RULE = {
+  scope: "pass-eventos",
+  max: 120,
+  windowMs: 60_000,
+  blockMs: 60_000,
+} as const;
 
 /**
  * Sección tal y como la recibe el viewer: ya no hay ids ni claves, solo URLs
@@ -164,7 +178,65 @@ export function passesRoutes({ config, db }: Deps) {
       },
       sections,
       watermark: watermarkFor(view.passId, new Date(), view.destinatarioRef),
+      /*
+       * Testigo para la telemetría de ESTA lectura. Se emite solo si el plan de
+       * quien generó el pase registra actividad; si no, el viewer no recibe
+       * nada y no mide nada. Es la puerta: sin testigo no hay eventos posibles,
+       * porque el endpoint no acepta ninguna otra credencial.
+       */
+      eventos: view.mideLectura
+        ? await signEventsToken(config.MEDIA_SIGNING_KEY, view.passId)
+        : null,
     });
+  });
+
+  /*
+   * Telemetría de una lectura.
+   *
+   * NO lleva el testigo del pase en la ruta, y es una desviación consciente de
+   * lo que pedía el plan. Dos razones: ese testigo es una credencial y no tiene
+   * por qué viajar en cada latido; y el pase de un solo uso SE CONSUME al
+   * abrirlo, así que exigir «un pase todavía abrible» habría dejado sin
+   * métricas precisamente al modo más común. Lo que se exige es el testigo
+   * firmado que el servidor emitió al abrir: demuestra que este navegador abrió
+   * este pase hace menos de dos horas.
+   *
+   * Y responde 204 pase lo que pase con el contenido: esto es telemetría, no
+   * funcionalidad. Un fallo aquí no puede estropearle la visita a nadie.
+   */
+  passes.post("/api/passes/eventos", async (c) => {
+    const limit = await hitRateLimit(db, EVENTOS_RULE, c.get("ip"));
+    if (!limit.allowed) return c.body(null, 204);
+
+    const body = await c.req.json().catch(() => null);
+    const parsed = EventosSchema.safeParse(body);
+    if (!parsed.success) return c.body(null, 204);
+
+    const passId = await verifyEventsToken(config.MEDIA_SIGNING_KEY, parsed.data.testigo);
+    if (!passId) return c.body(null, 204);
+
+    await registrarEventos(db, passId, parsed.data.eventos);
+    return c.body(null, 204);
+  });
+
+  /*
+   * Lo que el dueño del pase ve de esa lectura. Ya agregado: el panel no recibe
+   * los eventos crudos, porque la lista de instantes en que otra persona miró
+   * cada foto no tiene por qué salir de la base.
+   */
+  passes.get("/api/passes/:id/lectura", async (c) => {
+    const usuario = await usuarioDeLaSesion(db, bearer(c.req.header("Authorization")));
+    if (!usuario) return c.json({ error: "no autorizado" }, 401);
+
+    const suyo = await db.one<{ id: string }>(
+      `SELECT ps.id FROM vistta.passes ps
+       JOIN vistta.profiles p ON p.id = ps.profile_id
+       WHERE ps.id = $1 AND p.owner_id = $2`,
+      [c.req.param("id"), usuario.id]
+    );
+    if (!suyo) return c.json({ error: "no encontrado" }, 404);
+
+    return c.json(await resumenDeLectura(db, suyo.id));
   });
 
   return passes;

@@ -5,6 +5,8 @@ import { hmacSha256Hex, timingSafeEqual } from "./crypto";
 
 export const MEDIA_TTL_SECONDS = 300; // 5 min para leer
 export const SUBIDA_TTL_SECONDS = 900; // 15 min para subir lo reservado
+/** Lo que dura una lectura larga. Pasado esto, la telemetría deja de admitirse. */
+export const EVENTOS_TTL_SECONDS = 2 * 60 * 60;
 
 /**
  * Dominios de firma. Que sean dos y no uno es la corrección de un fallo real:
@@ -15,6 +17,20 @@ export const SUBIDA_TTL_SECONDS = 900; // 15 min para subir lo reservado
  */
 const LECTURA = "vistta/medio/lectura/v1";
 const ESCRITURA = "vistta/medio/escritura/v1";
+/**
+ * Tercer dominio: los eventos de lectura.
+ *
+ * Hace falta uno propio por lo de siempre —una firma de eventos no puede valer
+ * como una de lectura de medios— y existe por un motivo que no es de estilo: el
+ * pase de un solo uso SE CONSUME al abrirlo, así que exigir «un pase todavía
+ * abrible» para aceptar sus eventos dejaría fuera precisamente al modo más
+ * común. Este testigo lo emite el servidor AL ABRIR y demuestra justo eso: que
+ * este navegador abrió este pase hace poco.
+ *
+ * Y evita lo otro: reenviar el testigo del pase —que es una credencial— en cada
+ * latido de telemetría.
+ */
+const EVENTOS = "vistta/lectura/eventos/v1";
 
 const utf8 = new TextEncoder();
 
@@ -54,6 +70,27 @@ export async function verifyMediaSignature(
   sig: string
 ): Promise<boolean> {
   return verificar(secret, LECTURA, [mediaId, passId, String(exp)], exp, sig);
+}
+
+/** Testigo para mandar eventos de ESTA lectura, y de ninguna otra. */
+export async function signEventsToken(
+  secret: string,
+  passId: string,
+  ttlSeconds = EVENTOS_TTL_SECONDS
+): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
+  const sig = await hmacSha256Hex(secret, payload(EVENTOS, [passId, String(exp)]));
+  return `${passId}.${exp}.${sig}`;
+}
+
+/** Devuelve el pase al que pertenece el testigo, o null si no vale. */
+export async function verifyEventsToken(secret: string, testigo: string): Promise<string | null> {
+  const partes = testigo.split(".");
+  if (partes.length !== 3) return null;
+  const [passId, expTexto, sig] = partes;
+  const exp = Number(expTexto);
+  if (!(await verificar(secret, EVENTOS, [passId, String(exp)], exp, sig))) return null;
+  return passId;
 }
 
 /**

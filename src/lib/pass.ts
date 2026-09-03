@@ -36,6 +36,13 @@ export interface PassView {
   passId: string;
   /** A quién se le enseña, si el cliente lo escribió. Va en la marca de agua. */
   destinatarioRef: string | null;
+  /**
+   * Si el plan de quien generó el pase registra actividad de lectura.
+   *
+   * Se resuelve al abrir y no en la ruta, para que la decisión salga del mismo
+   * sitio que el resto de límites del plan y no de una consulta suelta.
+   */
+  mideLectura: boolean;
   profileId: string;
   displayName: string;
   brandColor: string | null;
@@ -314,9 +321,14 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
   // le prometió al cliente, y solo eso.
   const medios = await mediosDelPase(db, claimed.id);
 
+  // El plan manda también aquí: sin métricas en el plan, el viewer no recibe
+  // testigo y no puede medir nada.
+  const cuenta = await cuentaDelPerfil(db, profile.id);
+
   return {
     passId: claimed.id,
     destinatarioRef: claimed.destinatario_ref,
+    mideLectura: cuenta?.limites.metricasDeLectura ?? false,
     profileId: profile.id,
     displayName: profile.display_name,
     brandColor: profile.brand_color,

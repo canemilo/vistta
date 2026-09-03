@@ -128,8 +128,14 @@ solo en tu navegador. Hazlo siempre en un ordenador compartido.
 ## Preguntas que salen siempre
 
 **¿Puedo saber si mi cliente lo ha abierto?**
-No. Vistta no registra quién abre un pase ni desde dónde. Lo que sí sabes es que
-si el enlace ya no le funciona a él, es que alguien lo abrió.
+Sí, si tu plan lo incluye: en la lista de enlaces, «ver lectura» te dice si lo
+abrió y cuánto tiempo estuvo en cada apartado. Redondeado —«unos 4 min»—, porque
+lo mide un navegador y no es un cronómetro: una pestaña abierta y olvidada cuenta
+como lectura.
+
+Lo que **no** sabrás nunca es quién lo abrió ni desde dónde: Vistta no registra
+nombre, dirección IP ni dispositivo de quien mira. Y quien abre el enlace **lo
+ve escrito** al pie del documento; medirle sin decírselo no es una opción.
 
 **¿Puedo mandar el mismo pase a dos personas?**
 No: lo abriría la primera. Genera un pase por persona. Y con la referencia del

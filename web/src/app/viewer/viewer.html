@@ -6,6 +6,18 @@
       [marca]="vista()!.watermark"
       [enlace]="enlace()"
     />
+
+    @if (midiendo()) {
+      <!-- Medir a alguien sin decírselo no es aceptable, y decirlo cuesta esto.
+           Discreto pero no escondido: al final del documento, con el mismo peso
+           visual que el resto de la letra pequeña. -->
+      <p
+        class="mx-auto max-w-[900px] px-6 pb-10 font-mono text-[10px] leading-[1.8] tracking-[0.14em] text-[#4d6b73]"
+      >
+        Quien te ha enviado este enlace verá cuánto tiempo has mirado cada apartado. No se registra
+        tu nombre, tu dirección IP ni tu dispositivo.
+      </p>
+    }
   }
 
   @case ('cargando') {
