@@ -1,0 +1,34 @@
+# Variante «la base vive fuera de la máquina» (Supabase u otro Postgres gestionado).
+#
+#   docker compose -f compose.prod.yml -f compose.supabase.yml --env-file .env up -d
+#
+# NO es el camino por defecto. Con 12 GB en el VPS, Postgres en el propio
+# servidor tiene menos piezas, no se pausa y no tiene límites de plan. Esto está
+# aquí para que la opción exista documentada y probada, no para recomendarla.
+# Ver `docs/14-supabase-opcional.md`.
+
+services:
+  # El servicio de base no se levanta: un perfil que nunca se activa lo deja
+  # definido —para que el archivo base siga siendo válido— pero fuera del `up`.
+  db:
+    profiles: ["base-local-desactivada"]
+
+  # `!reset` borra la dependencia del archivo base. Sin esto, compose esperaría
+  # a que un servicio que no va a arrancar se ponga sano, y el `up` se colgaría.
+  migrar:
+    depends_on: !reset null
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?con esta variante hace falta DATABASE_URL}
+
+  # Aquí `!override` y NO `!reset`, y la diferencia importa: `depends_on` se
+  # FUSIONA por clave, así que un simple añadido dejaría viva la espera por `db`;
+  # pero borrarlo entero se lleva también la espera por `migrar`, y entonces la
+  # API puede empezar a atender con la base a medio migrar. Se comprobó: con
+  # `!reset`, `migrar` y `api` arrancaban a la vez. `!override` reemplaza el
+  # bloque completo y deja exactamente la dependencia que sí hace falta.
+  api:
+    depends_on: !override
+      migrar:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?con esta variante hace falta DATABASE_URL}

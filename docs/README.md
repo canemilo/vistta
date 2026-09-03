@@ -37,6 +37,7 @@ documento.
 | `11-puesta-en-produccion.md`      | Técnico           | Del dominio a Vistta funcionando, paso a paso         |
 | `12-vps-produccion.md`            | Técnico           | El VPS concreto: acceso, endurecimiento, Docker y DNS |
 | `13-migracion-a-r2.md`            | Técnico           | Bucket, token, verificación y migración de los medios |
+| `14-supabase-opcional.md`         | Técnico           | La base fuera de la máquina: cómo, y por qué no       |
 
 ## Lo que NO está aquí
 
