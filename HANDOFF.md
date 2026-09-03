@@ -431,6 +431,32 @@ repositorio, así que alguien puede corregir un documento y no regenerarlos, y s
 a un cliente un PDF que ya no dice lo que dice el texto. Lo detecta `pnpm docs:verificar`, que
 compara por hash del contenido —no por fecha, que git no conserva— y va dentro de `pnpm check`.
 
+## 2.9. Lo que quedó del intento de ARM/Oracle
+
+El despliegue se preparó para Oracle Cloud Always Free (VM ARM) y **se descartó**: el destino es un
+VPS Contabo x86, la misma arquitectura sobre la que todo estaba ya ensayado. Lo específico de ARM se
+revirtió entero —`docs/11` y los topes de memoria de `compose.prod.yml` volvieron a lo que eran—.
+Sobrevivieron dos cosas, porque no eran de ARM:
+
+**Ningún paso de la construcción ejercitaba argon2.** Sharp estaba cubierto de rebote por
+`comprobar-fuentes.js`, pero argon2 —el otro binario nativo— no lo tocaba nadie: un binario ausente,
+de otra libc o de otra arquitectura no habría dado la cara al construir ni al arrancar, sino en el
+PRIMER LOGIN de producción. Ahora hay `scripts/comprobar-argon2.ts` y un `RUN` en el `Dockerfile`.
+Verificado por mutación, las tres: sin el `.node`, con una verificación que dice que sí a todo, y con
+el algoritmo cambiado a `argon2i`. Las tres caen con motivo legible y la imagen no llega a existir.
+El módulo se carga con `import()` DENTRO del try y no con un import de cabecera, y eso también salió
+de una mutación: con el import estático la construcción caía igual, pero escupiendo cuarenta líneas
+de volcado en lugar de la frase.
+
+**Cuánta memoria pide marcar una foto** (medido en **arm64**; PENDIENTE repetirlo en x86, que es lo
+que va a correr). Una imagen de 50 Mpx —el tope de `src/lib/watermark.ts`, que un archivo de
+**287 kB** ya alcanza— pica 73 MB al marcarse; **dieciséis a la vez, 407 MB**. Con un techo de
+512 MB las dieciséis siguen pasando; con 384 MB el contenedor muere por OOM. De aquí salen dos
+cosas: que el límite que de verdad ata es el de PÍXELES y no el de bytes, y que **los topes de
+`deploy.resources.limits` se quitaron a propósito** al cambiar de máquina —en un VPS de 6 vCPU y
+12 GB, un techo de 768 MB mataría la API en una ráfaga donde sin techo aguantaría—. Si algún día se
+suben `LADO_MAXIMO` o `MAX_PIXELES_ENTRADA`, hay que volver a medir esto.
+
 ## 3. Fallos conocidos
 
 Auditados el 2026-09-01. Los seis están cerrados: tres en D0, porque el propio salto a Node los

@@ -66,6 +66,13 @@ COPY migrations ./migrations
 # no tener que meter un transpilador en la imagen solo para esto.
 RUN node dist/comprobar-fuentes.js
 
+# Y la misma idea para argon2, que es el otro binario nativo y no lo ejercitaba
+# ningún paso: sharp queda cubierto por la comprobación de las fuentes, pero un
+# argon2 que no cargue —otra arquitectura, otra libc, una base musl— no se
+# notaría al construir ni al arrancar, sino en el primer intento de login de
+# producción. Cuesta un segundo aquí y evita descubrirlo con un cliente delante.
+RUN node dist/comprobar-argon2.js
+
 # El directorio de los medios se crea AQUÍ y con su dueño puesto. Docker copia
 # el propietario del directorio de la imagen al crear el volumen; si no
 # existiera, el volumen nacería de root y el proceso, que corre como `node`, no
