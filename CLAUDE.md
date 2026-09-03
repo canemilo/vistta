@@ -246,8 +246,10 @@ no se negocian:
 
 ## Cómo trabajar aquí
 
-- Delega en el subagente adecuado: backend, frontend, security, infra-devops, qa-testing, compliance, docs.
-  **Ojo: `.claude/` con esos 7 subagentes no está en el repo** (nunca se commiteó). Hasta que se
-  reponga, hay que darle el rol al agente en el propio prompt.
+- Delega en el subagente adecuado. Los siete viven en `.claude/agents/` y ya están en el repo:
+  `backend`, `frontend`, `security`, `infra-devops`, `qa-testing`, `compliance` y `docs`.
+  **`security` y `compliance` solo leen y proponen**: no tienen `Write` ni `Edit`, y su parche va en
+  la respuesta para que lo aplique otro. Cada definición lleva dentro los invariantes de su área, así
+  que el rol ya no hay que explicarlo en cada prompt.
 - Commits pequeños; una responsabilidad por módulo (arquitectura limpia).
 - El plan de trabajo pendiente vive en HANDOFF.md.
