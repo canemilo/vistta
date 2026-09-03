@@ -45,8 +45,20 @@ export interface DocProfile {
   templateUrl: './pass-document.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    /*
+     * El documento es SIEMPRE oscuro, tenga el sistema el tema que tenga.
+     *
+     * No es un descuido de la tokenización: es la cara del producto. Lo que
+     * recibe el cliente de nuestro cliente tiene que verse igual en todas
+     * partes, y sobre fondo oscuro la marca de agua incrustada se lee sin pelear
+     * con la foto. Hasta ahora heredaba el fondo del body; al volverse claro el
+     * panel, se lo pinta él.
+     */
     :host {
       display: block;
+      min-height: 100%;
+      background-color: #060e17;
+      color: #d7e9e6;
     }
   `,
 })

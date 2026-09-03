@@ -29,30 +29,30 @@
       <!-- Esquinas marcadas: el panel se lee como un instrumento, no como una
            tarjeta de producto. Es lo único decorativo, y va aquí y en ningún
            otro sitio de la aplicación. -->
-      <div class="relative mt-7 border border-[#16303a] bg-[#0a1620]/80 p-6">
+      <div class="relative mt-7 border border-borde-2 bg-sup/80 p-6">
         <span
-          class="pointer-events-none absolute -top-px -left-px h-3 w-3 border-t border-l border-emerald-400/50"
+          class="pointer-events-none absolute -top-px -left-px h-3 w-3 border-t border-l border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -top-px -right-px h-3 w-3 border-t border-r border-emerald-400/50"
+          class="pointer-events-none absolute -top-px -right-px h-3 w-3 border-t border-r border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -bottom-px -left-px h-3 w-3 border-b border-l border-emerald-400/50"
+          class="pointer-events-none absolute -bottom-px -left-px h-3 w-3 border-b border-l border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -right-px -bottom-px h-3 w-3 border-r border-b border-emerald-400/50"
+          class="pointer-events-none absolute -right-px -bottom-px h-3 w-3 border-r border-b border-acento/50"
           aria-hidden="true"
         ></span>
 
-        <h1 class="text-center font-mono text-[10px] tracking-[0.34em] text-[#8fb0b2] uppercase">
+        <h1 class="text-center font-mono text-[10px] tracking-[0.34em] text-texto-2 uppercase">
           Administración
         </h1>
 
         <label
-          class="mt-7 block font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+          class="mt-7 block font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase"
           for="admin-usuario"
         >
           Usuario
@@ -63,11 +63,11 @@
           name="id"
           autocomplete="username"
           (keyup.enter)="entrar()"
-          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="mt-2 w-full rounded border border-borde bg-fondo px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-texto outline-none focus:border-acento/60"
         />
 
         <label
-          class="mt-5 block font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+          class="mt-5 block font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase"
           for="admin-clave"
         >
           Contraseña
@@ -79,20 +79,20 @@
           type="password"
           autocomplete="current-password"
           (keyup.enter)="entrar()"
-          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="mt-2 w-full rounded border border-borde bg-fondo px-3 py-2.5 font-mono text-[13px] tracking-[0.08em] text-texto outline-none focus:border-acento/60"
         />
 
         <button
           type="button"
           (click)="entrar()"
           [disabled]="ocupado()"
-          class="mt-7 w-full rounded border border-emerald-400/60 bg-emerald-400/10 px-4 py-2.5 font-mono text-[11px] tracking-[0.24em] text-emerald-300 transition-colors hover:bg-emerald-400/20 hover:text-emerald-200 disabled:opacity-40 disabled:hover:bg-emerald-400/10"
+          class="mt-7 w-full rounded border border-acento/60 bg-acento/10 px-4 py-2.5 font-mono text-[11px] tracking-[0.24em] text-acento transition-colors hover:bg-acento/20 hover:text-acento disabled:opacity-40 disabled:hover:bg-acento/10"
         >
           {{ ocupado() ? 'COMPROBANDO…' : 'ENTRAR' }}
         </button>
 
         @if (error()) {
-          <p class="mt-4 font-mono text-[11px] text-amber-300" role="alert">{{ error() }}</p>
+          <p class="mt-4 font-mono text-[11px] text-aviso" role="alert">{{ error() }}</p>
         }
       </div>
 
@@ -103,7 +103,7 @@
         que alguien pida por ahí que le concedan el rol.
       -->
       <p
-        class="mt-6 text-center font-mono text-[10px] leading-[1.8] tracking-[0.06em] text-[#5e848f]"
+        class="mt-6 text-center font-mono text-[10px] leading-[1.8] tracking-[0.06em] text-texto-3"
       >
         Cada acción queda registrada con su autor y su fecha.<br />
         El rol se concede solo desde la máquina que tiene la base.
@@ -114,47 +114,47 @@
   <main id="contenido" class="mx-auto max-w-6xl px-6 py-10">
     <header class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 class="font-mono text-[11px] tracking-[0.28em] text-[#63848b] uppercase">
+        <h1 class="font-mono text-[11px] tracking-[0.28em] text-texto-3 uppercase">
           Administración
         </h1>
-        <p class="mt-1 font-serif text-[19px] text-[#cfe3e0]">
+        <p class="mt-1 font-serif text-[19px] text-texto">
           {{ cuentas().length }} cuentas
           @if (suspendidas()) {
-            <span class="text-amber-300">· {{ suspendidas() }} suspendidas</span>
+            <span class="text-aviso">· {{ suspendidas() }} suspendidas</span>
           }
         </p>
       </div>
       <button
         type="button"
         (click)="salir()"
-        class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60"
+        class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60"
       >
         SALIR
       </button>
     </header>
 
     @if (error()) {
-      <p class="mt-4 font-mono text-[12px] text-amber-300" role="alert">{{ error() }}</p>
+      <p class="mt-4 font-mono text-[12px] text-aviso" role="alert">{{ error() }}</p>
     }
 
     <!-- La contraseña recién generada. Se enseña una vez y no hay forma de
          volver a verla: si se pierde, hay que generar otra. -->
     @if (credencial(); as cred) {
-      <div class="mt-6 rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-5" role="alert">
-        <p class="font-mono text-[11px] tracking-[0.22em] text-emerald-300 uppercase">
+      <div class="mt-6 rounded-xl border border-acento/40 bg-acento/5 p-5" role="alert">
+        <p class="font-mono text-[11px] tracking-[0.22em] text-acento uppercase">
           Contraseña de {{ cred.id }}
         </p>
-        <p class="mt-3 font-mono text-[20px] tracking-[0.12em] text-[#cfe3e0] select-all">
+        <p class="mt-3 font-mono text-[20px] tracking-[0.12em] text-texto select-all">
           {{ cred.password }}
         </p>
-        <p class="mt-3 max-w-[58ch] font-serif text-[14px] leading-[1.7] text-[#8fb0b2]">
+        <p class="mt-3 max-w-[58ch] font-serif text-[14px] leading-[1.7] text-texto-2">
           Cópiala ahora. No se guarda en ningún sitio y no se puede volver a consultar: si se
           pierde, hay que generar otra. Dile a la persona que la cambie al entrar.
         </p>
         <button
           type="button"
           (click)="credencial.set(null)"
-          class="mt-4 rounded-lg border border-emerald-500/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:border-emerald-400"
+          class="mt-4 rounded-lg border border-acento/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-acento hover:border-acento"
         >
           YA LA TENGO
         </button>
@@ -162,27 +162,27 @@
     }
 
     <!-- Alta de cuenta -->
-    <div class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">Nueva cuenta</p>
+    <div class="mt-8 rounded-xl border border-borde bg-sup-2 p-5">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">Nueva cuenta</p>
       <div class="mt-4 flex flex-wrap items-center gap-3">
         <input
           [(ngModel)]="nuevoId"
           name="nuevoId"
           placeholder="identificador"
           aria-label="Identificador de la cuenta nueva"
-          class="w-44 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          class="w-44 rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[12px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
         />
         <input
           [(ngModel)]="nuevoNombre"
           name="nuevoNombre"
           placeholder="Nombre visible"
           aria-label="Nombre visible de la cuenta nueva"
-          class="w-56 rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          class="w-56 rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[12px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
         />
         <select
           [(ngModel)]="nuevoPlan"
           name="nuevoPlan"
-          class="rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
         >
           @for (p of planes(); track p) {
             <option [value]="p">{{ p }}</option>
@@ -192,12 +192,12 @@
           type="button"
           (click)="crear()"
           [disabled]="ocupado()"
-          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40"
+          class="rounded-lg border border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40"
         >
           CREAR
         </button>
       </div>
-      <p class="mt-3 font-mono text-[10px] text-[#63848b]">
+      <p class="mt-3 font-mono text-[10px] text-texto-3">
         El identificador solo admite minúsculas, dígitos, guion y guion bajo. La contraseña la
         genera el servidor.
       </p>
@@ -206,34 +206,34 @@
     <!-- Pagos por conciliar.
          Va antes que las cuentas porque es lo único aquí que tiene una cola de
          trabajo: alguien ha pagado y está esperando a que se le active. -->
-    <div class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
+    <div class="mt-8 rounded-xl border border-borde bg-sup-2 p-5">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
         Pagos por cotejar
         @if (pendientes().length) {
-          <span class="text-emerald-400">· {{ pendientes().length }}</span>
+          <span class="text-acento">· {{ pendientes().length }}</span>
         }
       </p>
       @if (pendientes().length) {
         <ul class="mt-4 flex flex-col gap-3">
           @for (p of pendientes(); track p.code) {
             <li
-              class="flex flex-wrap items-center gap-3 rounded-lg border border-[#16303a] bg-[#0b1a24] px-4 py-3"
+              class="flex flex-wrap items-center gap-3 rounded-lg border border-borde-2 bg-sup px-4 py-3"
             >
-              <span class="font-mono text-[13px] tracking-[0.1em] text-[#cfe3e0] select-all">
+              <span class="font-mono text-[13px] tracking-[0.1em] text-texto select-all">
                 {{ p.code }}
               </span>
-              <span class="font-mono text-[12px] text-[#8fb0b2]">
+              <span class="font-mono text-[12px] text-texto-2">
                 {{ p.userId }} · {{ p.plan }} {{ p.periodo }} ·
-                <span class="text-[#cfe3e0]">{{ euros(p.importe) }}</span>
+                <span class="text-texto">{{ euros(p.importe) }}</span>
               </span>
-              <span class="font-mono text-[10px] text-[#63848b]">
+              <span class="font-mono text-[10px] text-texto-3">
                 pedido el {{ fecha(p.createdAt) }}
               </span>
               <select
                 [(ngModel)]="metodos[p.code]"
                 [name]="'metodo-' + p.code"
                 [attr.aria-label]="'Por dónde llegó el pago ' + p.code"
-                class="ml-auto rounded border border-[#1c3b44] bg-[#081420] px-2 py-1 font-mono text-[11px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+                class="ml-auto rounded border border-borde bg-sup-2 px-2 py-1 font-mono text-[11px] text-texto outline-none focus:border-acento/60"
               >
                 <option value="">¿por dónde llegó?</option>
                 <option value="bizum">bizum</option>
@@ -245,7 +245,7 @@
                 type="button"
                 (click)="cobrar(p)"
                 [disabled]="ocupado()"
-                class="rounded border border-emerald-500/50 px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-emerald-300 hover:border-emerald-400 disabled:opacity-40"
+                class="rounded border border-acento/50 px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-acento hover:border-acento disabled:opacity-40"
               >
                 COBRADO
               </button>
@@ -253,19 +253,19 @@
                 type="button"
                 (click)="anular(p)"
                 [disabled]="ocupado()"
-                class="rounded border border-[#1c3b44] px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] hover:border-amber-400/60 disabled:opacity-40"
+                class="rounded border border-borde px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-texto-2 hover:border-aviso/60 disabled:opacity-40"
               >
                 ANULAR
               </button>
             </li>
           }
         </ul>
-        <p class="mt-3 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+        <p class="mt-3 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-texto-3">
           Comprueba el código en el concepto del ingreso antes de darlo por cobrado. El código no
           demuestra nada por sí solo: viaja en el concepto de un Bizum y lo puede ver cualquiera.
         </p>
       } @else {
-        <p class="mt-3 font-mono text-[11px] text-[#5e848f]">Nada pendiente de cobrar.</p>
+        <p class="mt-3 font-mono text-[11px] text-texto-3">Nada pendiente de cobrar.</p>
       }
     </div>
 
@@ -273,76 +273,76 @@
     <div class="mt-8 overflow-x-auto">
       <table class="w-full min-w-[880px] border-collapse text-left">
         <thead>
-          <tr class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] uppercase">
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Cuenta</th>
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Plan</th>
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Perfiles</th>
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Pases</th>
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Medios</th>
-            <th scope="col" class="border-b border-[#16303a] py-3 pr-4">Estado</th>
-            <th scope="col" class="border-b border-[#16303a] py-3">Acciones</th>
+          <tr class="font-mono text-[10px] tracking-[0.16em] text-texto-3 uppercase">
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Cuenta</th>
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Plan</th>
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Perfiles</th>
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Pases</th>
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Medios</th>
+            <th scope="col" class="border-b border-borde-2 py-3 pr-4">Estado</th>
+            <th scope="col" class="border-b border-borde-2 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (c of cuentas(); track c.id) {
-            <tr class="align-top font-mono text-[12px] text-[#cfe3e0]">
-              <td class="border-b border-[#0f2630] py-3 pr-4">
+            <tr class="align-top font-mono text-[12px] text-texto">
+              <td class="border-b border-borde-3 py-3 pr-4">
                 <input
                   [value]="c.displayName"
                   (change)="renombrar(c, $any($event.target).value)"
                   [attr.aria-label]="'Nombre visible de ' + c.id"
-                  class="w-44 rounded border border-transparent bg-transparent px-1 py-1 text-[12px] text-[#cfe3e0] outline-none focus:border-[#1c3b44]"
+                  class="w-44 rounded border border-transparent bg-transparent px-1 py-1 text-[12px] text-texto outline-none focus:border-borde"
                 />
-                <span class="block px-1 text-[10px] text-[#63848b]">
+                <span class="block px-1 text-[10px] text-texto-3">
                   {{ c.id }}
                   @if (c.role === 'admin') {
-                    <span class="text-emerald-400"> · admin</span>
+                    <span class="text-acento"> · admin</span>
                   }
                   <!-- La petición se ve aquí y se atiende con el botón
                        CONTRASEÑA de esta misma fila: una bandeja aparte
                        obligaría a cruzar dos pantallas para una sola acción. -->
                   @if (c.clavePedidaEl; as pedida) {
-                    <span class="mt-1 block text-amber-300">
+                    <span class="mt-1 block text-aviso">
                       · pidió contraseña el {{ fecha(pedida) }}
                     </span>
                   }
                 </span>
               </td>
-              <td class="border-b border-[#0f2630] py-3 pr-4">
+              <td class="border-b border-borde-3 py-3 pr-4">
                 <select
                   [value]="c.plan"
                   (change)="cambiarPlan(c, $any($event.target).value)"
                   [attr.aria-label]="'Plan de ' + c.id"
                   [disabled]="ocupado()"
-                  class="rounded border border-[#1c3b44] bg-[#081420] px-2 py-1 text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+                  class="rounded border border-borde bg-sup-2 px-2 py-1 text-[12px] text-texto outline-none focus:border-acento/60"
                 >
                   @for (p of planes(); track p) {
                     <option [value]="p">{{ p }}</option>
                   }
                 </select>
               </td>
-              <td class="border-b border-[#0f2630] py-3 pr-4">
+              <td class="border-b border-borde-3 py-3 pr-4">
                 {{ c.perfilesActivos }}
                 @if (c.perfilesCongelados) {
-                  <span class="text-amber-300">(+{{ c.perfilesCongelados }} congelados)</span>
+                  <span class="text-aviso">(+{{ c.perfilesCongelados }} congelados)</span>
                 }
               </td>
-              <td class="border-b border-[#0f2630] py-3 pr-4">{{ c.pasesAbiertos }}</td>
-              <td class="border-b border-[#0f2630] py-3 pr-4">{{ megas(c.bytesUsados) }}</td>
-              <td class="border-b border-[#0f2630] py-3 pr-4">
+              <td class="border-b border-borde-3 py-3 pr-4">{{ c.pasesAbiertos }}</td>
+              <td class="border-b border-borde-3 py-3 pr-4">{{ megas(c.bytesUsados) }}</td>
+              <td class="border-b border-borde-3 py-3 pr-4">
                 @if (c.status === 'activa') {
-                  <span class="text-emerald-400">activa</span>
+                  <span class="text-acento">activa</span>
                 } @else {
-                  <span class="text-amber-300">suspendida</span>
+                  <span class="text-aviso">suspendida</span>
                 }
               </td>
-              <td class="border-b border-[#0f2630] py-3">
+              <td class="border-b border-borde-3 py-3">
                 <div class="flex flex-wrap gap-2">
                   <button
                     type="button"
                     (click)="nuevaPassword(c)"
                     [disabled]="ocupado()"
-                    class="rounded border border-[#1c3b44] px-2 py-1 text-[10px] tracking-[0.1em] text-[#8fb0b2] hover:border-emerald-400/60 disabled:opacity-40"
+                    class="rounded border border-borde px-2 py-1 text-[10px] tracking-[0.1em] text-texto-2 hover:border-acento/60 disabled:opacity-40"
                   >
                     CONTRASEÑA
                   </button>
@@ -352,7 +352,7 @@
                       (click)="descartarSolicitud(c)"
                       [disabled]="ocupado()"
                       [attr.aria-label]="'Descartar la solicitud de contraseña de ' + c.id"
-                      class="rounded border border-[#1c3b44] px-2 py-1 text-[10px] tracking-[0.1em] text-[#63848b] hover:border-amber-400/60 hover:text-amber-300 disabled:opacity-40"
+                      class="rounded border border-borde px-2 py-1 text-[10px] tracking-[0.1em] text-texto-3 hover:border-aviso/60 hover:text-aviso disabled:opacity-40"
                     >
                       DESCARTAR
                     </button>
@@ -361,7 +361,7 @@
                     type="button"
                     (click)="alternarSuspension(c)"
                     [disabled]="ocupado()"
-                    class="rounded border border-[#1c3b44] px-2 py-1 text-[10px] tracking-[0.1em] text-[#8fb0b2] hover:border-amber-400/60 disabled:opacity-40"
+                    class="rounded border border-borde px-2 py-1 text-[10px] tracking-[0.1em] text-texto-2 hover:border-aviso/60 disabled:opacity-40"
                   >
                     {{ c.status === 'activa' ? 'SUSPENDER' : 'REACTIVAR' }}
                   </button>
@@ -371,41 +371,41 @@
                     type="button"
                     (click)="pedirBorrado(c.id)"
                     [disabled]="ocupado()"
-                    class="rounded border border-red-500/40 px-2 py-1 text-[10px] tracking-[0.1em] text-red-300 hover:border-red-400 disabled:opacity-40"
+                    class="rounded border border-peligro/40 px-2 py-1 text-[10px] tracking-[0.1em] text-peligro hover:border-peligro disabled:opacity-40"
                   >
                     BORRAR
                   </button>
                 </div>
 
                 @if (borrando() === c.id) {
-                  <div class="mt-3 rounded-lg border border-red-500/40 bg-red-500/5 p-3">
-                    <p class="max-w-[46ch] font-serif text-[13px] leading-[1.6] text-[#cfe3e0]">
+                  <div class="mt-3 rounded-lg border border-peligro/40 bg-peligro/5 p-3">
+                    <p class="max-w-[46ch] font-serif text-[13px] leading-[1.6] text-texto">
                       Esto borra la cuenta, sus perfiles, sus fotos y sus pases,
                       <strong>ahora y sin vuelta atrás</strong>. Para dejar de cobrar a alguien sin
                       destruir su trabajo, usa SUSPENDER.
                     </p>
-                    <p class="mt-2 font-mono text-[11px] text-[#8fb0b2]">
-                      Escribe <span class="text-red-300">{{ c.id }}</span> para confirmar:
+                    <p class="mt-2 font-mono text-[11px] text-texto-2">
+                      Escribe <span class="text-peligro">{{ c.id }}</span> para confirmar:
                     </p>
                     <div class="mt-2 flex flex-wrap gap-2">
                       <input
                         [(ngModel)]="confirmacion"
                         name="confirmacion"
                         [attr.aria-label]="'Escribe ' + c.id + ' para confirmar el borrado'"
-                        class="w-44 rounded border border-red-500/40 bg-[#0b1a24] px-2 py-1 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-red-400"
+                        class="w-44 rounded border border-peligro/40 bg-sup px-2 py-1 font-mono text-[12px] text-texto outline-none focus:border-peligro"
                       />
                       <button
                         type="button"
                         (click)="confirmarBorrado()"
                         [disabled]="ocupado() || confirmacion !== c.id"
-                        class="rounded border border-red-500/60 px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-red-300 hover:border-red-400 disabled:opacity-30"
+                        class="rounded border border-peligro/60 px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-peligro hover:border-peligro disabled:opacity-30"
                       >
                         BORRAR DEFINITIVAMENTE
                       </button>
                       <button
                         type="button"
                         (click)="cancelarBorrado()"
-                        class="rounded border border-[#1c3b44] px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] hover:border-emerald-400/60"
+                        class="rounded border border-borde px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-texto-2 hover:border-acento/60"
                       >
                         CANCELAR
                       </button>
@@ -421,27 +421,27 @@
 
     <!-- Auditoría -->
     <div class="mt-12">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
         Registro de administración
       </p>
-      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.7] text-[#8fb0b2]">
+      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.7] text-texto-2">
         Todo lo que se hace desde aquí queda anotado. Cuando alguien puede tocar las cuentas de
         todos, el registro no es una comodidad: es parte del control.
       </p>
       <ul class="mt-4 flex flex-col gap-1">
         @for (r of auditoria(); track r.id) {
-          <li class="font-mono text-[11px] text-[#8fb0b2]">
-            <span class="text-[#63848b]">{{ fecha(r.createdAt) }}</span>
-            · {{ r.adminId }} → <span class="text-[#cfe3e0]">{{ r.accion }}</span>
+          <li class="font-mono text-[11px] text-texto-2">
+            <span class="text-texto-3">{{ fecha(r.createdAt) }}</span>
+            · {{ r.adminId }} → <span class="text-texto">{{ r.accion }}</span>
             @if (r.objetivo) {
               · {{ r.objetivo }}
             }
             @if (detalle(r)) {
-              <span class="text-[#63848b]">({{ detalle(r) }})</span>
+              <span class="text-texto-3">({{ detalle(r) }})</span>
             }
           </li>
         } @empty {
-          <li class="font-mono text-[11px] text-[#5e848f]">Todavía no hay nada anotado.</li>
+          <li class="font-mono text-[11px] text-texto-3">Todavía no hay nada anotado.</li>
         }
       </ul>
     </div>

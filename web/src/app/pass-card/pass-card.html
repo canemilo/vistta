@@ -1,8 +1,8 @@
 <div
-  class="w-full max-w-[420px] overflow-hidden rounded-2xl border border-[#1c3b44] bg-[#0c1a24]/85 shadow-[0_40px_120px_-25px_rgba(0,0,0,0.95)] backdrop-blur-sm"
+  class="w-full max-w-[420px] overflow-hidden rounded-2xl border border-borde bg-sup/85 shadow-[0_40px_120px_-25px_rgba(0,0,0,0.95)] backdrop-blur-sm"
 >
   <!-- Cabecera: enlace + estado -->
-  <header class="flex items-center justify-between gap-4 border-b border-[#16303a] px-5 py-3.5">
+  <header class="flex items-center justify-between gap-4 border-b border-borde-2 px-5 py-3.5">
     <div class="flex min-w-0 items-center gap-2.5">
       <span
         class="h-2 w-2 shrink-0 rounded-full"
@@ -12,11 +12,11 @@
             : 'bg-slate-500/70'
         "
       ></span>
-      <span class="truncate text-[13px] tracking-tight text-[#cfe3e0]">{{ enlace() }}</span>
+      <span class="truncate text-[13px] tracking-tight text-texto">{{ enlace() }}</span>
     </div>
     <span
       class="shrink-0 text-[11px] font-medium tracking-[0.22em]"
-      [class]="activo() ? 'text-emerald-400' : 'text-slate-500'"
+      [class]="activo() ? 'text-acento' : 'text-slate-500'"
     >
       {{ etiquetaEstado() }}
     </span>
@@ -45,7 +45,7 @@
         }
       </div>
     } @else {
-      <div class="flex h-[180px] items-center justify-center text-[12px] text-[#6f8f93]">
+      <div class="flex h-[180px] items-center justify-center text-[12px] text-texto-2">
         <ng-content select="[vacio]"></ng-content>
       </div>
     }

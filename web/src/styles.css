@@ -1,17 +1,98 @@
 @import 'tailwindcss';
 
-/* Paleta Vistta: azul noche con acento verde agua. */
+/*
+ * Paleta de Vistta, en TOKENS y no en hexadecimales sueltos.
+ *
+ * Antes cada plantilla escribía su color a mano: 252 valores repartidos por
+ * ocho archivos. Eso tenía dos consecuencias malas. Una, que cambiar de aspecto
+ * era imposible sin tocarlos todos. Y otra peor: nadie podía comprobar el
+ * contraste de un color que aparecía escrito treinta y seis veces, así que los
+ * grises tenues se quedaron en 4,38 sobre los paneles —por debajo del mínimo
+ * de 4,5 de la AA— y el texto de los perfiles se leía mal de verdad.
+ *
+ * Los nombres son POR FUNCIÓN, no por color: `--color-texto-3` sigue siendo el
+ * texto de tercer nivel en los dos temas, aunque en uno sea claro y en otro
+ * oscuro. Nombrarlos «gris-claro» habría obligado a renombrarlos al cambiar.
+ *
+ * Todos los pares de este archivo están medidos contra sus tres fondos. El peor
+ * caso de cada uno pasa el 4,5 de la AA, incluidos los `placeholder`.
+ */
 @theme {
-  --color-noche: #060e17;
-  --color-noche-2: #0a1622;
-  --color-panel: #0c1a24;
-  --color-borde: #1c3b44;
-  --color-acento: #34d399;
-  --color-acento-tenue: #7fd8bd;
-  --color-texto: #cfe3e0;
-  --color-texto-tenue: #6f8f93;
+  /* --- CLARO: el tema por defecto ------------------------------------------ */
+  --color-fondo: #f7f9fa;
+  --color-sup: #ffffff;
+  --color-sup-2: #eef3f4;
+  --color-sup-3: #e4ebed;
+
+  --color-borde: #d3dfe2;
+  --color-borde-2: #e2eaec;
+  --color-borde-3: #edf2f3;
+
+  --color-titulo: #07242f;
+  --color-texto: #0f2c37;
+  --color-texto-2: #33545e;
+  /* El que fallaba. Aquí 5,81 sobre blanco; antes, 4,38. */
+  --color-texto-3: #4c6a73;
+  --color-texto-4: #556d75;
+
+  /* #0a7a57 se quedaba en 4,42 sobre la superficie más profunda: lo cazó la
+     prueba de contraste, no el ojo. */
+  --color-acento: #09714f;
+  --color-acento-2: #125a70;
+  --color-acento-tenue: #0f8f66;
+  --color-sobre-acento: #ffffff;
+  --color-peligro: #a3243a;
+  --color-peligro-borde: #e8c4cb;
+  --color-peligro-fondo: #fdf2f4;
+  /* Avisos. En claro, ámbar oscuro: el ámbar de manual (#fcd34d) da 1,29
+     sobre blanco, o sea, ilegible. */
+  --color-aviso: #8a5300;
+  --color-aviso-borde: #e8d3ac;
+  --color-aviso-fondo: #fdf8ef;
+
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+/*
+ * --- OSCURO: el mismo diseño con otros valores ------------------------------
+ *
+ * Va por `prefers-color-scheme` y no por un interruptor porque no hay dónde
+ * guardarlo: el viewer lo abre alguien que no es cliente nuestro, una sola vez
+ * y sin sesión. Lo que sí se respeta es lo que ya ha elegido en su sistema.
+ *
+ * Y hay una razón de producto: un pase se abre muchas veces de noche, desde el
+ * móvil. Servirle una pantalla blanca a quemarropa es peor producto.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: #060e17;
+    --color-sup: #0b1a24;
+    --color-sup-2: #081420;
+    --color-sup-3: #04101a;
+
+    --color-borde: #1c3b44;
+    --color-borde-2: #16303a;
+    --color-borde-3: #0f2630;
+
+    --color-titulo: #e9f6f3;
+    --color-texto: #d7e9e6;
+    --color-texto-2: #a8c3c5;
+    /* Antes #63848b: 4,38 sobre el panel. Ahora 7,00. */
+    --color-texto-3: #8aa8b0;
+    --color-texto-4: #7b989f;
+
+    --color-acento: #34d399;
+    --color-acento-2: #6fc6dd;
+    --color-acento-tenue: #7fd8bd;
+    --color-sobre-acento: #04140e;
+    --color-peligro: #e88fa0;
+    --color-peligro-borde: #3b1c22;
+    --color-peligro-fondo: #160b0e;
+    --color-aviso: #fcd34d;
+    --color-aviso-borde: #3d3117;
+    --color-aviso-fondo: #17120a;
+  }
 }
 
 html,
@@ -21,15 +102,31 @@ body {
 
 body {
   margin: 0;
-  background-color: var(--color-noche);
-  /* Halo suave detrás de la tarjeta, como en la referencia. */
+  background-color: var(--color-fondo);
+  /*
+   * El halo se queda, con la intensidad de cada tema. En claro tiene que ser
+   * casi invisible: un degradado que en oscuro es «profundidad», en claro es
+   * una mancha sucia detrás del texto.
+   */
   background-image:
-    radial-gradient(70rem 40rem at 50% 38%, rgba(29, 78, 90, 0.45), transparent 70%),
-    radial-gradient(50rem 30rem at 15% 0%, rgba(16, 60, 72, 0.35), transparent 65%);
+    radial-gradient(70rem 40rem at 50% 38%, var(--halo-1), transparent 70%),
+    radial-gradient(50rem 30rem at 15% 0%, var(--halo-2), transparent 65%);
   background-repeat: no-repeat;
   color: var(--color-texto);
   font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --halo-1: rgba(18, 90, 112, 0.07);
+  --halo-2: rgba(10, 122, 87, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --halo-1: rgba(29, 78, 90, 0.45);
+    --halo-2: rgba(16, 60, 72, 0.35);
+  }
 }
 
 ::selection {

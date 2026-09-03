@@ -25,8 +25,12 @@ type Estado = 'cargando' | 'abierto' | 'denegado';
   templateUrl: './viewer.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    /* Mismo criterio que el documento: lo público es oscuro siempre. */
     :host {
       display: block;
+      min-height: 100vh;
+      background-color: #060e17;
+      color: #d7e9e6;
     }
   `,
 })

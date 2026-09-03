@@ -20,25 +20,25 @@
         reconozcan como la misma casa. Lo que las distingue no es la forma, es
         el tono: aquí se explica lo que hay que hacer, allí no se explica nada.
       -->
-      <div class="relative mt-8 border border-[#16303a] bg-[#0a1620]/80 p-6">
+      <div class="relative mt-8 border border-borde-2 bg-sup/80 p-6">
         <span
-          class="pointer-events-none absolute -top-px -left-px h-3 w-3 border-t border-l border-emerald-400/50"
+          class="pointer-events-none absolute -top-px -left-px h-3 w-3 border-t border-l border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -top-px -right-px h-3 w-3 border-t border-r border-emerald-400/50"
+          class="pointer-events-none absolute -top-px -right-px h-3 w-3 border-t border-r border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -bottom-px -left-px h-3 w-3 border-b border-l border-emerald-400/50"
+          class="pointer-events-none absolute -bottom-px -left-px h-3 w-3 border-b border-l border-acento/50"
           aria-hidden="true"
         ></span>
         <span
-          class="pointer-events-none absolute -right-px -bottom-px h-3 w-3 border-r border-b border-emerald-400/50"
+          class="pointer-events-none absolute -right-px -bottom-px h-3 w-3 border-r border-b border-acento/50"
           aria-hidden="true"
         ></span>
 
-        <h1 class="text-center font-mono text-[10px] tracking-[0.34em] text-[#8fb0b2] uppercase">
+        <h1 class="text-center font-mono text-[10px] tracking-[0.34em] text-texto-2 uppercase">
           Entrar al panel
         </h1>
 
@@ -53,19 +53,17 @@
         -->
         <div class="mt-5 flex items-center gap-2.5">
           <span
-            class="h-[7px] w-[7px] shrink-0 rounded-full border border-[color:var(--color-marca-azul)] bg-[#060e17]"
+            class="h-[7px] w-[7px] shrink-0 rounded-full border border-[color:var(--color-marca-azul)] bg-fondo"
             aria-hidden="true"
           ></span>
           <span class="hilo h-px flex-1" aria-hidden="true"></span>
         </div>
-        <p
-          class="mt-3 text-center font-mono text-[10px] tracking-[0.28em] text-[#8fb0b2] uppercase"
-        >
+        <p class="mt-3 text-center font-mono text-[10px] tracking-[0.28em] text-texto-2 uppercase">
           Un enlace. <span class="texto-marca">Una apertura.</span>
         </p>
 
         <label
-          class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+          class="mt-6 block font-mono text-[11px] tracking-[0.2em] text-texto-2 uppercase"
           for="usuario"
         >
           USUARIO
@@ -76,10 +74,10 @@
           autocomplete="username"
           [(ngModel)]="usuarioId"
           (keyup.enter)="entrar()"
-          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="mt-2 w-full rounded border border-borde bg-fondo px-3 py-2.5 font-mono tracking-[0.1em] text-texto outline-none focus:border-acento/60"
         />
         <label
-          class="mt-4 block font-mono text-[11px] tracking-[0.2em] text-[#6f8f93] uppercase"
+          class="mt-4 block font-mono text-[11px] tracking-[0.2em] text-texto-2 uppercase"
           for="contrasena"
         >
           CONTRASEÑA
@@ -90,18 +88,18 @@
           autocomplete="current-password"
           [(ngModel)]="contrasena"
           (keyup.enter)="entrar()"
-          class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2.5 font-mono tracking-[0.1em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="mt-2 w-full rounded border border-borde bg-fondo px-3 py-2.5 font-mono tracking-[0.1em] text-texto outline-none focus:border-acento/60"
         />
         <button
           type="button"
           (click)="entrar()"
           [disabled]="ocupado() || !usuarioId.trim() || contrasena.length < 8"
-          class="mt-7 w-full rounded bg-emerald-400 px-3 py-3 font-mono text-[12px] tracking-[0.24em] text-[#04140e] shadow-[0_0_24px_-6px_rgba(52,211,153,0.6)] transition-colors hover:bg-emerald-300 disabled:opacity-30 disabled:shadow-none"
+          class="mt-7 w-full rounded bg-acento px-3 py-3 font-mono text-[12px] tracking-[0.24em] text-sobre-acento shadow-[0_0_24px_-6px_rgba(52,211,153,0.6)] transition-colors hover:bg-acento disabled:opacity-30 disabled:shadow-none"
         >
           ENTRAR
         </button>
         @if (error()) {
-          <p class="mt-4 font-mono text-[12px] text-rose-400" role="alert">{{ error() }}</p>
+          <p class="mt-4 font-mono text-[12px] text-peligro" role="alert">{{ error() }}</p>
         }
 
         <!--
@@ -113,14 +111,14 @@
           lo dice con esas palabras en vez de prometer un correo que no llega
           nunca, que es la peor forma posible de fallar aquí.
         -->
-        <div class="mt-6 border-t border-[#16303a] pt-4 text-center">
+        <div class="mt-6 border-t border-borde-2 pt-4 text-center">
           @if (clavePedida(); as aviso) {
-            <p class="font-mono text-[10px] leading-[1.8] text-emerald-400" role="status">
+            <p class="font-mono text-[10px] leading-[1.8] text-acento" role="status">
               {{ aviso }}
             </p>
           } @else if (pidiendoClave()) {
             <label
-              class="block text-left font-mono text-[10px] tracking-[0.24em] text-[#63848b] uppercase"
+              class="block text-left font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase"
               for="usuario-olvidado"
             >
               Tu usuario
@@ -131,9 +129,9 @@
               name="usuarioOlvidado"
               autocomplete="username"
               (keyup.enter)="pedirClaveNueva()"
-              class="mt-2 w-full rounded border border-[#1c3b44] bg-[#060e17] px-3 py-2 font-mono text-[13px] tracking-[0.08em] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+              class="mt-2 w-full rounded border border-borde bg-fondo px-3 py-2 font-mono text-[13px] tracking-[0.08em] text-texto outline-none focus:border-acento/60"
             />
-            <p class="mt-3 font-mono text-[10px] leading-[1.7] text-[#63848b]">
+            <p class="mt-3 font-mono text-[10px] leading-[1.7] text-texto-3">
               No se envía ningún correo: avisamos a quien administra tu cuenta y te dará una nueva
               por donde te dio el acceso.
             </p>
@@ -142,14 +140,14 @@
                 type="button"
                 (click)="pedirClaveNueva()"
                 [disabled]="ocupado() || !usuarioOlvidado.trim()"
-                class="rounded border border-emerald-400/60 px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+                class="rounded border border-acento/60 px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-acento hover:bg-acento/10 disabled:opacity-40"
               >
                 PEDIRLA
               </button>
               <button
                 type="button"
                 (click)="pidiendoClave.set(false); error.set('')"
-                class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+                class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
               >
                 CANCELAR
               </button>
@@ -158,11 +156,11 @@
             <button
               type="button"
               (click)="pidiendoClave.set(true); error.set('')"
-              class="font-mono text-[10px] tracking-[0.16em] text-[#8fb0b2] underline hover:text-emerald-400"
+              class="font-mono text-[10px] tracking-[0.16em] text-texto-2 underline hover:text-acento"
             >
               He olvidado la contraseña
             </button>
-            <p class="mt-3 font-mono text-[10px] leading-[1.8] text-[#63848b]">
+            <p class="mt-3 font-mono text-[10px] leading-[1.8] text-texto-3">
               ¿Primera vez? Usa la contraseña temporal y cámbiala al entrar.<br />
               No hay registro público: las cuentas las crea un administrador.
             </p>
@@ -170,23 +168,23 @@
         </div>
       </div>
 
-      <p class="mt-6 text-center font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">
-        <a href="/legal" class="underline hover:text-emerald-400">Términos y privacidad</a>
+      <p class="mt-6 text-center font-mono text-[10px] tracking-[0.16em] text-texto-3">
+        <a href="/legal" class="underline hover:text-acento">Términos y privacidad</a>
       </p>
     </div>
   </main>
 } @else if (vistaPrevia()) {
   <!-- Vista previa: el mismo documento que verá el cliente -->
   <div
-    class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[#16303a] bg-[#081420] px-6 py-3"
+    class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-borde-2 bg-sup-2 px-6 py-3"
   >
-    <p class="font-mono text-[10px] tracking-[0.24em] text-[#6f8f93] uppercase">
+    <p class="font-mono text-[10px] tracking-[0.24em] text-texto-2 uppercase">
       Vista previa · no consume ningún pase
     </p>
     <button
       type="button"
       (click)="vistaPrevia.set(false)"
-      class="font-mono text-[11px] tracking-[0.18em] text-emerald-400 hover:underline"
+      class="font-mono text-[11px] tracking-[0.18em] text-acento hover:underline"
     >
       VOLVER A EDITAR
     </button>
@@ -200,19 +198,15 @@
 } @else {
   <!-- Edición del contenido -->
   <main id="contenido" class="mx-auto max-w-[860px] px-6 pb-24">
-    <header
-      class="flex flex-wrap items-center justify-between gap-4 border-b border-[#16303a] py-5"
-    >
+    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-borde-2 py-5">
       <div>
-        <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">
-          vistta · panel
-        </p>
-        <p class="mt-1 font-mono text-[11px] text-emerald-400">
+        <p class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase">vistta · panel</p>
+        <p class="mt-1 font-mono text-[11px] text-acento">
           Sesión abierta ·
           <button
             type="button"
             (click)="cambiandoClave.set(!cambiandoClave())"
-            class="underline hover:text-emerald-300"
+            class="underline hover:text-acento"
           >
             cambiar contraseña
           </button>
@@ -231,7 +225,7 @@
           (ngModelChange)="elegirPerfil($event)"
           name="perfilElegido"
           aria-label="Perfil que se está editando"
-          class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+          class="rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
         >
           @for (p of perfiles(); track p.id) {
             <option [value]="p.id" [disabled]="p.status === 'congelado'">
@@ -250,7 +244,7 @@
           [title]="
             puedeCrearPerfil() ? 'Crear un perfil nuevo' : 'Tu plan no da para más perfiles activos'
           "
-          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40 disabled:hover:border-borde disabled:hover:text-texto-2"
         >
           + PERFIL
         </button>
@@ -258,7 +252,7 @@
         <button
           type="button"
           (click)="vistaPrevia.set(true)"
-          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
         >
           VER COMO EL CLIENTE
         </button>
@@ -268,7 +262,7 @@
         <button
           type="button"
           (click)="salir()"
-          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-rose-400/60 hover:text-rose-300"
+          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-peligro/60 hover:text-peligro"
         >
           SALIR
         </button>
@@ -276,11 +270,9 @@
     </header>
 
     @if (creandoPerfil()) {
-      <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
-          Nuevo perfil
-        </h2>
-        <p class="mt-2 max-w-[60ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+      <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">Nuevo perfil</h2>
+        <p class="mt-2 max-w-[60ch] font-mono text-[10px] leading-[1.7] text-texto-3">
           Un perfil es un trabajo que se enseña por separado, con su propio contenido y sus propios
           pases. Tu plan da para
           {{ topePerfiles() === null ? 'los que quieras' : topePerfiles() }}
@@ -296,26 +288,26 @@
             (keydown.enter)="crearPerfil()"
             placeholder="Nombre del perfil"
             aria-label="Nombre del perfil nuevo"
-            class="min-w-0 flex-1 rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+            class="min-w-0 flex-1 rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
           />
           <button
             type="button"
             (click)="crearPerfil()"
             [disabled]="ocupado() || !nombrePerfilNuevo.trim()"
-            class="rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+            class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10 disabled:opacity-40"
           >
             CREAR
           </button>
           <button
             type="button"
             (click)="creandoPerfil.set(false)"
-            class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+            class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
           >
             CANCELAR
           </button>
         </div>
         @if (errorPerfil()) {
-          <p class="mt-3 font-mono text-[11px] text-rose-400" role="alert">{{ errorPerfil() }}</p>
+          <p class="mt-3 font-mono text-[11px] text-peligro" role="alert">{{ errorPerfil() }}</p>
         }
       </section>
     }
@@ -323,7 +315,7 @@
     <!-- Cuando el plan ya no da para más, se dice aquí en vez de dejar un botón
          apagado sin explicación. -->
     @if (!puedeCrearPerfil()) {
-      <p class="mt-4 font-mono text-[10px] text-[#63848b]">
+      <p class="mt-4 font-mono text-[10px] text-texto-3">
         Tienes {{ uso().perfilesActivos }} de {{ topePerfiles() }}
         {{ topePerfiles() === 1 ? 'perfil' : 'perfiles' }} de tu plan. Para tener más, cambia de
         plan; los que sobren al bajar se congelan, no se borran.
@@ -341,13 +333,13 @@
       puede convertirse en un cambio de credenciales.
     -->
     @if (cambiandoClave()) {
-      <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+      <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
           Cambiar contraseña
         </h2>
         <div class="mt-4 grid gap-3 sm:max-w-[420px]">
           <label
-            class="font-mono text-[10px] tracking-[0.2em] text-[#63848b] uppercase"
+            class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase"
             for="clave-actual"
           >
             Contraseña actual
@@ -358,11 +350,11 @@
             autocomplete="current-password"
             [value]="claveActual"
             (input)="claveActual = $any($event.target).value"
-            class="rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+            class="rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
           />
 
           <label
-            class="mt-1 font-mono text-[10px] tracking-[0.2em] text-[#63848b] uppercase"
+            class="mt-1 font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase"
             for="clave-nueva"
           >
             Contraseña nueva
@@ -374,9 +366,9 @@
             [value]="claveNueva"
             (input)="claveNueva = $any($event.target).value"
             aria-describedby="clave-ayuda"
-            class="rounded-lg border border-[#1c3b44] bg-[#0c1a24] px-3 py-2.5 font-mono text-[13px] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+            class="rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
           />
-          <p id="clave-ayuda" class="font-mono text-[10px] leading-[1.7] text-[#63848b]">
+          <p id="clave-ayuda" class="font-mono text-[10px] leading-[1.7] text-texto-3">
             Diez caracteres o más. Al cambiarla se cerrarán las demás sesiones abiertas; esta se
             queda dentro.
           </p>
@@ -387,19 +379,19 @@
             type="button"
             (click)="cambiarClave()"
             [disabled]="ocupado() || !claveActual || claveNueva.length < 10"
-            class="rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-40"
+            class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10 disabled:opacity-40"
           >
             CAMBIAR
           </button>
           <button
             type="button"
             (click)="cambiandoClave.set(false)"
-            class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+            class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
           >
             CANCELAR
           </button>
           @if (errorClave()) {
-            <span class="font-mono text-[11px] text-rose-400" role="alert">{{ errorClave() }}</span>
+            <span class="font-mono text-[11px] text-peligro" role="alert">{{ errorClave() }}</span>
           }
         </div>
       </section>
@@ -408,7 +400,7 @@
     <!-- Va fuera del bloque de arriba porque al cambiarla el formulario se
          cierra, y el aviso tiene que sobrevivir a ese cierre. -->
     @if (claveCambiada()) {
-      <p class="mt-6 font-mono text-[11px] text-emerald-400" role="status">{{ claveCambiada() }}</p>
+      <p class="mt-6 font-mono text-[11px] text-acento" role="status">{{ claveCambiada() }}</p>
     }
 
     <!--
@@ -419,11 +411,11 @@
       texto discreto al pie sería una forma elegante de que no se enterase.
     -->
     @if (congelados().length) {
-      <section class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5" role="alert">
-        <p class="font-mono text-[11px] tracking-[0.22em] text-amber-300 uppercase">
+      <section class="mt-6 rounded-xl border border-aviso/40 bg-aviso/5 p-5" role="alert">
+        <p class="font-mono text-[11px] tracking-[0.22em] text-aviso uppercase">
           Perfiles congelados
         </p>
-        <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+        <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
           Tu plan da para {{ plan()?.limites?.perfiles ?? 1 }}
           {{ plan()?.limites?.perfiles === 1 ? 'perfil activo' : 'perfiles activos' }}. Los de abajo
           siguen guardados con todo su contenido, pero no se pueden editar ni enviar. Puedes activar
@@ -432,10 +424,10 @@
         <ul class="mt-4 flex flex-col gap-2">
           @for (p of congelados(); track p.id) {
             <li
-              class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] px-4 py-3"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-borde bg-sup-2 px-4 py-3"
             >
-              <span class="font-mono text-[12px] text-[#cfe3e0]">{{ p.displayName }}</span>
-              <span class="font-mono text-[11px] text-amber-300">
+              <span class="font-mono text-[12px] text-texto">{{ p.displayName }}</span>
+              <span class="font-mono text-[11px] text-aviso">
                 Se borra en {{ diasHasta(p.purgeAt) }}
                 {{ diasHasta(p.purgeAt) === 1 ? 'día' : 'días' }}
               </span>
@@ -443,7 +435,7 @@
                 type="button"
                 (click)="rescatar(p.id)"
                 [disabled]="ocupado()"
-                class="rounded-lg border border-amber-500/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-amber-300 hover:border-amber-400 disabled:opacity-40"
+                class="rounded-lg border border-aviso/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-aviso hover:border-aviso disabled:opacity-40"
               >
                 ACTIVAR ESTE
               </button>
@@ -458,41 +450,41 @@
          que el cliente necesita es ese código, no volver a elegir plan. -->
     @if (facturacion(); as f) {
       @if (f.pendiente; as pago) {
-        <section class="mt-6 rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-5">
-          <p class="font-mono text-[11px] tracking-[0.22em] text-emerald-300 uppercase">
+        <section class="mt-6 rounded-xl border border-acento/40 bg-acento/5 p-5">
+          <p class="font-mono text-[11px] tracking-[0.22em] text-acento uppercase">
             Pago pendiente · {{ pago.plan }} {{ pago.periodo }}
           </p>
-          <p class="mt-3 font-mono text-[22px] tracking-[0.14em] text-[#cfe3e0] select-all">
+          <p class="mt-3 font-mono text-[22px] tracking-[0.14em] text-texto select-all">
             {{ pago.code }}
           </p>
-          <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+          <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
             Envía <strong>{{ euros(pago.importe) }}</strong> poniendo
             <strong>{{ pago.code }}</strong> en el concepto. Sin ese código no se puede saber que el
             ingreso es tuyo.
           </p>
-          <ul class="mt-3 flex flex-col gap-1 font-mono text-[12px] text-[#8fb0b2]">
+          <ul class="mt-3 flex flex-col gap-1 font-mono text-[12px] text-texto-2">
             @if (f.pago.bizum) {
               <li>
-                Bizum: <span class="text-[#cfe3e0] select-all">{{ f.pago.bizum }}</span>
+                Bizum: <span class="text-texto select-all">{{ f.pago.bizum }}</span>
               </li>
             }
             @if (f.pago.paypal) {
               <li>
-                PayPal: <span class="text-[#cfe3e0] select-all">{{ f.pago.paypal }}</span>
+                PayPal: <span class="text-texto select-all">{{ f.pago.paypal }}</span>
               </li>
             }
           </ul>
-          <p class="mt-3 font-mono text-[10px] text-[#63848b]">
+          <p class="mt-3 font-mono text-[10px] text-texto-3">
             El plan se activa cuando comprobemos el ingreso, a mano. El código caduca el
             {{ fechaCorta(pago.expiresAt) }}.
           </p>
         </section>
       } @else if (f.porVencer && f.planHasta !== null) {
-        <section class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5" role="alert">
-          <p class="font-mono text-[11px] tracking-[0.22em] text-amber-300 uppercase">
+        <section class="mt-6 rounded-xl border border-aviso/40 bg-aviso/5 p-5" role="alert">
+          <p class="font-mono text-[11px] tracking-[0.22em] text-aviso uppercase">
             Tu plan vence pronto
           </p>
-          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
             El plan {{ f.plan }} termina el {{ fechaCorta(f.planHasta) }}. Cuando venza pasarás al
             plan de prueba: no se borra nada, pero los perfiles que sobren quedarán congelados hasta
             que renueves.
@@ -500,7 +492,7 @@
           <button
             type="button"
             (click)="viendoPlanes.set(true)"
-            class="mt-4 rounded-lg border border-amber-500/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-amber-300 hover:border-amber-400"
+            class="mt-4 rounded-lg border border-aviso/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-aviso hover:border-aviso"
           >
             RENOVAR
           </button>
@@ -508,15 +500,15 @@
       }
 
       @if (viendoPlanes()) {
-        <section class="mt-6 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
+        <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="font-mono text-[11px] tracking-[0.22em] text-[#63848b] uppercase">
+            <p class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
               Elegir plan
             </p>
             <select
               [(ngModel)]="periodoElegido"
               name="periodo"
-              class="rounded-lg border border-[#1c3b44] bg-[#0b1a24] px-3 py-1.5 font-mono text-[12px] text-[#cfe3e0] outline-none focus:border-emerald-400/60"
+              class="rounded-lg border border-borde bg-sup px-3 py-1.5 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
             >
               @for (p of f.catalogo.periodos; track p) {
                 <option [value]="p">{{ p }}</option>
@@ -529,22 +521,22 @@
                 type="button"
                 (click)="pedirPlan(p)"
                 [disabled]="ocupado()"
-                class="rounded-lg border border-[#1c3b44] px-4 py-3 text-left hover:border-emerald-400/60 disabled:opacity-40"
+                class="rounded-lg border border-borde px-4 py-3 text-left hover:border-acento/60 disabled:opacity-40"
               >
-                <span class="block font-mono text-[13px] text-[#cfe3e0]">{{ p }}</span>
-                <span class="block font-mono text-[11px] text-[#8fb0b2]">
+                <span class="block font-mono text-[13px] text-texto">{{ p }}</span>
+                <span class="block font-mono text-[11px] text-texto-2">
                   {{ euros(precio(p, periodoElegido)) }} / {{ periodoElegido }}
                 </span>
               </button>
             }
           </div>
-          <p class="mt-3 font-mono text-[10px] text-[#63848b]">
+          <p class="mt-3 font-mono text-[10px] text-texto-3">
             Se paga por Bizum o PayPal y lo comprobamos a mano: no hay tarjeta ni cobro automático.
           </p>
           <button
             type="button"
             (click)="viendoPlanes.set(false)"
-            class="mt-3 font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+            class="mt-3 font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
           >
             CERRAR
           </button>
@@ -555,7 +547,7 @@
     <!-- Lo que el plan permite y lo que va gastado. Sin esto, el cliente solo
          descubre sus límites al chocar con ellos. -->
     @if (plan(); as p) {
-      <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-[#63848b]">
+      <p class="mt-4 font-mono text-[11px] tracking-[0.06em] text-texto-3">
         Plan {{ p.nombre }} · {{ uso().perfilesActivos }}/{{ p.limites.perfiles }} perfiles ·
         {{ uso().pasesAbiertos }}/{{ p.limites.pasesSimultaneos ?? '∞' }} pases abiertos ·
         @if (p.limites.retencionMs === null) {
@@ -571,7 +563,7 @@
           <button
             type="button"
             (click)="viendoPlanes.set(true)"
-            class="underline hover:text-emerald-400"
+            class="underline hover:text-acento"
           >
             cambiar de plan
           </button>
@@ -589,39 +581,36 @@
       borrase el último que le quedaba.
     -->
     @if (!perfilId()) {
-      <section class="mt-10 rounded-xl border border-[#1c3b44] bg-[#081420] p-6">
-        <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+      <section class="mt-10 rounded-xl border border-borde bg-sup-2 p-6">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
           No tienes ningún perfil
         </h2>
-        <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+        <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
           Un perfil es un trabajo que se enseña por separado, con su propio contenido y sus propios
           pases. Crea uno para empezar.
         </p>
         <button
           type="button"
           (click)="creandoPerfil.set(true); errorPerfil.set('')"
-          class="mt-5 rounded-lg border border-emerald-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-emerald-300 hover:bg-emerald-400/10"
+          class="mt-5 rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10"
         >
           CREAR UN PERFIL
         </button>
       </section>
     } @else {
       <section class="mt-8 grid gap-4">
-        <label
-          class="font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
-          for="nombre"
-        >
+        <label class="font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase" for="nombre">
           Nombre que aparece arriba
         </label>
         <input
           id="nombre"
           [value]="nombre()"
           (input)="nombre.set($any($event.target).value); aviso.set('')"
-          class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-mono text-[15px] text-[#e6f4f1] outline-none focus:border-emerald-400/60"
+          class="rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-mono text-[15px] text-titulo outline-none focus:border-acento/60"
         />
 
         <label
-          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase"
           for="tagline"
         >
           Una línea sobre lo que haces
@@ -632,11 +621,11 @@
           (input)="actualizar({ tagline: $any($event.target).value })"
           placeholder="Fotografía de arquitectura y espacio construido."
           aria-label="Frase de presentación del perfil"
-          class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] text-[#cfe3e0] italic outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          class="rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-serif text-[15px] text-texto italic outline-none placeholder:text-texto-3 focus:border-acento/60"
         />
 
         <label
-          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-[#6f8f93] uppercase"
+          class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase"
           for="intro"
         >
           Presentación
@@ -648,15 +637,15 @@
           (input)="actualizar({ intro: $any($event.target).value })"
           placeholder="A quién va dirigido este pase y qué va a encontrar."
           aria-label="Introducción del pase"
-          class="resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+          class="resize-y rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
         ></textarea>
       </section>
 
       <!-- Bloques -->
       @for (seccion of contenido().sections; track $index; let si = $index) {
-        <section class="mt-6 rounded-xl border border-[#16303a] bg-[#0a1620]/60 p-5">
+        <section class="mt-6 rounded-xl border border-borde-2 bg-sup/60 p-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <span class="font-mono text-[10px] tracking-[0.24em] text-emerald-400/80 uppercase">
+            <span class="font-mono text-[10px] tracking-[0.24em] text-acento/80 uppercase">
               {{
                 seccion.type === 'texto'
                   ? 'Texto'
@@ -665,12 +654,12 @@
                     : 'Proyecto'
               }}
             </span>
-            <div class="flex items-center gap-3 font-mono text-[11px] text-[#63848d]">
+            <div class="flex items-center gap-3 font-mono text-[11px] text-texto-3">
               <button
                 type="button"
                 (click)="moverSeccion(si, -1)"
                 [disabled]="$first"
-                class="hover:text-[#cfe3e0] disabled:opacity-30"
+                class="hover:text-texto disabled:opacity-30"
               >
                 SUBIR
               </button>
@@ -678,11 +667,11 @@
                 type="button"
                 (click)="moverSeccion(si, 1)"
                 [disabled]="$last"
-                class="hover:text-[#cfe3e0] disabled:opacity-30"
+                class="hover:text-texto disabled:opacity-30"
               >
                 BAJAR
               </button>
-              <button type="button" (click)="quitarSeccion(si)" class="hover:text-rose-400">
+              <button type="button" (click)="quitarSeccion(si)" class="hover:text-peligro">
                 QUITAR
               </button>
             </div>
@@ -693,7 +682,7 @@
             (input)="editarSeccion(si, { title: $any($event.target).value })"
             placeholder="Título del bloque"
             [attr.aria-label]="'Título del bloque ' + (si + 1)"
-            class="mt-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-[#cfe3e0] uppercase outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+            class="mt-4 w-full rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-texto uppercase outline-none placeholder:text-texto-3 focus:border-acento/60"
           />
 
           @if (seccion.type !== 'galeria') {
@@ -703,7 +692,7 @@
               (input)="editarSeccion(si, $any({ body: $any($event.target).value }))"
               placeholder="Escribe aquí. Una línea en blanco separa párrafos."
               [attr.aria-label]="'Texto del bloque ' + (si + 1)"
-              class="mt-3 w-full resize-y rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-[#cfe3e0] outline-none placeholder:text-[#5e848f] focus:border-emerald-400/60"
+              class="mt-3 w-full resize-y rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
             ></textarea>
           }
 
@@ -718,7 +707,7 @@
               recordar cuál era cuál.
             -->
             <div class="mt-4 flex flex-wrap items-center gap-2">
-              <span class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] uppercase">
+              <span class="font-mono text-[10px] tracking-[0.16em] text-texto-3 uppercase">
                 Presentación
               </span>
               @for (modo of PRESENTACIONES; track modo.valor) {
@@ -730,8 +719,8 @@
                   class="rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em]"
                   [class]="
                     presentacionDe(seccion) === modo.valor
-                      ? 'border-emerald-400/60 bg-emerald-400/10 text-emerald-300'
-                      : 'border-[#1c3b44] text-[#8fb0b2] hover:border-emerald-400/40'
+                      ? 'border-acento/60 bg-acento/10 text-acento'
+                      : 'border-borde text-texto-2 hover:border-acento/40'
                   "
                 >
                   {{ modo.etiqueta }}
@@ -743,7 +732,7 @@
               @for (foto of itemsDe(si); track foto.mediaId) {
                 <figure class="group min-w-0">
                   <div
-                    class="relative aspect-4/3 overflow-hidden rounded-lg border border-[#16303a] bg-[#0e1c26]"
+                    class="relative aspect-4/3 overflow-hidden rounded-lg border border-borde-2 bg-sup-2"
                   >
                     @if (miniaturas()[foto.mediaId]) {
                       <img
@@ -761,7 +750,7 @@
                       type="button"
                       (click)="quitarFoto(si, $index)"
                       [attr.aria-label]="'Quitar la foto ' + ($index + 1) + ' de ' + seccion.title"
-                      class="absolute top-2 right-2 rounded border border-[#1c3b44] bg-[#081420]/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-[#8fb0b2] opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-red-400/60 hover:text-red-300 focus-visible:opacity-100 group-hover:opacity-100"
+                      class="absolute top-2 right-2 rounded border border-borde bg-sup-2/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-texto-2 opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-peligro/60 hover:text-peligro focus-visible:opacity-100 group-hover:opacity-100"
                     >
                       QUITAR
                     </button>
@@ -771,14 +760,14 @@
                     (input)="editarFoto(si, $index, $any($event.target).value)"
                     [attr.aria-label]="'Pie de la foto ' + ($index + 1)"
                     placeholder="Pie de foto"
-                    class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-[#8fb0b2] outline-none placeholder:text-[#5e848f] focus:border-[#1c3b44]"
+                    class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-texto-2 outline-none placeholder:text-texto-3 focus:border-borde"
                   />
                 </figure>
               }
             </div>
 
             <label
-              class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+              class="mt-4 inline-block cursor-pointer rounded-lg border border-dashed border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
             >
               AÑADIR ARCHIVOS
               <input
@@ -798,7 +787,7 @@
             en cada apertura. Callarlo dejaría al cliente creyendo que su vídeo
             lleva una protección que no lleva, y de eso va la mitad del producto.
           -->
-            <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+            <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-texto-3">
               Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y
               los PDF se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una
               captura de pantalla.
@@ -806,7 +795,7 @@
           }
         </section>
       } @empty {
-        <p class="mt-8 font-serif text-[15px] text-[#6f8f93]">
+        <p class="mt-8 font-serif text-[15px] text-texto-2">
           Todavía no hay bloques. Empieza por un texto que presente el trabajo, o por una galería.
         </p>
       }
@@ -815,30 +804,30 @@
         <button
           type="button"
           (click)="anadirSeccion('texto')"
-          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+          class="rounded-lg border border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
         >
           + TEXTO
         </button>
         <button
           type="button"
           (click)="anadirSeccion('proyecto')"
-          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+          class="rounded-lg border border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
         >
           + PROYECTO
         </button>
         <button
           type="button"
           (click)="anadirSeccion('galeria')"
-          class="rounded-lg border border-[#1c3b44] px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400"
+          class="rounded-lg border border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
         >
           + GALERÍA
         </button>
       </div>
 
       <!-- Guardar y compartir -->
-      <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-[#16303a] pt-6">
-        <fieldset class="mb-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] p-4">
-          <legend class="px-2 font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+      <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-borde-2 pt-6">
+        <fieldset class="mb-4 w-full rounded-lg border border-borde bg-sup-2 p-4">
+          <legend class="px-2 font-mono text-[11px] tracking-[0.18em] text-texto-3">
             CÓMO CADUCA EL ENLACE
           </legend>
 
@@ -851,9 +840,9 @@
               (change)="modoPase.set('unico')"
               class="mt-1 accent-emerald-400"
             />
-            <span class="text-[13px] text-[#c7dbdc]">
+            <span class="text-[13px] text-texto">
               Un solo uso
-              <span class="block font-mono text-[11px] text-[#63848d]">
+              <span class="block font-mono text-[11px] text-texto-3">
                 Se abre una vez. Al cerrarlo, el enlace deja de valer.
               </span>
             </span>
@@ -869,24 +858,24 @@
                 (change)="modoPase.set('accesos')"
                 class="mt-1 accent-emerald-400"
               />
-              <span class="text-[13px] text-[#c7dbdc]">
+              <span class="text-[13px] text-texto">
                 Varios accesos
-                <span class="block font-mono text-[11px] text-[#63848d]">
+                <span class="block font-mono text-[11px] text-texto-3">
                   Se puede abrir un número de veces que eliges tú, y caduca al llegar a ese número.
                 </span>
               </span>
             </label>
             @if (modoPase() === 'accesos') {
-              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-[#8fb0b2]">
+              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-texto-2">
                 ACCESOS
                 <input
                   type="number"
                   min="2"
                   [max]="topeAccesos()"
                   [(ngModel)]="accesosPase"
-                  class="w-20 rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1 text-[#c7dbdc]"
+                  class="w-20 rounded border border-borde bg-sup-3 px-2 py-1 text-texto"
                 />
-                <span class="text-[#63848d]">tu plan llega a {{ topeAccesos() }}</span>
+                <span class="text-texto-3">tu plan llega a {{ topeAccesos() }}</span>
               </label>
             }
           }
@@ -901,31 +890,31 @@
                 (change)="modoPase.set('ventana')"
                 class="mt-1 accent-emerald-400"
               />
-              <span class="text-[13px] text-[#c7dbdc]">
+              <span class="text-[13px] text-texto">
                 Ventana de tiempo
-                <span class="block font-mono text-[11px] text-[#63848d]">
+                <span class="block font-mono text-[11px] text-texto-3">
                   Se puede abrir las veces que haga falta durante un plazo que empieza a contar
                   cuando lo abren por primera vez.
                 </span>
               </span>
             </label>
             @if (modoPase() === 'ventana') {
-              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-[#8fb0b2]">
+              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-texto-2">
                 HORAS
                 <input
                   type="number"
                   min="1"
                   [max]="topeVentanaHoras()"
                   [(ngModel)]="ventanaHoras"
-                  class="w-20 rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1 text-[#c7dbdc]"
+                  class="w-20 rounded border border-borde bg-sup-3 px-2 py-1 text-texto"
                 />
-                <span class="text-[#63848d]">tu plan llega a {{ topeVentanaHoras() }} h</span>
+                <span class="text-texto-3">tu plan llega a {{ topeVentanaHoras() }} h</span>
               </label>
             }
           }
 
-          <div class="mt-3 border-t border-[#1c3b44] pt-3">
-            <label class="block font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+          <div class="mt-3 border-t border-borde pt-3">
+            <label class="block font-mono text-[11px] tracking-[0.18em] text-texto-3">
               A QUIÉN SE LO ENSEÑAS (opcional)
               <input
                 type="text"
@@ -933,17 +922,17 @@
                 [(ngModel)]="destinatarioRef"
                 name="destinatarioRef"
                 placeholder="ana@ejemplo.com o 600 123 456"
-                class="mt-1 w-full rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1.5 font-sans text-[13px] text-[#c7dbdc] placeholder:text-[#3f5a63]"
+                class="mt-1 w-full rounded border border-borde bg-sup-3 px-2 py-1.5 font-sans text-[13px] text-texto placeholder:text-texto-4"
               />
             </label>
-            <p class="mt-1.5 font-mono text-[11px] leading-relaxed text-[#63848d]">
-              Se escribe <span class="text-[#8fb0b2]">dentro de las fotos</span>, en cada visita. No
+            <p class="mt-1.5 font-mono text-[11px] leading-relaxed text-texto-3">
+              Se escribe <span class="text-texto-2">dentro de las fotos</span>, en cada visita. No
               impide una captura de pantalla ni una filtración: hace que una copia que salga de aquí
               lleve escrito a quién se le enseñó. Escríbelo solo si tienes motivo para tratar ese
               dato.
             </p>
 
-            <label class="mt-2 block font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+            <label class="mt-2 block font-mono text-[11px] tracking-[0.18em] text-texto-3">
               NOTA PARA TI (opcional)
               <input
                 type="text"
@@ -951,16 +940,16 @@
                 [(ngModel)]="destinatarioNota"
                 name="destinatarioNota"
                 placeholder="piso de la calle mayor"
-                class="mt-1 w-full rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1.5 font-sans text-[13px] text-[#c7dbdc] placeholder:text-[#3f5a63]"
+                class="mt-1 w-full rounded border border-borde bg-sup-3 px-2 py-1.5 font-sans text-[13px] text-texto placeholder:text-texto-4"
               />
             </label>
-            <p class="mt-1.5 font-mono text-[11px] text-[#63848d]">
+            <p class="mt-1.5 font-mono text-[11px] text-texto-3">
               Solo la ves tú, en esta lista. No se pinta en ninguna imagen.
             </p>
           </div>
 
           @if (modosDisponibles().length === 1) {
-            <p class="mt-2 font-mono text-[11px] text-[#63848d]">
+            <p class="mt-2 font-mono text-[11px] text-texto-3">
               Tu plan genera enlaces de un solo uso. Los enlaces con varios accesos o con ventana de
               tiempo van en los planes superiores.
             </p>
@@ -971,7 +960,7 @@
           type="button"
           (click)="guardar()"
           [disabled]="ocupado()"
-          class="rounded-lg bg-emerald-500/90 px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#04140e] hover:bg-emerald-400 disabled:opacity-40"
+          class="rounded-lg bg-acento/90 px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-sobre-acento hover:bg-acento disabled:opacity-40"
         >
           GUARDAR CAMBIOS
         </button>
@@ -979,35 +968,35 @@
           type="button"
           (click)="generar()"
           [disabled]="ocupado()"
-          class="rounded-lg border border-[#1c3b44] px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-400 disabled:opacity-40"
+          class="rounded-lg border border-borde px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40"
         >
           GENERAR ENLACE
         </button>
-        <span class="font-mono text-[11px] text-[#63848d]">
+        <span class="font-mono text-[11px] text-texto-3">
           {{ totalFotos() }} {{ totalFotos() === 1 ? 'foto' : 'fotos' }}
         </span>
         @if (aviso()) {
-          <span class="font-mono text-[11px] text-emerald-400">{{ aviso() }}</span>
+          <span class="font-mono text-[11px] text-acento">{{ aviso() }}</span>
         }
         @if (error()) {
-          <span class="font-mono text-[11px] text-rose-400">{{ error() }}</span>
+          <span class="font-mono text-[11px] text-peligro">{{ error() }}</span>
         }
       </div>
 
       @if (pases().length) {
-        <div class="mt-4 rounded-lg border border-[#1c3b44] bg-[#081420] p-4">
-          <h3 class="font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+        <div class="mt-4 rounded-lg border border-borde bg-sup-2 p-4">
+          <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto-3">
             ENLACES DE ESTE PERFIL
           </h3>
           <ul class="mt-2 space-y-1">
             @for (p of pases(); track p.id) {
-              <li class="flex flex-wrap items-baseline gap-x-3 text-[13px] text-[#c7dbdc]">
+              <li class="flex flex-wrap items-baseline gap-x-3 text-[13px] text-texto">
                 @if (p.destinatarioNota || p.destinatarioRef) {
-                  <span class="text-[13px] text-[#c7dbdc]">
+                  <span class="text-[13px] text-texto">
                     {{ p.destinatarioNota || p.destinatarioRef }}
                   </span>
                 }
-                <span class="font-mono text-[11px] text-[#8fb0b2]">
+                <span class="font-mono text-[11px] text-texto-2">
                   @switch (p.modo) {
                     @case ('unico') {
                       UN SOLO USO
@@ -1022,32 +1011,32 @@
                 </span>
                 <span
                   class="font-mono text-[11px]"
-                  [class.text-emerald-400]="p.estado === 'abrible'"
-                  [class.text-\[\#63848d\]]="p.estado !== 'abrible'"
+                  [class.text-acento]="p.estado === 'abrible'"
+                  [class.text-texto-3]="p.estado !== 'abrible'"
                 >
                   {{ estadoDelPase(p) }}
                 </span>
                 <button
                   type="button"
                   (click)="verLectura(p.id)"
-                  class="font-mono text-[11px] text-[#63848d] underline decoration-dotted hover:text-emerald-400"
+                  class="font-mono text-[11px] text-texto-3 underline decoration-dotted hover:text-acento"
                 >
                   {{ lectura()?.passId === p.id ? 'ocultar lectura' : 'ver lectura' }}
                 </button>
 
                 @if (lectura()?.passId === p.id) {
-                  <div class="mt-1 w-full pl-3 text-[13px] text-[#8fb0b2]">
+                  <div class="mt-1 w-full pl-3 text-[13px] text-texto-2">
                     @if (!lectura()!.resumen.hayDatos) {
                       <!-- Sin datos se dice sin datos. Un cero inventado haría
                            creer que lo abrió y no miró nada. -->
-                      <p class="font-mono text-[11px] text-[#63848d]">aún sin abrir</p>
+                      <p class="font-mono text-[11px] text-texto-3">aún sin abrir</p>
                     } @else {
                       <p class="font-mono text-[11px]">
                         en total, {{ enLectura(lectura()!.resumen.msTotales) }}
                       </p>
                       <ul class="mt-1 space-y-0.5">
                         @for (s of lectura()!.resumen.secciones; track s.seccionIdx) {
-                          <li class="font-mono text-[11px] text-[#63848d]">
+                          <li class="font-mono text-[11px] text-texto-3">
                             apartado {{ s.seccionIdx + 1 }} · {{ enLectura(s.msVisible) }}
                           </li>
                         }
@@ -1062,26 +1051,24 @@
       }
 
       @if (enlace()) {
-        <div
-          class="mt-4 flex items-center gap-3 rounded-lg border border-[#1c3b44] bg-[#081420] p-3"
-        >
+        <div class="mt-4 flex items-center gap-3 rounded-lg border border-borde bg-sup-2 p-3">
           <a
             [href]="enlace()"
             target="_blank"
             rel="noreferrer"
-            class="min-w-0 flex-1 truncate font-mono text-[12px] text-emerald-400 hover:underline"
+            class="min-w-0 flex-1 truncate font-mono text-[12px] text-acento hover:underline"
           >
             {{ enlace() }}
           </a>
           <button
             type="button"
             (click)="copiar()"
-            class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#6f8f93] hover:text-[#cfe3e0]"
+            class="shrink-0 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:text-texto"
           >
             {{ copiado() ? 'COPIADO' : 'COPIAR' }}
           </button>
         </div>
-        <p class="mt-2 font-mono text-[11px] text-[#63848d]">
+        <p class="mt-2 font-mono text-[11px] text-texto-3">
           Caduca a los 15 minutos y se cierra en cuanto lo abran.
         </p>
       }
@@ -1094,26 +1081,26 @@
       identificador. El aviso dice las dos consecuencias que no se ven: que se
       va el contenido y que los enlaces ya enviados dejan de abrirse.
     -->
-      <section class="mt-12 rounded-xl border border-[#3b1c22] bg-[#160b0e]/60 p-5">
+      <section class="mt-12 rounded-xl border border-peligro-borde bg-peligro-fondo/60 p-5">
         @if (!borrandoPerfil()) {
           <button
             type="button"
             (click)="borrandoPerfil.set(true); errorPerfil.set('')"
-            class="font-mono text-[11px] tracking-[0.16em] text-[#a9707a] hover:text-red-300"
+            class="font-mono text-[11px] tracking-[0.16em] text-peligro hover:text-peligro"
           >
             BORRAR ESTE PERFIL
           </button>
         } @else {
-          <p class="font-mono text-[11px] tracking-[0.22em] text-red-300 uppercase">
+          <p class="font-mono text-[11px] tracking-[0.22em] text-peligro uppercase">
             Borrar «{{ nombre() }}»
           </p>
-          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+          <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
             Se borra el perfil con todas sus fotos, y no hay vuelta atrás. Los pases que hayas
             enviado de este perfil <strong>dejarán de abrirse</strong>.
           </p>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <label
-              class="font-mono text-[10px] tracking-[0.16em] text-[#a9707a]"
+              class="font-mono text-[10px] tracking-[0.16em] text-peligro"
               for="confirmar-perfil"
             >
               Escribe {{ nombre() }} para confirmar:
@@ -1122,20 +1109,20 @@
               id="confirmar-perfil"
               [(ngModel)]="confirmacionPerfil"
               name="confirmacionPerfil"
-              class="min-w-0 flex-1 rounded-lg border border-[#3b1c22] bg-[#0c1a24] px-3 py-2 font-mono text-[13px] text-[#cfe3e0] outline-none focus:border-red-400/60"
+              class="min-w-0 flex-1 rounded-lg border border-peligro-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none focus:border-peligro/60"
             />
             <button
               type="button"
               (click)="borrarPerfilActual()"
               [disabled]="ocupado() || confirmacionPerfil.trim() !== nombre()"
-              class="rounded-lg border border-red-400/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-red-300 hover:bg-red-400/10 disabled:opacity-40"
+              class="rounded-lg border border-peligro/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-peligro hover:bg-peligro/10 disabled:opacity-40"
             >
               BORRAR
             </button>
             <button
               type="button"
               (click)="borrandoPerfil.set(false); confirmacionPerfil = ''"
-              class="font-mono text-[10px] tracking-[0.16em] text-[#63848b] hover:text-[#8fb0b2]"
+              class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
             >
               CANCELAR
             </button>
@@ -1144,13 +1131,13 @@
       </section>
     }
 
-    <footer class="mt-16 border-t border-[#16303a] pt-6">
-      <p class="font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">
-        <a href="/legal" class="underline hover:text-emerald-400">Términos y privacidad</a>
+    <footer class="mt-16 border-t border-borde-2 pt-6">
+      <p class="font-mono text-[10px] tracking-[0.16em] text-texto-3">
+        <a href="/legal" class="underline hover:text-acento">Términos y privacidad</a>
         <span aria-hidden="true"> · </span>
-        <a href="/legal" class="underline hover:text-emerald-400">Uso aceptable</a>
+        <a href="/legal" class="underline hover:text-acento">Uso aceptable</a>
       </p>
-      <p class="mt-2 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-[#63848b]">
+      <p class="mt-2 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-texto-3">
         Tu contenido caduca según tu plan. Las imágenes salen con la marca de cada visita
         incrustada; el vídeo y los PDF, no. Nada de esto impide una captura de pantalla.
       </p>

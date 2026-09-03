@@ -1,15 +1,13 @@
 <main id="contenido" class="mx-auto max-w-[860px] px-6 pt-12 pb-24">
-  <header class="border-b border-[#16303a] pb-6">
+  <header class="border-b border-borde-2 pb-6">
     <a
       routerLink="/"
-      class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase hover:text-emerald-400"
+      class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase hover:text-acento"
     >
       ← vistta
     </a>
-    <h1 class="mt-4 font-mono text-[clamp(1.6rem,4vw,2.4rem)] leading-[1.1] text-[#e6f4f1]">
-      Legal
-    </h1>
-    <p class="mt-3 max-w-[58ch] font-serif text-[15px] leading-[1.7] text-[#b9d2ce]">
+    <h1 class="mt-4 font-mono text-[clamp(1.6rem,4vw,2.4rem)] leading-[1.1] text-titulo">Legal</h1>
+    <p class="mt-3 max-w-[58ch] font-serif text-[15px] leading-[1.7] text-texto">
       Estos documentos describen el sistema que hay detrás, no una plantilla. Cuando el software
       cambia, cambian ellos.
     </p>
@@ -18,9 +16,9 @@
   <!-- Sin los datos del titular no hay aviso legal. Se dice arriba y en grande:
        un despliegue sin configurar no puede aparentar que lo está. -->
   @if (aviso() && !configurado()) {
-    <section class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5" role="alert">
-      <p class="font-mono text-[11px] tracking-[0.22em] text-amber-300 uppercase">Sin configurar</p>
-      <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+    <section class="mt-6 rounded-xl border border-aviso/40 bg-aviso/5 p-5" role="alert">
+      <p class="font-mono text-[11px] tracking-[0.22em] text-aviso uppercase">Sin configurar</p>
+      <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
         Este despliegue no tiene puestos el titular y el contacto legal, así que los documentos de
         abajo tienen huecos y <strong>no están en vigor</strong>. Quien lo administre debe rellenar
         <span class="font-mono text-[13px]">TITULAR_NOMBRE</span>,
@@ -32,18 +30,18 @@
   }
 
   @if (aviso()?.contacto; as correo) {
-    <section class="mt-8 rounded-xl border border-[#1c3b44] bg-[#081420] p-5">
-      <h2 class="font-mono text-[11px] tracking-[0.22em] text-[#8fb0b2] uppercase">
+    <section class="mt-8 rounded-xl border border-borde bg-sup-2 p-5">
+      <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
         Avisar de un contenido
       </h2>
-      <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-[#cfe3e0]">
+      <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
         Si un contenido alojado aquí te perjudica, escribe a
-        <a [href]="'mailto:' + correo" class="font-mono text-[14px] text-emerald-400 underline">
+        <a [href]="'mailto:' + correo" class="font-mono text-[14px] text-acento underline">
           {{ correo }}
         </a>
         contando qué enlace es y qué infringe. Se acusa recibo en 72 horas hábiles y se decide en 7.
       </p>
-      <p class="mt-3 max-w-[62ch] font-mono text-[11px] leading-[1.7] text-[#63848b]">
+      <p class="mt-3 max-w-[62ch] font-mono text-[11px] leading-[1.7] text-texto-3">
         Ante material de abuso sexual infantil o contenido íntimo no consentido se retira de
         inmediato, sin plazo previo. No hace falta tener cuenta para avisar.
       </p>
@@ -56,12 +54,12 @@
         <button
           type="button"
           (click)="abrir(doc)"
-          class="w-full rounded-xl border border-[#1c3b44] bg-[#081420] p-5 text-left hover:border-emerald-400/60 focus-visible:border-emerald-400/60 focus-visible:outline-none"
+          class="w-full rounded-xl border border-borde bg-sup-2 p-5 text-left hover:border-acento/60 focus-visible:border-acento/60 focus-visible:outline-none"
         >
-          <span class="font-mono text-[13px] tracking-[0.06em] text-[#cfe3e0]">
+          <span class="font-mono text-[13px] tracking-[0.06em] text-texto">
             {{ doc.titulo }}
           </span>
-          <span class="mt-1 block max-w-[62ch] font-serif text-[14px] leading-[1.6] text-[#8fb0b2]">
+          <span class="mt-1 block max-w-[62ch] font-serif text-[14px] leading-[1.6] text-texto-2">
             {{ doc.resumen }}
           </span>
         </button>
@@ -70,26 +68,26 @@
   </ul>
 
   @if (error()) {
-    <p class="mt-6 font-mono text-[12px] text-rose-400" role="alert">{{ error() }}</p>
+    <p class="mt-6 font-mono text-[12px] text-peligro" role="alert">{{ error() }}</p>
   }
 
   @if (elegido(); as doc) {
-    <section class="mt-10 border-t border-[#16303a] pt-8">
+    <section class="mt-10 border-t border-borde-2 pt-8">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="font-mono text-[13px] tracking-[0.16em] text-emerald-400 uppercase">
+        <h2 class="font-mono text-[13px] tracking-[0.16em] text-acento uppercase">
           {{ doc.titulo }}
         </h2>
         <button
           type="button"
           (click)="cerrar()"
-          class="rounded-lg border border-[#1c3b44] px-3 py-2 font-mono text-[10px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300"
+          class="rounded-lg border border-borde px-3 py-2 font-mono text-[10px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
         >
           CERRAR
         </button>
       </div>
 
       @if (cargando()) {
-        <p class="mt-6 font-mono text-[12px] text-[#63848b]" role="status">Cargando…</p>
+        <p class="mt-6 font-mono text-[12px] text-texto-3" role="status">Cargando…</p>
       } @else {
         <!-- El HTML sale de `marked` sobre un archivo del propio repositorio, y
              aun así pasa por el saneador de Angular al pintarlo. -->
