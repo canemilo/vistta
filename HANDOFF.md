@@ -125,6 +125,20 @@
       la página `/legal` los sirve desde su única versión. Ver «Decisiones y desvíos en I».
       **Falta que un abogado los revise**, y las cuatro cosas de `legal/README.md`.
 
+- [x] **J — Puesta en producción sobre VPS** — cerrado el 2026-09-04, salvo el último punto. El
+      destino se cambió de Oracle Always Free (ARM) a un **VPS Contabo x86**, y lo de ARM se
+      revirtió entero. Queda: `docs/12-vps-produccion.md` (acceso, endurecimiento, Docker y DNS,
+      con el estado real de la zona de vistta.es comprobado con `dig`);
+      `docs/13-migracion-a-r2.md`; `docs/14-supabase-opcional.md` con `compose.supabase.yml`
+      probado contra una base externa; `scripts/desplegar.sh`, con sus ramas de fallo
+      ejercitadas; la restauración de una copia probada de punta a punta; y `www` redirigiendo.
+      **R2 está verificado contra la cuenta real** (2026-09-04): ciclo completo y la aplicación
+      sirviendo una foto marcada desde el bucket. **Queda solo el README** (ruta de producción).
+- [x] **K — Pases flexibles, destinatario y métricas** — cerrado el 2026-09-04. Modos `accesos` y
+      `ventana` sin tocar el uso único; referencia del destinatario dentro de la marca de agua;
+      y métricas de lectura agregadas, con 30 días de retención y solo en planes de pago. Ver
+      «Decisiones y desvíos en J y K», más abajo.
+
 ## 2.1. Desvíos del plan en D
 
 Tres cosas salieron distintas de como estaban escritas en el plan, y las tres a propósito.

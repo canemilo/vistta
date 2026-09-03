@@ -1,7 +1,8 @@
 # Vistta — API
 
-Backend del MVP: **Node + Hono + PostgreSQL**. El núcleo es el **ciclo del pase**
-y su **consumo atómico de un solo uso**.
+Backend: **Node + Hono + PostgreSQL**. El núcleo es el **ciclo del pase** y su
+**consumo atómico**: un enlace se abre las veces que diga su modo y ni una más,
+resuelto en un único UPDATE condicional. Por defecto, **una sola vez**.
 
 ## Estructura
 
@@ -10,18 +11,26 @@ y su **consumo atómico de un solo uso**.
     src/config.ts         Entorno validado con Zod
     src/db.ts             Pool de pg + interfaz Db (query / one / tx)
     src/migrate.ts        Aplicador de migraciones (lo usan el CLI y los tests)
-    src/routes/passes.ts  POST /api/passes (crear) · GET /api/open/:token (abrir+consumir)
+    src/routes/passes.ts  Crear y abrir pases · telemetría de lectura
     src/routes/panel.ts   Sesión del panel (login, quién soy, salir)
-    src/routes/profiles.ts Perfiles y subida de medios
-    src/routes/media.ts   GET /m/* servido solo con firma válida
-    src/lib/pass.ts       createPass / consumePass (UPDATE atómico)
-    src/lib/auth.ts       Cuentas y sesiones opacas
-    src/lib/password.ts   Argon2id
+    src/routes/profiles.ts Perfiles y subida de medios (presign + confirm)
+    src/routes/media.ts   GET /m/* servido solo con firma válida, y marcado al vuelo
+    src/routes/admin.ts   Panel de administración (cuentas, nunca contenido)
+    src/routes/billing.ts Cobro manual: código VISTTA-XXXXXX y conciliación
+    src/routes/legal.ts   GET /api/legal, público y sin sesión
+    src/lib/pass.ts       createPass / consumePass (UPDATE atómico) y pasAbribleSql
+    src/lib/planes.ts     TODAS las cifras de los planes. No hay números fuera de aquí
+    src/lib/media.ts      Firma HMAC con dominio separado por uso
+    src/lib/watermark.ts  La marca, incrustada en los píxeles por visita
+    src/lib/eventos.ts    Métricas de lectura, agregadas
+    src/lib/congelado.ts  Pasarse de un límite congela; no borra
+    src/lib/purga.ts      Lo único que borra contenido. Con retención por plan
+    src/lib/auth.ts       Cuentas y sesiones opacas · password.ts  Argon2id
     src/lib/ratelimit.ts  Contador en Postgres, por hash de la identidad
-    src/lib/media.ts      Firma HMAC de las URLs de medios
     src/lib/client-ip.ts  Identidad del cliente (política de TRUST_PROXY)
-    src/storage/          Puerto Storage + adaptadores (memoria, Supabase)
-    migrations/           SQL en dialecto PostgreSQL
+    src/storage/          Puerto Storage + cuatro adaptadores: r2, supabase, fs, memory
+    src/worker.ts         La cola (vistta.jobs) vive en Postgres, no en Redis
+    migrations/           SQL en dialecto PostgreSQL, de 0001 a 0009
     test/                 Vitest contra Postgres REAL
 
 ## Puesta en marcha
@@ -76,10 +85,35 @@ se apuntan a cualquier otra.
 
 ## Despliegue
 
-El MVP va a un host de Node sin tarjeta (Render o similar) con Supabase como
-base y como almacén de medios. Las variables se cargan como secretos del host:
-`DATABASE_URL`, `MEDIA_SIGNING_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`.
-`TRUST_PROXY=true` solo si delante hay un proxy propio.
+**La ruta de producción es un VPS propio**, no un host serverless: Sharp y
+Argon2 son binarios nativos y necesitan un servidor de verdad.
+
+| Pieza                            | Dónde                                                    |
+| -------------------------------- | -------------------------------------------------------- |
+| API, panel/viewer, Caddy y la BD | **VPS Contabo x86** con Ubuntu 24.04 y Docker            |
+| Medios                           | **Cloudflare R2**, jurisdicción UE (`STORAGE_DRIVER=r2`) |
+| TLS y estáticos                  | Caddy, en el mismo compose                               |
+
+Un despliegue completo es un comando:
+
+    ./scripts/desplegar.sh
+
+Trae los cambios, construye las dos imágenes, levanta, **espera a que la API
+esté sana** y enseña el estado; si algo falla, sale con error y con el log del
+servicio que lo rompió.
+
+Las guías, en el orden en que hacen falta:
+
+| Documento                         | Para qué                                                            |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `docs/12-vps-produccion.md`       | Del VPS recién contratado a Docker operativo y DNS resolviendo      |
+| `docs/11-puesta-en-produccion.md` | De ahí a Vistta funcionando: `.env`, medios, levantar y comprobar   |
+| `docs/13-migracion-a-r2.md`       | El bucket, el token, y `pnpm r2:verificar` antes de que entre nadie |
+| `docs/14-supabase-opcional.md`    | La base fuera de la máquina. **No es el camino por defecto**        |
+| `DESPLIEGUE.md`                   | Copias, restauración probada y el paso a proxy de Cloudflare        |
+
+`TRUST_PROXY=true` solo si delante hay un proxy propio; el `compose.prod.yml` ya
+lo pone, porque siempre está Caddy.
 
 ## Antes de meter clientes reales
 
@@ -94,7 +128,8 @@ trabajo real de nadie**:
    CSAM: tiene que llegar a un buzón que alguien lee.
 2. **Fijar la jurisdicción** del VPS y del bucket de R2 y anotarla en
    `legal/rat.md`, punto D. Para R2 no basta la _location hint_: la garantía es
-   la **jurisdicción `eu`**, y entonces hace falta `R2_ENDPOINT`
+   la **jurisdicción `eu`**, y entonces hace falta `R2_ENDPOINT` —comprobado
+   contra la cuenta real: sin esa variable el bucket es inalcanzable—
    (ver `docs/13-migracion-a-r2.md`).
 3. **Guardar el contrato de encargado de cada proveedor** (Contabo y
    Cloudflare). Un subencargado sin contrato incumple el art. 28.4 por bien que
@@ -102,7 +137,8 @@ trabajo real de nadie**:
 4. **Que un abogado revise los cuatro textos públicos de `legal/`.** Están
    escritos leyendo el esquema, que es lo que un abogado no puede aportar; la
    revisión jurídica es lo que no puede aportar quien escribió el código.
-5. **Pasar los medios a R2 y comprobarlo** con `pnpm r2:verificar`. Con
-   `STORAGE_DRIVER=fs` las fotos no entran en ninguna copia de seguridad.
+5. **Pasar los medios a R2 y comprobarlo** con `pnpm r2:verificar`, que hace el
+   ciclo entero contra el bucket real. Con `STORAGE_DRIVER=fs` las fotos no
+   entran en ninguna copia de seguridad.
 6. **Restaurar una copia** de verdad. El procedimiento está probado y descrito
    en `DESPLIEGUE.md`.
