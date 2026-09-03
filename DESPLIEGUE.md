@@ -142,14 +142,19 @@ El script **comprueba la copia antes de rotar**: si el volcado no se puede leer,
 sale con error y no borra nada. Al revés, una noche con la base caída se
 llevaría por delante las copias buenas.
 
-Restaurar (probado: 11 tablas y las filas vuelven):
+Restaurar en una base nueva, que es lo que se hace para mirar una copia sin
+tocar nada (probado el 2026-09-03: vuelven las **12 tablas** y sus filas):
 
 ```bash
 docker compose -f compose.prod.yml exec db psql -U vistta -d postgres -c "CREATE DATABASE restaurada;"
 docker compose -f compose.prod.yml exec db pg_restore -U vistta -d restaurada /copias/vistta-<sello>.dump
 ```
 
-Sobre la base viva, con la API parada y sabiendo lo que se hace:
+Sobre la base viva, con la API parada y sabiendo lo que se hace. **Probado
+entero el 2026-09-03**, no solo escrito: se borraron los pases, se restauró
+encima, volvieron los tres, y después se entró al panel, se generó un pase nuevo
+y abrió **200 y luego 410**. Una restauración que deja la base llena pero la
+aplicación rota no vale de nada, así que eso último es parte de la prueba:
 
 ```bash
 docker compose -f compose.prod.yml stop api
@@ -162,6 +167,36 @@ versionado. Una restauración de la base sin los medios deja perfiles apuntando 
 objetos que puede que ya no estén.
 
 ## Actualizar
+
+Un solo comando, que hace lo mismo de siempre y además espera y comprueba:
+
+```bash
+cd /srv/vistta && ./scripts/desplegar.sh
+```
+
+Trae los cambios (`git pull --ff-only`, y se niega si hay cosas sin commitear),
+construye las dos imágenes, levanta, **espera a que la API esté sana** y enseña
+el estado. Si algo falla, sale con código 1 y **enseña el log del servicio que
+lo rompió** en vez de dejarte buscándolo. Probado: con la contraseña de la base
+mal, corta en `migrar` y escribe `password authentication failed`.
+
+Variantes:
+
+```bash
+SIN_GIT=1   ./scripts/desplegar.sh    # ya has traído tú los cambios
+SIN_BUILD=1 ./scripts/desplegar.sh    # solo converger el estado, sin reconstruir
+COMPOSE="docker compose -f compose.prod.yml -f compose.supabase.yml" ./scripts/desplegar.sh
+```
+
+> **Cada despliegue corta unos segundos**, y conviene saber por qué: reconstruir
+> cambia el identificador de la imagen aunque todas las capas estén cacheadas
+> —BuildKit sella la configuración cada vez—, así que compose recrea `api` y
+> `caddy`. Medido: dos ejecuciones seguidas sin tocar una línea dan dos
+> identificadores distintos. Si justo entonces un cliente está mirando un pase,
+> su foto no carga: cada visita relee el original para marcarlo, así que no hay
+> nada cacheado que le salve. Con `SIN_BUILD=1` no se recrea nada.
+
+A mano, si prefieres verlo paso a paso:
 
 ```bash
 cd /srv/vistta && git pull

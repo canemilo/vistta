@@ -287,8 +287,11 @@ crontab -e
 ```
 
 Y **restaura una** antes de dar esto por hecho. El procedimiento está en
-`DESPLIEGUE.md`. Una copia que nunca se ha restaurado no es una copia, es un
-archivo.
+`DESPLIEGUE.md`, y está **probado entero**: se borraron los pases, se restauró
+encima de la base viva, volvieron, y después la aplicación seguía funcionando
+—pase nuevo, 200 y luego 410—. Una copia que nunca se ha restaurado no es una
+copia, es un archivo; y una restauración que llena la base pero deja la
+aplicación rota tampoco sirve.
 
 ---
 
@@ -329,13 +332,19 @@ trabajo real de nadie**:
 ## Actualizar, más adelante
 
 ```bash
-cd /srv/vistta && git pull
-docker build -t vistta-api:latest . && docker build -f Dockerfile.web -t vistta-web:latest .
-docker compose -f compose.prod.yml up -d
+cd /srv/vistta && ./scripts/desplegar.sh
 ```
 
-`migrar` corre antes que `api` por dependencia declarada, así que las migraciones
-se aplican solas. Los certificados sobreviven porque están en un volumen.
+Trae los cambios, construye las dos imágenes, levanta, **espera a que la API esté
+sana** y enseña el estado. Si algo falla sale con error y con el log del servicio
+que lo rompió. `migrar` corre antes que `api` por dependencia declarada, así que
+las migraciones se aplican solas, y los certificados sobreviven porque están en
+un volumen.
+
+Cada despliegue **corta unos segundos**, porque reconstruir cambia el
+identificador de la imagen aunque todo esté cacheado y compose recrea los
+contenedores. Los detalles y las variantes (`SIN_GIT`, `SIN_BUILD`) están en
+`DESPLIEGUE.md`.
 
 ## Qué se ha ensayado y qué no
 
