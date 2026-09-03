@@ -164,9 +164,19 @@ credencial de un solo uso. Escribirla en un log la convertiría en una credencia
 guardada en texto plano y fuera del control de la base. Tampoco se registran
 cuerpos de petición, cabeceras ni direcciones IP.
 
-Caddy escribe su propio registro de acceso, que **sí incluye IP y URL**. Quien
-despliegue debe decidir su retención y dejarla escrita aquí; la recomendación es
-desactivarlo para `/api/open/*` y `/m/*` o recortarlo a días.
+**Caddy tampoco escribe registro de acceso**, y esto se comprobó sobre el
+despliegue real el 2026-09-03: `deploy/Caddyfile` no lleva la directiva `log`, y
+Caddy no registra peticiones si no se le pide. Tras decenas de solicitudes, su
+salida contenía únicamente líneas de arranque y de certificados: ninguna de
+acceso. Es decir, **de la visita a un pase no queda IP ni URL en ninguna parte**.
+
+Que siga así no es opcional por descuido, es una propiedad del diseño: la URL de
+un pase **es** la credencial. Activar el registro de acceso escribiría testigos
+de un solo uso en texto plano y fuera del control de la base, y además metería
+direcciones IP de personas que no son clientes de Vistta. Si alguna vez se
+activa —para depurar, o para medir latencias—, hay que hacer las tres cosas a la
+vez: excluir `/api/open/*` y `/m/*`, fijar una retención corta, y anotarla
+aquí.
 
 ---
 

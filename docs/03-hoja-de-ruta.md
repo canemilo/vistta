@@ -56,7 +56,7 @@ Ninguna de estas es opcional, y ninguna es trabajo de programación.
 - **Fijar la jurisdicción** del VPS y del bucket, y anotarla en el registro.
 - **Guardar el contrato de encargado de cada proveedor.** Un subencargado sin
   contrato es un incumplimiento del art. 28.4, funcione el sistema como funcione.
-- Decidir la retención del registro de acceso de Caddy, que sí guarda IP.
+- Comprobar que el registro de acceso de Caddy sigue apagado (hoy lo está: no hay directiva `log`).
 - **Revisión de un abogado** de los cuatro textos públicos.
 
 ## Después del lanzamiento

@@ -322,8 +322,11 @@ trabajo real de nadie**:
 3. **Fijar la jurisdicción** del VPS y del bucket, y anotarla en `legal/rat.md`.
 4. **Guardar el contrato de encargado de cada proveedor.** Un subencargado sin
    contrato es un incumplimiento del art. 28.4, funcione el sistema como funcione.
-5. **Decidir la retención del registro de acceso de Caddy**, que sí guarda IP y
-   URL completa, y anotarla.
+5. **Dejar el registro de acceso de Caddy como está: apagado.** Comprobado sobre
+   el despliegue: no hay directiva `log` y Caddy no registra ni una petición, así
+   que de abrir un pase no queda IP ni URL. Si algún día se activa, hay que
+   excluir `/api/open/*` y `/m/*` —esas URL llevan la credencial— y anotar la
+   retención en `legal/rat.md`.
 6. **Revisión de un abogado** de los cuatro textos públicos de `legal/`.
 7. **Decidir los precios y `GRACIA_CONGELADO_MS`**, que hoy son provisionales.
    El segundo es el plazo tras el cual se destruye trabajo de un cliente.

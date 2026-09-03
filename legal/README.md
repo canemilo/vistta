@@ -47,8 +47,11 @@ reales**:
    punto D.
 3. **Guardar el contrato de encargado de cada proveedor.** Un subencargado sin
    contrato es un incumplimiento del art. 28.4, por bien que funcione el sistema.
-4. **Decidir la retención del registro de acceso de Caddy**, que sí guarda IP y
-   URL completa, y anotarla en `rat.md`, punto C.
+4. **No activar el registro de acceso de Caddy.** Comprobado el 2026-09-03: hoy
+   no existe —el `Caddyfile` no lleva `log`— y por eso de una visita no queda ni
+   IP ni URL. La URL de un pase es la credencial, así que activarlo sin excluir
+   `/api/open/*` y `/m/*` guardaría testigos en texto plano. Si se activa, se
+   anota en `rat.md`, punto C.
 5. **Que un abogado revise estos textos.** Están escritos desde el conocimiento
    del sistema, que es la parte que un abogado no puede aportar, pero la revisión
    jurídica es la que no puede aportar quien escribió el código.

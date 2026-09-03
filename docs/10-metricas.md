@@ -99,13 +99,13 @@ sobre personas hay que justificarla en el registro del art. 30.
 
 ### Salud del sistema
 
-| Indicador                      | Objetivo     | Cómo                                           |
-| ------------------------------ | ------------ | ---------------------------------------------- |
-| Disponibilidad de `/health`    | > 99 %       | Comprobación externa cada minuto               |
-| Latencia de `/api/open/:token` | p95 < 800 ms | Registro de acceso de Caddy                    |
-| **Latencia de `/m/:mediaId`**  | p95 < 1,5 s  | Es el cuello: marca cada imagen en cada visita |
-| Trabajos en cola fallidos      | 0 sostenido  | `SELECT count(*) … status='failed'`            |
-| Última copia correcta          | < 24 h       | Salida de `backup.sh`                          |
+| Indicador                      | Objetivo     | Cómo                                                                                    |
+| ------------------------------ | ------------ | --------------------------------------------------------------------------------------- |
+| Disponibilidad de `/health`    | > 99 %       | Comprobación externa cada minuto                                                        |
+| Latencia de `/api/open/:token` | p95 < 800 ms | **Sin fuente hoy**: Caddy no registra accesos y activarlo guardaría el testigo del pase |
+| **Latencia de `/m/:mediaId`**  | p95 < 1,5 s  | Es el cuello: marca cada imagen en cada visita                                          |
+| Trabajos en cola fallidos      | 0 sostenido  | `SELECT count(*) … status='failed'`                                                     |
+| Última copia correcta          | < 24 h       | Salida de `backup.sh`                                                                   |
 
 ### Producto
 

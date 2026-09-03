@@ -80,3 +80,29 @@ El MVP va a un host de Node sin tarjeta (Render o similar) con Supabase como
 base y como almacén de medios. Las variables se cargan como secretos del host:
 `DATABASE_URL`, `MEDIA_SIGNING_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`.
 `TRUST_PROXY=true` solo si delante hay un proxy propio.
+
+## Antes de meter clientes reales
+
+Nada de esto es programación, y sin ello el despliegue **no está listo para el
+trabajo real de nadie**:
+
+1. **Los cuatro datos del titular**: `TITULAR_NOMBRE`, `TITULAR_IDENTIFICACION`,
+   `TITULAR_DIRECCION` y `CONTACTO_LEGAL`. Sin los cuatro, `/legal` avisa de que
+   el despliegue no está configurado —`GET /api/legal` devuelve
+   `"completo": false`— y **el procedimiento de retirada de contenido no lleva a
+   ninguna parte**. Es el que atiende un aviso por contenido no consentido o por
+   CSAM: tiene que llegar a un buzón que alguien lee.
+2. **Fijar la jurisdicción** del VPS y del bucket de R2 y anotarla en
+   `legal/rat.md`, punto D. Para R2 no basta la _location hint_: la garantía es
+   la **jurisdicción `eu`**, y entonces hace falta `R2_ENDPOINT`
+   (ver `docs/13-migracion-a-r2.md`).
+3. **Guardar el contrato de encargado de cada proveedor** (Contabo y
+   Cloudflare). Un subencargado sin contrato incumple el art. 28.4 por bien que
+   funcione el sistema.
+4. **Que un abogado revise los cuatro textos públicos de `legal/`.** Están
+   escritos leyendo el esquema, que es lo que un abogado no puede aportar; la
+   revisión jurídica es lo que no puede aportar quien escribió el código.
+5. **Pasar los medios a R2 y comprobarlo** con `pnpm r2:verificar`. Con
+   `STORAGE_DRIVER=fs` las fotos no entran en ninguna copia de seguridad.
+6. **Restaurar una copia** de verdad. El procedimiento está probado y descrito
+   en `DESPLIEGUE.md`.
