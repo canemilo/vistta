@@ -43,6 +43,12 @@ function diagnostico(estado: number, cuerpo: string): string[] {
     SignatureDoesNotMatch:
       "R2_SECRET_ACCESS_KEY no es la que corresponde a esa clave de acceso (o el reloj de esta máquina va desviado más de 15 minutos).",
     InvalidAccessKeyId: "R2_ACCESS_KEY_ID no existe en esa cuenta.",
+    // R2 no responde como MinIO a una clave de acceso desconocida, y esto salió
+    // el 2026-09-03 probando contra R2 de verdad: MinIO da 403
+    // `InvalidAccessKeyId` y R2 da 401 `Unauthorized`. Sin esta línea, el
+    // diagnóstico se quedaba en «R2 responde 401» en el caso más común al
+    // estrenar credenciales.
+    Unauthorized: "R2_ACCESS_KEY_ID no existe en esa cuenta, o el token se ha revocado o caducado.",
     AccessDenied:
       "El token existe pero no puede hacer esto: comprueba que es de tipo «Object Read & Write» y que su alcance incluye ESTE bucket.",
     NoSuchBucket: `El bucket «${process.env.R2_BUCKET}» no existe en esa cuenta. Ojo: el nombre distingue mayúsculas.`,
@@ -52,6 +58,7 @@ function diagnostico(estado: number, cuerpo: string): string[] {
   if (codigo) pistas.push(`R2 responde ${estado} ${codigo}.`);
   else pistas.push(`R2 responde ${estado}.`);
   if (tabla[codigo]) pistas.push(tabla[codigo]);
+
   if (estado === 401 || estado === 403) {
     pistas.push("Las credenciales NO se imprimen aquí; revísalas en el .env, no en este log.");
   }

@@ -23,11 +23,11 @@ pierde el disco del VPS, se pierden las fotos de un cliente.
 
 En el panel de Cloudflare, **R2 → Create bucket**:
 
-| Ajuste         | Valor           | Por qué                                               |
-| -------------- | --------------- | ----------------------------------------------------- |
-| Nombre         | `vistta-medios` | Es el que va en `R2_BUCKET`; distingue mayúsculas     |
-| Acceso público | **Desactivado** | Ver el aviso de abajo. No actives el dominio `r2.dev` |
-| Ubicación      | Europa          | Residencia de datos coherente con el VPS (Alemania)   |
+| Ajuste         | Valor           | Por qué                                                                                                |
+| -------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| Nombre         | El que elijas   | Va tal cual en `R2_BUCKET` y **distingue mayúsculas**. En el despliegue de vistta.es es `vistta-media` |
+| Acceso público | **Desactivado** | Ver el aviso de abajo. No actives el dominio `r2.dev`                                                  |
+| Ubicación      | Europa          | Residencia de datos coherente con el VPS (Alemania)                                                    |
 
 > **No actives el dominio público del bucket, ni ahora ni después.** Los medios se sirven
 > **solo** por la API, que exige tres cosas —firma válida, fila en `pass_media` y
@@ -64,11 +64,11 @@ deja sin poner.
 
 **R2 → Manage API tokens → Create API token**:
 
-| Ajuste    | Valor                                       |
-| --------- | ------------------------------------------- |
-| Permisos  | **Object Read & Write**                     |
-| Alcance   | **Solo `vistta-medios`**, no toda la cuenta |
-| Caducidad | Sin caducar, o anótala en el calendario     |
+| Ajuste    | Valor                                   |
+| --------- | --------------------------------------- |
+| Permisos  | **Object Read & Write**                 |
+| Alcance   | **Solo ese bucket**, no toda la cuenta  |
+| Caducidad | Sin caducar, o anótala en el calendario |
 
 **Object Read & Write, no solo lectura**, y esto no es una preferencia: sin permiso de
 borrado, ni la purga ni el reaper de huérfanos pueden limpiar nada. El bucket crece para
@@ -76,6 +76,12 @@ siempre y la factura con él. El script del paso 4 detecta justo ese caso.
 
 Cloudflare enseña la clave secreta **una sola vez**. Si la pierdes, se genera otra; no se
 recupera.
+
+> **El alcance no es un detalle de estilo.** Al crear el token, Cloudflare ofrece por defecto
+> «todos los buckets R2 de esta cuenta», y con eso funciona igual de bien —el despliegue de
+> vistta.es se estrenó así—. Pero un token de cuenta entera convierte cualquier fuga del
+> `.env` en acceso a todo lo que haya en R2 y a lo que se cree después. Limitarlo a un bucket
+> cuesta un desplegable.
 
 ## 3. Las variables
 
@@ -86,7 +92,7 @@ STORAGE_DRIVER=r2
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
-R2_BUCKET=vistta-medios
+R2_BUCKET=vistta-media
 # Solo con jurisdicción `eu`; en otro caso, se deja fuera.
 R2_ENDPOINT=
 ```
@@ -136,13 +142,13 @@ R2 responde al ciclo completo: subir, leer, borrar.
 Y cuando no, dice cuál de las cuatro variables mirar. Estos cinco casos están **probados
 contra MinIO**, provocándolos a propósito:
 
-| Lo que verás                         | Lo que pasa de verdad                                              |
-| ------------------------------------ | ------------------------------------------------------------------ |
-| `403 SignatureDoesNotMatch` al subir | `R2_SECRET_ACCESS_KEY` no corresponde, o el reloj va desviado      |
-| `403 InvalidAccessKeyId`             | `R2_ACCESS_KEY_ID` no existe en esa cuenta                         |
-| `404 NoSuchBucket`                   | El nombre del bucket, o el endpoint (¿jurisdicción `eu`?)          |
-| Sube y lee, **falla al borrar**      | El token es de solo lectura. Es el caso caro: nada podrá limpiarse |
-| `faltan R2_...`                      | Una variable vacía en el `.env`                                    |
+| Lo que verás                         | Lo que pasa de verdad                                                                                                                                                             |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `403 SignatureDoesNotMatch` al subir | `R2_SECRET_ACCESS_KEY` no corresponde, o el reloj va desviado                                                                                                                     |
+| `401 Unauthorized`                   | `R2_ACCESS_KEY_ID` no existe, o el token se revocó. **R2 no responde como MinIO aquí**: MinIO da `403 InvalidAccessKeyId` y R2 un `401 Unauthorized`; el script contempla los dos |
+| `404 NoSuchBucket`                   | El nombre del bucket, o el endpoint (¿jurisdicción `eu`?)                                                                                                                         |
+| Sube y lee, **falla al borrar**      | El token es de solo lectura. Es el caso caro: nada podrá limpiarse                                                                                                                |
+| `faltan R2_...`                      | Una variable vacía en el `.env`                                                                                                                                                   |
 
 Las credenciales **no se imprimen** en ningún caso.
 
@@ -176,7 +182,7 @@ rclone config create r2 s3 provider=Cloudflare \
   endpoint=https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com
 
 # 3. Copiar, DEJANDO FUERA los .tipo.
-rclone copy ./medios-copia r2:vistta-medios --exclude "*.tipo" --progress
+rclone copy ./medios-copia r2:vistta-media --exclude "*.tipo" --progress
 ```
 
 Con `aws s3 sync` el equivalente es `--exclude "*.tipo"` y
@@ -188,7 +194,7 @@ Cuenta lo que hay a cada lado. Tienen que dar el mismo número:
 
 ```bash
 # Objetos en el bucket
-rclone size r2:vistta-medios
+rclone size r2:vistta-media
 
 # Medios que la base espera encontrar
 docker compose -f compose.prod.yml exec db \
@@ -226,11 +232,11 @@ Y el invariante, como siempre (`docs/11` §7): abrir el pase dos veces da **200 
 
 ## Qué se ha ensayado y qué no
 
-|                         |                                                                                                                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Probado de verdad**   | `scripts/verificar-r2.ts` contra **MinIO**: el ciclo completo en verde, y los cinco fallos de la tabla del paso 4 provocados a propósito, cada uno con su diagnóstico y sin filtrar credenciales |
-| **Leído, no ejecutado** | Que el tipo MIME del objeto no se usa al servir: sale de `media.mime` en las dos rutas                                                                                                           |
-| **Nunca ejecutado**     | **R2 de verdad**: ni el bucket, ni el token, ni el endpoint de jurisdicción `eu`, ni la copia con `rclone`. Nada de este documento ha tocado Cloudflare                                          |
+|                                         |                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Probado contra R2 REAL** (2026-09-03) | El ciclo completo sobre un bucket con jurisdicción UE; el `404 NoSuchBucket` al quitar `R2_ENDPOINT`; el `403 SignatureDoesNotMatch` con el secreto cambiado; el `401 Unauthorized` con una clave que no existe; y la aplicación entera sirviendo una foto marcada desde R2, con el invariante 200 → 410 |
+| **Leído, no ejecutado**                 | Que el tipo MIME del objeto no se usa al servir: sale de `media.mime` en las dos rutas                                                                                                                                                                                                                   |
+| **Sigue sin probarse**                  | El **volumen**: se movió un objeto, no mil. Y la migración con `rclone` de un `fs` existente. El caso del token de solo lectura se provocó en MinIO y no en R2, para no crear un segundo token                                                                                                           |
 
 El paso 4 existe precisamente para que esa última fila deje de dar miedo: es una orden, tarda
 diez segundos y dice qué pasa.
