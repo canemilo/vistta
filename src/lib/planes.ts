@@ -17,6 +17,16 @@
 
 export type Plan = "prueba" | "pro" | "boveda";
 
+/**
+ * Cómo caduca un pase.
+ *
+ *   unico   — se abre una vez. Es el modo por defecto y el único que este
+ *             producto promete; `docs/11` §7 lo comprueba en cada despliegue.
+ *   accesos — hasta N aperturas, y además una ventana desde la primera.
+ *   ventana — sin tope de aperturas, válido X tiempo desde la primera.
+ */
+export type ModoDePase = "unico" | "accesos" | "ventana";
+
 export const PLANES_VALIDOS: readonly Plan[] = ["prueba", "pro", "boveda"] as const;
 
 /** El plan con el que nace una cuenta. */
@@ -45,7 +55,41 @@ export interface LimitesDePlan {
    * propósito, no es un disco duro.
    */
   retencionMs: number | null;
+  /** Modos de pase que el plan admite. `unico` está en todos. */
+  modosDePase: readonly ModoDePase[];
+  /** Tope de aperturas en modo `accesos`. `null` = el plan no admite ese modo. */
+  maxAccesos: number | null;
+  /** Ventana máxima desde la primera apertura. `null` = no admite ventana. */
+  ventanaMaxMs: number | null;
+  /**
+   * Plazo máximo para la PRIMERA apertura en los modos nuevos. El modo `unico`
+   * no usa este tope: se queda con el de siempre (`PLAZO_UNICO_MAX_MS`), para
+   * que su comportamiento no cambie ni un poco.
+   */
+  plazoPrimeraAperturaMaxMs: number;
 }
+
+/** Aperturas mínimas en modo `accesos`: con una sola, el modo es `unico`. */
+export const ACCESOS_MINIMOS = 2;
+
+/** Por debajo de una hora, una ventana no es una ventana: es un solo uso lento. */
+export const VENTANA_MINIMA_MS = 60 * 60 * 1000;
+
+/**
+ * Ventana que se aplica a un pase de modo `accesos` si no se pide otra.
+ *
+ * El modo `accesos` la lleva SIEMPRE, y ese es el motivo: sin plazo, un pase de
+ * tres accesos que solo se abre una vez sigue siendo abrible para siempre, y la
+ * purga no borra los medios de un pase abrible. Ese contenido se quedaría
+ * inmovilizado contra la retención del plan, indefinidamente.
+ */
+export const VENTANA_POR_DEFECTO_MS = 24 * 60 * 60 * 1000;
+
+/** Plazo para la primera apertura del modo `unico`: el de siempre, sin tocar. */
+export const PLAZO_UNICO_MAX_MS = 24 * 60 * 60 * 1000;
+
+/** Y el que se aplica por defecto en los modos nuevos, si no se pide otro. */
+export const PLAZO_NUEVOS_POR_DEFECTO_MS = 72 * 60 * 60 * 1000;
 
 /**
  * Cifras fijadas por el cliente el 2026-09-01.
@@ -62,12 +106,23 @@ export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
     pasesSimultaneos: 5,
     cuotaPorPerfil: 70 * MB,
     retencionMs: 7 * DIA,
+    // Solo un uso. Es coherencia técnica antes que comercial: con 7 días de
+    // retención, una ventana de 7 días crea pases que sobreviven a su propio
+    // contenido. Y de paso es la razón para subir de plan.
+    modosDePase: ["unico"],
+    maxAccesos: null,
+    ventanaMaxMs: null,
+    plazoPrimeraAperturaMaxMs: PLAZO_UNICO_MAX_MS,
   },
   pro: {
     perfiles: 3,
     pasesSimultaneos: 30,
     cuotaPorPerfil: 200 * MB,
     retencionMs: 15 * DIA,
+    modosDePase: ["unico", "accesos", "ventana"],
+    maxAccesos: 5,
+    ventanaMaxMs: 2 * DIA,
+    plazoPrimeraAperturaMaxMs: 7 * DIA,
   },
   boveda: {
     perfiles: 10,
@@ -76,6 +131,13 @@ export const PLANES: Readonly<Record<Plan, LimitesDePlan>> = Object.freeze({
     cuotaPorPerfil: 1024 * MB,
     // Lo otro que distingue a este plan: la ausencia de plazo, no un plazo largo.
     retencionMs: null,
+    modosDePase: ["unico", "accesos", "ventana"],
+    maxAccesos: 10,
+    // Siete días es el techo DURO de la ventana, en cualquier plan: es la
+    // retención del plan más corto, y una ventana más larga que la retención
+    // más corta abre la puerta a un pase que sobrevive a sus propias fotos.
+    ventanaMaxMs: 7 * DIA,
+    plazoPrimeraAperturaMaxMs: 7 * DIA,
   },
 });
 

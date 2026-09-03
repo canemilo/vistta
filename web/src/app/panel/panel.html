@@ -837,6 +837,101 @@
 
       <!-- Guardar y compartir -->
       <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-[#16303a] pt-6">
+        <fieldset class="mb-4 w-full rounded-lg border border-[#1c3b44] bg-[#081420] p-4">
+          <legend class="px-2 font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+            CÓMO CADUCA EL ENLACE
+          </legend>
+
+          <label class="flex cursor-pointer items-start gap-3 py-1.5">
+            <input
+              type="radio"
+              name="modoPase"
+              value="unico"
+              [checked]="modoPase() === 'unico'"
+              (change)="modoPase.set('unico')"
+              class="mt-1 accent-emerald-400"
+            />
+            <span class="text-[13px] text-[#c7dbdc]">
+              Un solo uso
+              <span class="block font-mono text-[11px] text-[#63848d]">
+                Se abre una vez. Al cerrarlo, el enlace deja de valer.
+              </span>
+            </span>
+          </label>
+
+          @if (modosDisponibles().includes('accesos')) {
+            <label class="flex cursor-pointer items-start gap-3 py-1.5">
+              <input
+                type="radio"
+                name="modoPase"
+                value="accesos"
+                [checked]="modoPase() === 'accesos'"
+                (change)="modoPase.set('accesos')"
+                class="mt-1 accent-emerald-400"
+              />
+              <span class="text-[13px] text-[#c7dbdc]">
+                Varios accesos
+                <span class="block font-mono text-[11px] text-[#63848d]">
+                  Se puede abrir un número de veces que eliges tú, y caduca al llegar a ese número.
+                </span>
+              </span>
+            </label>
+            @if (modoPase() === 'accesos') {
+              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-[#8fb0b2]">
+                ACCESOS
+                <input
+                  type="number"
+                  min="2"
+                  [max]="topeAccesos()"
+                  [(ngModel)]="accesosPase"
+                  class="w-20 rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1 text-[#c7dbdc]"
+                />
+                <span class="text-[#63848d]">tu plan llega a {{ topeAccesos() }}</span>
+              </label>
+            }
+          }
+
+          @if (modosDisponibles().includes('ventana')) {
+            <label class="flex cursor-pointer items-start gap-3 py-1.5">
+              <input
+                type="radio"
+                name="modoPase"
+                value="ventana"
+                [checked]="modoPase() === 'ventana'"
+                (change)="modoPase.set('ventana')"
+                class="mt-1 accent-emerald-400"
+              />
+              <span class="text-[13px] text-[#c7dbdc]">
+                Ventana de tiempo
+                <span class="block font-mono text-[11px] text-[#63848d]">
+                  Se puede abrir las veces que haga falta durante un plazo que empieza a contar
+                  cuando lo abren por primera vez.
+                </span>
+              </span>
+            </label>
+            @if (modoPase() === 'ventana') {
+              <label class="ml-8 flex items-center gap-2 py-1 font-mono text-[11px] text-[#8fb0b2]">
+                HORAS
+                <input
+                  type="number"
+                  min="1"
+                  [max]="topeVentanaHoras()"
+                  [(ngModel)]="ventanaHoras"
+                  class="w-20 rounded border border-[#1c3b44] bg-[#04101a] px-2 py-1 text-[#c7dbdc]"
+                />
+                <span class="text-[#63848d]">tu plan llega a {{ topeVentanaHoras() }} h</span>
+              </label>
+            }
+          }
+
+          @if (modosDisponibles().length === 1) {
+            <p class="mt-2 font-mono text-[11px] text-[#63848d]">
+              Tu plan genera enlaces de un solo uso. Los enlaces con varios accesos o con ventana de
+              tiempo van en los planes superiores.
+            </p>
+          }
+        </fieldset>
+
         <button
           type="button"
           (click)="guardar()"
@@ -863,6 +958,40 @@
           <span class="font-mono text-[11px] text-rose-400">{{ error() }}</span>
         }
       </div>
+
+      @if (pases().length) {
+        <div class="mt-4 rounded-lg border border-[#1c3b44] bg-[#081420] p-4">
+          <h3 class="font-mono text-[11px] tracking-[0.18em] text-[#63848d]">
+            ENLACES DE ESTE PERFIL
+          </h3>
+          <ul class="mt-2 space-y-1">
+            @for (p of pases(); track p.id) {
+              <li class="flex flex-wrap items-baseline gap-x-3 text-[13px] text-[#c7dbdc]">
+                <span class="font-mono text-[11px] text-[#8fb0b2]">
+                  @switch (p.modo) {
+                    @case ('unico') {
+                      UN SOLO USO
+                    }
+                    @case ('accesos') {
+                      VARIOS ACCESOS
+                    }
+                    @case ('ventana') {
+                      VENTANA
+                    }
+                  }
+                </span>
+                <span
+                  class="font-mono text-[11px]"
+                  [class.text-emerald-400]="p.estado === 'abrible'"
+                  [class.text-\[\#63848d\]]="p.estado !== 'abrible'"
+                >
+                  {{ estadoDelPase(p) }}
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
 
       @if (enlace()) {
         <div

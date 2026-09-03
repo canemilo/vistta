@@ -46,9 +46,14 @@ Tres cosas que conviene saber antes de enviarlo:
 
 - **Caduca a los 15 minutos si nadie lo abre.** Genera el pase cuando vayas a
   enviarlo, no la noche antes.
-- **Se abre una sola vez.** Si tu cliente lo abre en el móvil y luego quiere
-  verlo en el ordenador, necesita un pase nuevo. Díselo al mandarlo: «ábrelo
-  donde vayas a mirarlo con calma».
+- **Se abre una sola vez**, salvo que elijas otra cosa. Si tu cliente lo abre en
+  el móvil y luego quiere verlo en el ordenador, necesita un pase nuevo. Díselo
+  al mandarlo: «ábrelo donde vayas a mirarlo con calma».
+  Si sabes que va a volver a mirarlo —una negociación, un presupuesto que se
+  comenta con un socio—, al generar el enlace puedes elegir **varios accesos** o
+  una **ventana de tiempo** que empieza a contar cuando lo abren. La lista de
+  enlaces del perfil te dice en qué estado está cada uno: «2 de 3 accesos»,
+  «caduca en unas 6 h». Un solo uso sigue siendo lo que viene marcado.
 - **Lo que verá es lo que había al generarlo.** Si editas el perfil después, ese
   pase sigue enseñando la versión congelada. Para enseñar los cambios, genera
   uno nuevo.

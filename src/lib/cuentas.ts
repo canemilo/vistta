@@ -1,4 +1,5 @@
 import type { Db } from "../db";
+import { pasAbribleSql } from "./pass";
 import { limitesDe, planDe, type LimitesDePlan, type Plan } from "./planes";
 
 /**
@@ -56,12 +57,17 @@ export async function perfilesActivos(db: Db, userId: string): Promise<number> {
  *
  * Un pase consumido no cuenta —ya hizo su trabajo— y uno caducado tampoco. El
  * límite es de enlaces vivos ahí fuera, no de enlaces creados en total.
+ *
+ * «Vivo» lo define `pasAbribleSql`, y no se escribe a mano aquí: con los modos
+ * por accesos y por ventana, un pase puede seguir abriéndose mucho después de
+ * su `expires_at`, que solo gobierna la PRIMERA apertura. Contarlo a mano dejaba
+ * de contar pases que siguen ahí fuera, y el tope del plan se podía saltar.
  */
 export async function pasesAbiertos(db: Db, userId: string, ahora = Date.now()): Promise<number> {
   const fila = await db.one<{ n: number }>(
     `SELECT count(*)::int AS n
      FROM vistta.passes ps JOIN vistta.profiles p ON p.id = ps.profile_id
-     WHERE p.owner_id = $1 AND ps.status = 'pending' AND ps.expires_at > $2`,
+     WHERE p.owner_id = $1 AND ${pasAbribleSql("ps", "$2")}`,
     [userId, ahora]
   );
   return fila?.n ?? 0;

@@ -58,16 +58,28 @@ status = 'pendiente'`. Sin las dos, 10 de 16 confirmaciones cobran el mismo cód
 La regla, a estas alturas, va al revés: si añades un contador con un tope, da por hecho que tiene
 carrera. Escribe el `FOR UPDATE` y el test de ráfaga desde el principio.
 
-## Invariante crítico — uso único atómico (PostgreSQL)
+## Invariante crítico — consumo atómico (PostgreSQL)
 
-El pase se consume UNA sola vez y el consumo es ATÓMICO con un único UPDATE condicional:
+El pase se abre **las veces que diga su modo, ni una más**, y el consumo es ATÓMICO: un ÚNICO
+UPDATE condicional que decide y contabiliza a la vez (`src/lib/pass.ts`). Nunca un `SELECT` del
+contador y un `UPDATE` después: verificado por mutación, así se cuelan **15 de 16**.
 
-```sql
-UPDATE vistta.passes SET status='consumed', consumed_at=$1
-WHERE token_hash=$2 AND status='pending' AND expires_at > $1;
-```
+Basta el UPDATE, sin `FOR UPDATE`, porque la petición que despierta del bloqueo de fila reevalúa su
+WHERE contra la fila ya cambiada.
 
-Solo la primera petición válida obtiene rowCount = 1; el resto queda denegado (usado/caducado/inexistente).
+- **`unico` (por defecto) no ha cambiado**: 200 la primera vez, 410 la segunda. Es lo único que este
+  producto promete y `docs/11` §7 lo comprueba en cada despliegue.
+- `accesos` (N aperturas) y `ventana` (plazo desde la primera apertura) se añadieron después. Los dos
+  llevan SIEMPRE ventana: un pase sin plazo se queda abrible para siempre, y la purga no borra los
+  medios de un pase abrible —ese contenido quedaría inmovilizado contra la retención, para siempre—.
+
+**Los dos plazos son distintos y se confunden**: `expires_at` es el plazo para la PRIMERA apertura;
+`valido_hasta` es hasta cuándo se sigue abriendo, y se calcula AL ABRIR. Aplicar `expires_at` también
+después rompe el modo ventana entero (el plazo por defecto son 15 minutos).
+
+**Qué significa «abrible» se escribe UNA vez** (`pasAbribleSql`) y lo usan el consumo, el recuento de
+pases del plan y la purga. Si divergen, la que se equivoca es la purga, y equivocarse ahí es borrar
+una foto que un pase vivo todavía puede pedir.
 
 ## Seguridad (no negociable)
 

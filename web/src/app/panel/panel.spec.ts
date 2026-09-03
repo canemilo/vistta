@@ -1,7 +1,14 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Panel } from './panel';
-import { Api, type EstadoDeCuenta, type ProfileRow, type Usuario } from '../core/api';
+import {
+  Api,
+  type EstadoDeCuenta,
+  type LimitesDePlan,
+  type PaseListado,
+  type ProfileRow,
+  type Usuario,
+} from '../core/api';
 
 /**
  * Crear perfiles y salir de la cuenta.
@@ -20,11 +27,15 @@ const PERFIL = (id: string, nombre: string): ProfileRow => ({
   purgeAt: null,
 });
 
-const LIMITES = (perfiles: number) => ({
+const LIMITES = (perfiles: number): LimitesDePlan => ({
   perfiles,
   pasesSimultaneos: 30,
   cuotaPorPerfil: 200 * 1024 * 1024,
   retencionMs: 15 * 86_400_000,
+  modosDePase: ['unico', 'accesos', 'ventana'],
+  maxAccesos: 5,
+  ventanaMaxMs: 2 * 86_400_000,
+  plazoPrimeraAperturaMaxMs: 7 * 86_400_000,
 });
 
 class ApiFalsa {
@@ -95,6 +106,25 @@ class ApiFalsa {
   };
 
   preview = () => Promise.resolve('');
+
+  /** Enlaces ya generados y opciones con las que se pidió el último. */
+  pases: PaseListado[] = [];
+  ultimoPasePedido: { modo?: string; maxAccesos?: number; ventanaMs?: number } | null = null;
+
+  createPass = (
+    _s: string,
+    _perfil: string,
+    opciones: { modo?: string; maxAccesos?: number; ventanaMs?: number } = {},
+  ) => {
+    this.ultimoPasePedido = opciones;
+    return Promise.resolve({
+      url: 'https://vistta.example/v/abc',
+      expiresAt: Date.now() + 900_000,
+      modo: (opciones.modo ?? 'unico') as 'unico' | 'accesos' | 'ventana',
+    });
+  };
+
+  listPasses = () => Promise.resolve({ passes: this.pases });
 }
 
 describe('Panel · perfiles y cierre de sesión', () => {
@@ -480,5 +510,104 @@ describe('Panel · he olvidado la contraseña', () => {
 
     expect(boton('He olvidado la contraseña')).toBeDefined();
     expect(fixture.nativeElement.querySelector('#usuario-olvidado')).toBeNull();
+  });
+});
+
+describe('Panel · cómo caduca el enlace', () => {
+  let fixture: ComponentFixture<Panel>;
+  let api: ApiFalsa;
+
+  const boton = (texto: string) =>
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]).find(
+      (b) => (b.textContent ?? '').trim().startsWith(texto),
+    );
+  const radios = () =>
+    Array.from(
+      fixture.nativeElement.querySelectorAll('input[name="modoPase"]'),
+    ) as HTMLInputElement[];
+
+  async function estabiliza(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    api = new ApiFalsa();
+    sessionStorage.setItem('vistta.sesion', 'sesion-de-prueba');
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+  });
+
+  afterEach(() => sessionStorage.clear());
+
+  /*
+   * Lo que este producto promete es el enlace de un solo uso. Si algún día
+   * alguien reordena las opciones y deja otra marcada, un cliente mandaría sin
+   * darse cuenta un enlace que se abre varias veces.
+   */
+  it('«un solo uso» viene marcado de entrada', async () => {
+    const marcado = radios().find((r) => r.checked);
+    expect(marcado).withContext('tiene que haber un modo marcado').toBeDefined();
+    expect(marcado!.value).toBe('unico');
+  });
+
+  it('generar sin tocar nada pide un pase de un solo uso', async () => {
+    boton('GENERAR ENLACE')!.click();
+    await estabiliza();
+    expect(api.ultimoPasePedido!.modo).toBe('unico');
+    expect(api.ultimoPasePedido!.maxAccesos).toBeUndefined();
+    expect(api.ultimoPasePedido!.ventanaMs).toBeUndefined();
+  });
+
+  it('eligiendo varios accesos, se manda el número elegido', async () => {
+    const accesos = radios().find((r) => r.value === 'accesos')!;
+    accesos.click();
+    await estabiliza();
+
+    boton('GENERAR ENLACE')!.click();
+    await estabiliza();
+    expect(api.ultimoPasePedido!.modo).toBe('accesos');
+    expect(api.ultimoPasePedido!.maxAccesos).toBe(3);
+  });
+
+  it('la ventana se manda en milisegundos, no en horas', async () => {
+    radios()
+      .find((r) => r.value === 'ventana')!
+      .click();
+    await estabiliza();
+
+    boton('GENERAR ENLACE')!.click();
+    await estabiliza();
+    expect(api.ultimoPasePedido!.modo).toBe('ventana');
+    expect(api.ultimoPasePedido!.ventanaMs).toBe(24 * 3_600_000);
+  });
+
+  it('el listado dice cuántos accesos quedan, sin precisión de reloj', async () => {
+    api.pases = [
+      {
+        id: 'p1',
+        modo: 'accesos',
+        estado: 'abrible',
+        creadoEn: Date.now(),
+        expiraEn: Date.now() + 3_600_000,
+        validoHasta: Date.now() + 6 * 3_600_000,
+        accesosUsados: 2,
+        maxAccesos: 3,
+      },
+    ];
+    // Se recarga el perfil para que el panel pida la lista.
+    fixture.componentInstance['elegirPerfil']('p_uno');
+    await estabiliza();
+
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('2 de 3 accesos');
+    expect(texto).toContain('caduca en unas 6 h');
   });
 });

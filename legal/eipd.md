@@ -60,10 +60,18 @@ reenvían.
 
 - _Probabilidad:_ media. Es un error humano y ocurre.
 - _Impacto:_ medio o alto, según lo que enseñe el perfil.
-- **Mitigación real:** el pase se consume **una sola vez** y caduca a los 15
-  minutos sin abrir. Un enlace reenviado o filtrado ya está muerto casi siempre,
-  y quien lo abrió por error se delata al dejarlo inservible para el destinatario.
-- _Riesgo residual:_ **bajo**. El primero que abre lo ve entero.
+- **Mitigación real:** por defecto el pase se consume **una sola vez** y caduca a
+  los 15 minutos sin abrir. Un enlace reenviado o filtrado ya está muerto casi
+  siempre, y quien lo abrió por error se delata al dejarlo inservible para el
+  destinatario.
+- **Y donde esa mitigación es MENOR:** el usuario puede generar enlaces de varios
+  accesos o con ventana de tiempo (máximo siete días). Ahí un enlace reenviado
+  sigue vivo, y quien lo abre por error ya no se delata dejándolo inservible. La
+  contrapartida es que el usuario elige ese riesgo a conciencia: el modo por
+  defecto es el de un solo uso, la interfaz explica en una línea qué implica cada
+  opción, y el plan de prueba solo genera enlaces de un solo uso.
+- _Riesgo residual:_ **bajo** con un solo uso —el primero que abre lo ve entero—;
+  **medio** con los otros dos modos, y proporcional al plazo que elija el usuario.
 - **Limitación honesta:** Vistta no puede verificar la identidad del destinatario
   ni sabe quién abrió. El control sobre a quién se manda es del cliente.
 

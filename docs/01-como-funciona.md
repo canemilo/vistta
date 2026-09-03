@@ -48,13 +48,32 @@ Lo que eso cambia en la práctica:
 El enlace además **caduca a los 15 minutos si nadie lo abre**. Eso es a
 propósito: un pase no es un archivo, es una cita.
 
+### Y cuando una cita no basta
+
+Un solo uso sirve para enseñar trabajo. No sirve para acompañar una negociación
+de días, donde la otra parte vuelve a mirar el mismo dossier tres veces y lo
+comenta con alguien. Para eso hay otras dos formas de caducar, que se eligen al
+generar el enlace:
+
+| Modo               | Qué hace                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Un solo uso**    | Se abre una vez. Es lo de siempre y **lo que viene elegido**                                               |
+| **Varios accesos** | Se abre un número de veces que eliges tú, y muere al llegar                                                |
+| **Ventana**        | Se abre las veces que haga falta durante un plazo que empieza a contar **cuando lo abren por primera vez** |
+
+Los dos últimos van con los planes de pago, y ninguno pasa de siete días. El
+contenido de este producto caduca a propósito: un enlace que durase más que la
+retención del plan sobreviviría a sus propias fotos.
+
 ## Qué promete Vistta, exactamente
 
 Esto es lo que hace, y está probado:
 
-- **El pase se abre una sola vez, y el consumo es atómico.** Aunque lleguen
-  dieciséis peticiones simultáneas, solo una lo abre. Hay una prueba que lanza
-  esa ráfaga contra una base de datos real.
+- **El pase se abre las veces que diga su modo, y el consumo es atómico.** Con
+  un solo uso, aunque lleguen dieciséis peticiones simultáneas solo una lo abre.
+  Con tres accesos, abren exactamente tres. Hay pruebas que lanzan esa ráfaga
+  contra una base de datos real, y están verificadas rompiendo el código a
+  propósito: partido en dos consultas, se cuelan quince de dieciséis.
 - **Las imágenes llevan la marca de la visita dentro de los píxeles.** La imagen
   se decodifica, se le pinta el identificador encima y se vuelve a codificar: lo
   que sale por el cable no son los bytes que subiste.

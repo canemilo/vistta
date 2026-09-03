@@ -7,6 +7,8 @@ import {
   type EstadoDeCuenta,
   type EstadoFacturacion,
   type MediaRef,
+  type ModoDePase,
+  type PaseListado,
   type ProfileContent,
   type ProfileRow,
   type Usuario,
@@ -55,6 +57,26 @@ export class Panel {
   protected claveActual = '';
   protected claveNueva = '';
   protected readonly uso = signal<EstadoDeCuenta['uso']>({ perfilesActivos: 0, pasesAbiertos: 0 });
+
+  // --- cómo caduca el enlace ------------------------------------------------
+  /**
+   * `unico` viene elegido, y no por comodidad: es lo único que este producto
+   * promete y lo que el cliente espera si no piensa en ello. Los otros dos
+   * modos se eligen a conciencia o no se eligen.
+   */
+  protected readonly modoPase = signal<ModoDePase>('unico');
+  protected accesosPase = 3;
+  protected ventanaHoras = 24;
+  protected readonly pases = signal<PaseListado[]>([]);
+
+  /** Los modos que da el plan. Sin plan (perfil sin dueño), solo el de siempre. */
+  protected readonly modosDisponibles = computed<ModoDePase[]>(
+    () => this.plan()?.limites.modosDePase ?? ['unico'],
+  );
+  protected readonly topeAccesos = computed(() => this.plan()?.limites.maxAccesos ?? 0);
+  protected readonly topeVentanaHoras = computed(() =>
+    Math.floor((this.plan()?.limites.ventanaMaxMs ?? 0) / 3_600_000),
+  );
 
   // --- contraseña olvidada --------------------------------------------------
   protected readonly pidiendoClave = signal(false);
@@ -424,7 +446,11 @@ export class Panel {
     const perfil = await this.api.getProfile(sesion, id);
     this.nombre.set(perfil.displayName);
     this.contenido.set({ ...perfil.data, sections: perfil.data.sections ?? [] });
+    // Los enlaces ya generados de este perfil: con pases de varios accesos,
+    // saber cuántos quedan es parte de poder usarlos.
+    this.pases.set([]);
     await this.cargarMiniaturas();
+    await this.cargarPases();
   }
 
   private async cargarMiniaturas(): Promise<void> {
@@ -585,13 +611,65 @@ export class Panel {
     this.error.set('');
     this.copiado.set(false);
     try {
-      const { url } = await this.api.createPass(sesion, this.perfilId());
+      const modo = this.modoPase();
+      const { url } = await this.api.createPass(sesion, this.perfilId(), {
+        modo,
+        maxAccesos: modo === 'accesos' ? this.accesosPase : undefined,
+        ventanaMs: modo === 'ventana' ? this.ventanaHoras * 3_600_000 : undefined,
+      });
       this.enlace.set(url);
+      await this.cargarPases();
     } catch {
       this.error.set('No se pudo generar el enlace. Vuelve a entrar con el PIN.');
     } finally {
       this.ocupado.set(false);
     }
+  }
+
+  /** Los enlaces ya generados de este perfil, con su estado real. */
+  protected async cargarPases(): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion || !this.perfilId()) return;
+    try {
+      const { passes } = await this.api.listPasses(sesion, this.perfilId());
+      this.pases.set(passes);
+    } catch {
+      // El listado es información, no funcionalidad: si falla, no se estropea
+      // nada de lo que el usuario está haciendo.
+      this.pases.set([]);
+    }
+  }
+
+  /**
+   * Lo que se enseña de cada enlace, en una línea.
+   *
+   * Redondeado a propósito: «caduca en unas 6 h» es lo que alguien necesita
+   * saber. Un contador al segundo daría una precisión que no aporta.
+   */
+  protected estadoDelPase(p: PaseListado): string {
+    if (p.estado === 'agotado') return 'ya se abrió';
+    if (p.estado === 'caducado') return 'caducado sin abrir';
+
+    const partes: string[] = [];
+    if (p.modo === 'accesos' && p.maxAccesos !== null) {
+      partes.push(`${p.accesosUsados} de ${p.maxAccesos} accesos`);
+    }
+    const limite = p.validoHasta ?? p.expiraEn;
+    const restanMs = limite - Date.now();
+    partes.push(
+      p.validoHasta === null
+        ? `sin abrir, ${this.enTiempo(restanMs)} para abrirlo`
+        : `caduca en ${this.enTiempo(restanMs)}`,
+    );
+    return partes.join(' · ');
+  }
+
+  private enTiempo(ms: number): string {
+    if (ms <= 0) return 'un momento';
+    const horas = Math.round(ms / 3_600_000);
+    if (horas >= 48) return `unos ${Math.round(horas / 24)} días`;
+    if (horas >= 1) return `unas ${horas} h`;
+    return `unos ${Math.max(1, Math.round(ms / 60_000))} min`;
   }
 
   protected async copiar(): Promise<void> {

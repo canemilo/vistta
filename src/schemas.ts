@@ -1,9 +1,60 @@
 import { z } from "zod";
+import { ACCESOS_MINIMOS, VENTANA_MINIMA_MS } from "./lib/planes";
 
-export const CreatePassSchema = z.object({
-  profileId: z.string().min(1).max(128),
-  ttlSeconds: z.number().int().positive().max(86400).optional(),
-});
+export const CreatePassSchema = z
+  .object({
+    profileId: z.string().min(1).max(128),
+    /**
+     * Plazo para la PRIMERA apertura. El tope real lo pone el plan: aquí solo
+     * se corta lo absurdo. `unico` se queda en 24 h como siempre.
+     */
+    ttlSeconds: z
+      .number()
+      .int()
+      .positive()
+      .max(7 * 24 * 3600)
+      .optional(),
+    modo: z.enum(["unico", "accesos", "ventana"]).default("unico"),
+    maxAccesos: z.number().int().min(ACCESOS_MINIMOS).max(100).optional(),
+    ventanaMs: z.number().int().positive().optional(),
+  })
+  /*
+   * Las combinaciones incoherentes se rechazan con 400 aquí, antes de tocar la
+   * base. Los TOPES por plan no: esos necesitan saber de quién es el perfil, y
+   * se comprueban en `createPass` para poder distinguir «no puedes» (403) de
+   * «ese número no vale» (400).
+   */
+  .superRefine((v, ctx) => {
+    const exigir = (campo: "maxAccesos" | "ventanaMs", mensaje: string) => {
+      if (v[campo] === undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [campo], message: mensaje });
+      }
+    };
+    const prohibir = (campo: "maxAccesos" | "ventanaMs", mensaje: string) => {
+      if (v[campo] !== undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [campo], message: mensaje });
+      }
+    };
+
+    if (v.modo === "unico") {
+      prohibir("maxAccesos", "el modo `unico` no lleva número de accesos");
+      prohibir("ventanaMs", "el modo `unico` no lleva ventana");
+    }
+    if (v.modo === "accesos") {
+      exigir("maxAccesos", "el modo `accesos` necesita `maxAccesos`");
+    }
+    if (v.modo === "ventana") {
+      exigir("ventanaMs", "el modo `ventana` necesita `ventanaMs`");
+      prohibir("maxAccesos", "el modo `ventana` no lleva número de accesos");
+    }
+    if (v.ventanaMs !== undefined && v.ventanaMs < VENTANA_MINIMA_MS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ventanaMs"],
+        message: "la ventana mínima es de una hora",
+      });
+    }
+  });
 export type CreatePassInput = z.infer<typeof CreatePassSchema>;
 
 export const PanelLoginSchema = z.object({

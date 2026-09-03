@@ -1,7 +1,15 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
 import { CreatePassSchema } from "../schemas";
-import { createPass, consumePass, DemasiadosPasesError, ProfileNotFoundError } from "../lib/pass";
+import {
+  createPass,
+  consumePass,
+  DemasiadosPasesError,
+  ModoNoPermitidoError,
+  ParametroDeModoError,
+  ProfileNotFoundError,
+  pasesDelPerfil,
+} from "../lib/pass";
 import type { SeccionDePase } from "../lib/pass";
 import { bearer, usuarioDeLaSesion } from "../lib/auth";
 import { hitRateLimit } from "../lib/ratelimit";
@@ -59,11 +67,24 @@ export function passesRoutes({ config, db }: Deps) {
     if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
 
     try {
-      const { token, expiresAt } = await createPass(db, parsed.data);
-      return c.json({ url: `${config.BASE_URL}/v/${token}`, expiresAt }, 201);
+      const { token, expiresAt, modo } = await createPass(db, parsed.data);
+      return c.json({ url: `${config.BASE_URL}/v/${token}`, expiresAt, modo }, 201);
     } catch (err) {
       if (err instanceof ProfileNotFoundError) {
         return c.json({ error: "perfil no encontrado" }, 404);
+      }
+      if (err instanceof ModoNoPermitidoError) {
+        // 403 y no 400: la petición está bien formada, lo que no da es el plan.
+        // Y NUNCA un pase silencioso de otro modo: quien pide tres accesos y
+        // recibe uno de un solo uso se entera cuando el cliente ya no puede
+        // abrir el enlace.
+        return c.json({ error: "el plan no admite ese modo de pase", modo: err.modo }, 403);
+      }
+      if (err instanceof ParametroDeModoError) {
+        return c.json(
+          { error: "valor fuera del tope del plan", campo: err.campo, maximo: err.maximo },
+          400
+        );
       }
       if (err instanceof DemasiadosPasesError) {
         // 409 y no 402: el problema no es que no haya pagado, es que ya tiene
@@ -73,6 +94,28 @@ export function passesRoutes({ config, db }: Deps) {
       }
       throw err;
     }
+  });
+
+  /*
+   * Los pases de un perfil, para el panel.
+   *
+   * Hace falta desde que un pase puede abrirse más de una vez: sin esto, quien
+   * manda un enlace de tres accesos no tiene forma de saber si quedan tres, uno
+   * o ninguno. Devuelve el estado ya calculado por el servidor y JAMÁS el
+   * token, que en la base solo existe como hash.
+   */
+  passes.get("/api/passes", async (c) => {
+    const usuario = await usuarioDeLaSesion(db, bearer(c.req.header("Authorization")));
+    if (!usuario) return c.json({ error: "no autorizado" }, 401);
+
+    const profileId = c.req.query("profileId") ?? "";
+    const suyo = await db.one<{ id: string }>(
+      `SELECT id FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
+      [profileId, usuario.id]
+    );
+    if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
+
+    return c.json({ passes: await pasesDelPerfil(db, profileId) });
   });
 
   // Abrir un pase (cliente). Se consume en el primer acceso.

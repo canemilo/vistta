@@ -71,8 +71,11 @@ el plan vence solo.
 
 Lo que hace, de verdad:
 
-- El enlace se abre **una sola vez** y el consumo es atómico: aunque lleguen mil
-  peticiones a la vez, solo una lo abre.
+- El enlace se abre **el número de veces que fija su modo**, y el consumo es
+  atómico: aunque lleguen mil peticiones a la vez, no se abre ni una vez de más.
+  Por defecto ese número es **uno**. El usuario puede elegir al generarlo un
+  número mayor de accesos, o una ventana de tiempo que empieza a contar en la
+  primera apertura; en ningún caso más de siete días.
 - Las imágenes salen con una **marca de agua incrustada en los píxeles**,
   distinta en cada visita. No es una capa superpuesta: guardar la imagen guarda
   la marca.

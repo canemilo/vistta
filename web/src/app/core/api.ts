@@ -111,6 +111,8 @@ export interface ProfileRow {
   purgeAt: number | null;
 }
 
+export type ModoDePase = 'unico' | 'accesos' | 'ventana';
+
 export interface LimitesDePlan {
   perfiles: number;
   /** null = sin límite. */
@@ -118,6 +120,36 @@ export interface LimitesDePlan {
   cuotaPorPerfil: number;
   /** null = no caduca nunca. Las dos cosas son lo que se paga en Bóveda. */
   retencionMs: number | null;
+  /** Modos que admite el plan. `unico` está en todos. */
+  modosDePase: ModoDePase[];
+  /** null = el plan no admite el modo por accesos. */
+  maxAccesos: number | null;
+  /** null = el plan no admite ventana. */
+  ventanaMaxMs: number | null;
+  plazoPrimeraAperturaMaxMs: number;
+}
+
+/**
+ * Un pase en la lista del panel. El estado lo calcula el servidor: aquí no se
+ * deduce, porque dos ideas distintas de «todavía se abre» acaban con el panel
+ * mintiendo sobre un enlace que ya se mandó.
+ */
+export interface PaseListado {
+  id: string;
+  modo: ModoDePase;
+  estado: 'abrible' | 'agotado' | 'caducado';
+  creadoEn: number;
+  expiraEn: number;
+  validoHasta: number | null;
+  accesosUsados: number;
+  maxAccesos: number | null;
+}
+
+/** Lo que se pide al crear un pase. Sin `modo`, sale de un solo uso. */
+export interface OpcionesDePase {
+  modo?: ModoDePase;
+  maxAccesos?: number;
+  ventanaMs?: number;
 }
 
 export interface EstadoDeCuenta {
@@ -496,13 +528,25 @@ export class Api {
     );
   }
 
-  createPass(session: string, profileId: string): Promise<{ url: string; expiresAt: number }> {
+  createPass(
+    session: string,
+    profileId: string,
+    opciones: OpcionesDePase = {},
+  ): Promise<{ url: string; expiresAt: number; modo: ModoDePase }> {
     return firstValueFrom(
-      this.http.post<{ url: string; expiresAt: number }>(
+      this.http.post<{ url: string; expiresAt: number; modo: ModoDePase }>(
         '/api/passes',
-        { profileId },
+        { profileId, ...opciones },
         { headers: { authorization: `Bearer ${session}` } },
       ),
+    );
+  }
+
+  listPasses(session: string, profileId: string): Promise<{ passes: PaseListado[] }> {
+    return firstValueFrom(
+      this.http.get<{ passes: PaseListado[] }>(`/api/passes?profileId=${profileId}`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
     );
   }
 }

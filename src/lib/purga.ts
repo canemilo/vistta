@@ -1,6 +1,7 @@
 import type { Db } from "../db";
 import type { Storage } from "../storage/port";
 import { GRACIA_CONGELADO_MS, PLANES, type Plan } from "./planes";
+import { pasAbribleSql } from "./pass";
 
 /**
  * La parte irreversible del bloque E: aquí se borra contenido de clientes.
@@ -109,13 +110,19 @@ async function purgarMediosCaducados(db: Db, storage: Storage, ahora: number): P
          -- La retención cuenta desde que la cuenta tiene este plan: quien acaba
          -- de bajar de Bóveda no pierde su archivo esa misma noche.
          AND u.plan_since < $2
-         -- Intocable si algún pase sin abrir y sin caducar lo lleva dentro.
+         -- Intocable si algún pase que TODAVÍA SE PUEDE ABRIR lo lleva dentro.
+         --
+         -- La condición sale de pasAbribleSql y no se escribe aquí, porque
+         -- tiene que decir exactamente lo mismo que el consumo. Si divergen, el
+         -- que se equivoca es este SELECT, y equivocarse aquí es borrar una foto
+         -- que un pase vivo todavía puede pedir: el cliente abre su enlace y no
+         -- hay nada dentro. Con los modos nuevos ya no basta expires_at, que
+         -- solo gobierna la primera apertura.
          AND NOT EXISTS (
            SELECT 1 FROM vistta.pass_media pm
            JOIN vistta.passes ps ON ps.id = pm.pass_id
            WHERE pm.media_id = m.id
-             AND ps.status = 'pending'
-             AND ps.expires_at > $3
+             AND ${pasAbribleSql("ps", "$3")}
          )`,
       [plan, limite, ahora]
     );
