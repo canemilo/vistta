@@ -214,6 +214,7 @@ export class Panel {
 
   protected async entrar(): Promise<void> {
     this.error.set('');
+    this.saliendoDelLogin.set(false);
     this.ocupado.set(true);
     try {
       const { token, user } = await this.api.login(this.usuarioId.trim(), this.contrasena);
@@ -484,6 +485,13 @@ export class Panel {
   protected async salir(): Promise<void> {
     const token = this.sesion();
     sessionStorage.removeItem(Panel.CLAVE_SESION);
+    /*
+     * Deshacer el giro es lo PRIMERO, y no un detalle: la animación de salida
+     * lleva `forwards`, así que deja la tarjeta girada y a opacidad cero. Si al
+     * salir no se apaga esta señal, la pantalla de entrada vuelve ya
+     * desaparecida y lo que se ve es un rectángulo negro. Pasó.
+     */
+    this.saliendoDelLogin.set(false);
     this.sesion.set(null);
     this.usuario.set(null);
     this.perfiles.set([]);

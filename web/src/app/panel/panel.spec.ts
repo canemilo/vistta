@@ -760,6 +760,36 @@ describe('Panel · el giro al entrar', () => {
    * alguien con sus credenciales bien puestas se quedaría mirando una pantalla
    * parada. Un adorno no puede dejar a nadie fuera de su propio panel.
    */
+  /**
+   * Entrar y volver a salir. La animación de salida lleva `forwards`, así que
+   * deja la tarjeta girada y a opacidad cero: si al salir no se deshace, la
+   * pantalla de entrada vuelve ya desaparecida y lo que se ve es un rectángulo
+   * negro. Ocurrió, y por eso esto mira que el formulario se vea otra vez y que
+   * la clase del giro no se haya quedado puesta.
+   */
+  it('al salir, la pantalla de entrada vuelve a verse', async () => {
+    const usuario = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const clave = fixture.nativeElement.querySelector('input[type="password"]') as HTMLInputElement;
+    usuario.value = 'marina';
+    usuario.dispatchEvent(new Event('input'));
+    clave.value = 'una-contrasena-larga';
+    clave.dispatchEvent(new Event('input'));
+    await estabiliza();
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').trim().startsWith('ENTRAR'))!
+      .click();
+    await new Promise((listo) => setTimeout(listo, 700));
+    await estabiliza();
+
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').trim().startsWith('SALIR'))!
+      .click();
+    await estabiliza();
+
+    expect(fixture.nativeElement.querySelector('input[type="password"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.gira-salida')).toBeNull();
+  });
+
   it('tras entrar bien, el panel acaba apareciendo', async () => {
     const usuario = fixture.nativeElement.querySelector('input') as HTMLInputElement;
     const clave = fixture.nativeElement.querySelector('input[type="password"]') as HTMLInputElement;
