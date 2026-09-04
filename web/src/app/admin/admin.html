@@ -386,9 +386,20 @@
                 </span>
               </td>
               <td class="border-b border-borde-3 py-3 pr-4">
+                <!--
+                  `ngModel` y no `[value]`, y es EXACTAMENTE el mismo fallo que
+                  ya estaba documentado en el selector de perfiles del panel:
+                  `[value]` se escribe antes de que existan los `<option>` del
+                  `@for`, así que el desplegable se queda en el primero. Aquí
+                  eso significaba que TODAS las cuentas se veían en «prueba»
+                  aunque fueran pro o bóveda —y desde esa pantalla se cambia el
+                  plan, así que se podía degradar a alguien sin querer creyendo
+                  que ya estaba ahí—.
+                -->
                 <select
-                  [value]="c.plan"
-                  (change)="cambiarPlan(c, $any($event.target).value)"
+                  [ngModel]="c.plan"
+                  (ngModelChange)="cambiarPlan(c, $event)"
+                  [name]="'plan-' + c.id"
                   [attr.aria-label]="'Plan de ' + c.id"
                   [disabled]="ocupado()"
                   class="rounded border border-borde bg-sup-2 px-2 py-1 text-[12px] text-texto outline-none focus:border-acento/60"
@@ -397,6 +408,25 @@
                     <option [value]="p">{{ p }}</option>
                   }
                 </select>
+                <!-- Cuánto le queda pagado. Sin esto, el administrador ve el
+                     plan pero no si está a punto de caerse. -->
+                @if (c.planHasta; as hasta) {
+                  <span
+                    class="mt-1.5 block text-[10px]"
+                    [class.text-peligro]="diasHasta(hasta) <= 1"
+                    [class.text-aviso]="diasHasta(hasta) > 1 && diasHasta(hasta) <= 7"
+                    [class.text-texto-3]="diasHasta(hasta) > 7"
+                  >
+                    @if (diasHasta(hasta) === 0) {
+                      vence hoy
+                    } @else {
+                      {{ diasHasta(hasta) }} {{ diasHasta(hasta) === 1 ? 'día' : 'días' }} · hasta
+                      {{ fecha(hasta) }}
+                    }
+                  </span>
+                } @else if (c.plan !== 'prueba') {
+                  <span class="mt-1.5 block text-[10px] text-texto-3">sin plazo</span>
+                }
               </td>
               <td class="border-b border-borde-3 py-3 pr-4">
                 {{ c.perfilesActivos }}

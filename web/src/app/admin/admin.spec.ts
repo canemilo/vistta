@@ -207,6 +207,38 @@ describe('Admin · el control del cobro', () => {
 
   afterEach(() => sessionStorage.clear());
 
+  /*
+   * EL FALLO QUE ESTO IMPIDE, y que ya había ocurrido una vez en el selector de
+   * perfiles: con `[value]` en un `<select>`, el valor se escribe antes de que
+   * existan los `<option>` del `@for`, así que el desplegable se queda en el
+   * primero. Aquí eso significaba que TODAS las cuentas se veían en «prueba»
+   * aunque fueran pro o bóveda. Y desde este mismo desplegable se cambia el
+   * plan: alguien podía degradar una cuenta sin querer, creyendo que ya estaba
+   * en prueba.
+   */
+  it('cada cuenta enseña SU plan, no el primero de la lista', async () => {
+    await montar([
+      cuenta('nordeste', { plan: 'pro' }),
+      cuenta('costavega', { plan: 'boveda' }),
+      cuenta('marina', { plan: 'prueba' }),
+    ]);
+
+    const selects = Array.from(
+      fixture.nativeElement.querySelectorAll('select[aria-label^="Plan de"]'),
+    ) as HTMLSelectElement[];
+    expect(selects.map((s) => s.value)).toEqual(['pro', 'boveda', 'prueba']);
+  });
+
+  it('enseña cuánto le queda pagado a cada plan con plazo', async () => {
+    const texto = await montar([
+      cuenta('nordeste', { plan: 'pro', planHasta: Date.now() + 20.5 * DIA }),
+      cuenta('milo', { plan: 'boveda', planHasta: null }),
+    ]);
+    expect(texto).toContain('20 días');
+    // Bóveda de por vida: se dice con palabras, no con una fecha inventada.
+    expect(texto).toContain('sin plazo');
+  });
+
   it('enseña quién debe pagar, con su código y su importe', async () => {
     const texto = await montar([
       cuenta('marina', {
