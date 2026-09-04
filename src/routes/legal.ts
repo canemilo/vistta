@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv, Deps } from "../deps";
+import { PERIODOS, PLANES, PLANES_DE_PAGO, PLANES_VALIDOS, PRECIOS } from "../lib/planes";
 
 export function legalRoutes({ config }: Deps) {
   const legal = new Hono<AppEnv>();
@@ -19,6 +20,33 @@ export function legalRoutes({ config }: Deps) {
    * enseñar el documento. La alternativa —enseñarlo con los huecos sin
    * rellenar— sería peor que no enseñarlo: parecería un texto en vigor.
    */
+  /**
+   * Los planes, para la página pública.
+   *
+   * PÚBLICA y sin sesión por lo mismo que el aviso legal: quien está mirando si
+   * este producto le sirve todavía no tiene cuenta —ni la va a poder crear él,
+   * porque aquí no hay alta pública—. Pedirle que entre para ver qué incluye
+   * cada plan sería pedirle que entre a un sitio donde no puede entrar.
+   *
+   * Y sale de `planes.ts` en vez de escribirse en el HTML porque esa es la
+   * regla del proyecto: ninguna cifra de plan vive fuera de ese archivo. Una
+   * página de precios con los números a mano es la manera más segura de acabar
+   * anunciando una oferta que ya no existe.
+   */
+  legal.get("/api/planes", (c) =>
+    c.json({
+      moneda: "EUR",
+      periodos: PERIODOS,
+      planes: PLANES_VALIDOS.map((nombre) => ({
+        nombre,
+        limites: PLANES[nombre],
+        precios: PRECIOS[nombre],
+        // `prueba` no se vende: se entra en ella y se sube desde ahí.
+        seVende: PLANES_DE_PAGO.includes(nombre),
+      })),
+    })
+  );
+
   legal.get("/api/legal", (c) => {
     const titular = {
       nombre: config.TITULAR_NOMBRE ?? null,

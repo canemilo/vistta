@@ -3,6 +3,7 @@ import { readdir } from "node:fs/promises";
 import { PUBLICOS, INTERNOS } from "../scripts/copiar-legal.mjs";
 import { createApp } from "../src/app";
 import { configDePruebasCon, db, storage, ORIGIN, call } from "./helpers";
+import { PLANES, PLANES_VALIDOS, PRECIOS, type Plan } from "../src/lib/planes";
 
 /**
  * La identidad del titular y el contacto legal.
@@ -113,5 +114,54 @@ describe("qué documentos legales se publican", () => {
     expect(sinClasificar, "añádelo a PUBLICOS o a INTERNOS en scripts/copiar-legal.mjs").toEqual(
       []
     );
+  });
+});
+
+describe("los planes, en público", () => {
+  /*
+   * Sin sesión a propósito: quien mira si esto le sirve todavía no tiene cuenta
+   * —ni puede crearla, porque aquí no hay alta pública—. Pedirle que entre para
+   * ver los precios sería pedirle que entre donde no puede.
+   */
+  it("se pueden consultar sin sesión", async () => {
+    const res = await call("/api/planes");
+    expect(res.status).toBe(200);
+    const { planes } = (await res.json()) as { planes: { nombre: string }[] };
+    expect(planes.map((p) => p.nombre)).toEqual([...PLANES_VALIDOS]);
+  });
+
+  it("las cifras son las de planes.ts, no una copia", async () => {
+    const { planes } = (await (await call("/api/planes")).json()) as {
+      planes: { nombre: Plan; limites: unknown; precios: unknown }[];
+    };
+    for (const p of planes) {
+      expect(p.limites).toEqual(PLANES[p.nombre]);
+      expect(p.precios).toEqual(PRECIOS[p.nombre]);
+    }
+  });
+
+  it("dice cuál se vende: el de prueba no", async () => {
+    const { planes } = (await (await call("/api/planes")).json()) as {
+      planes: { nombre: string; seVende: boolean }[];
+    };
+    expect(planes.find((p) => p.nombre === "prueba")?.seVende).toBe(false);
+    expect(planes.find((p) => p.nombre === "pro")?.seVende).toBe(true);
+  });
+
+  /*
+   * «Ilimitado» y «nunca» viajan como null hasta la portada. Si alguien los
+   * tradujera a un número grande para que la página lo pintara más fácil, la
+   * página acabaría enseñando ese número como si fuera un tope real.
+   */
+  it("lo ilimitado sigue siendo null al salir por la API", async () => {
+    const { planes } = (await (await call("/api/planes")).json()) as {
+      planes: {
+        nombre: string;
+        limites: { pasesSimultaneos: number | null; retencionMs: number | null };
+      }[];
+    };
+    const boveda = planes.find((p) => p.nombre === "boveda")!;
+    expect(boveda.limites.pasesSimultaneos).toBeNull();
+    expect(boveda.limites.retencionMs).toBeNull();
   });
 });

@@ -38,6 +38,7 @@ const LIMITES = (perfiles: number): LimitesDePlan => ({
   maxAccesos: 5,
   ventanaMaxMs: 2 * 86_400_000,
   plazoPrimeraAperturaMaxMs: 7 * 86_400_000,
+  metricasDeLectura: true,
 });
 
 class ApiFalsa {

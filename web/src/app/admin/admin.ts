@@ -93,10 +93,11 @@ export class Admin {
   private async recuperar(token: string): Promise<void> {
     try {
       const { user } = await this.api.me(token);
-      // Una sesión de cliente no pinta nada aquí: se le manda a su panel en vez
-      // de enseñarle una pantalla que la API le va a negar entera.
+      // Una sesión de cliente no pinta nada aquí: se le manda A SU PANEL —que
+      // desde que hay portada pública vive en /panel— y no a la raíz, que ahora
+      // es la página de producto. Mandarlo allí sería sacarlo de la aplicación.
       if (user.role !== 'admin') {
-        void this.router.navigate(['/']);
+        void this.router.navigate(['/panel']);
         return;
       }
       this.sesion.set(token);

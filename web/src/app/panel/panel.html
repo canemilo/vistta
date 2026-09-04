@@ -16,6 +16,16 @@
         La marca hereda el color del texto: clara sobre el fondo oscuro de esta
         pantalla, negra donde el fondo es claro. Un solo archivo y ninguna placa.
       -->
+      <!-- Volver a la portada. Hace falta desde que el login dejó de ser la
+           raíz: quien llega aquí por curiosidad, o quien se equivoca de sitio,
+           necesita una salida que no sea el botón de atrás del navegador. -->
+      <a
+        routerLink="/"
+        class="mb-8 inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase hover:text-acento"
+      >
+        <span aria-hidden="true">←</span> Volver a la página principal
+      </a>
+
       <div class="flex justify-center text-titulo">
         <app-marca [alto]="96" />
       </div>

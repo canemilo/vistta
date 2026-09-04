@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   Api,
   type EditableSection,
@@ -23,7 +23,7 @@ import { Marca } from '../core/marca';
 /** Panel: entrar con PIN, montar el contenido y generar el enlace. */
 @Component({
   selector: 'app-panel',
-  imports: [FormsModule, PassDocument, BotonTema, Marca],
+  imports: [FormsModule, PassDocument, BotonTema, Marca, RouterLink],
   templateUrl: './panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `

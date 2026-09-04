@@ -1,8 +1,16 @@
 import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  // El panel es la home: quien entra aquí es el profesional, no su cliente.
-  { path: '', loadComponent: () => import('./panel/panel').then((m) => m.Panel) },
+  /*
+   * La portada pública es la home, y el panel se muda a /panel.
+   *
+   * Hasta ahora la home era la pantalla de entrada, lo que tenía sentido cuando
+   * no había nada público que enseñar. Con una portada, dejar el login en la
+   * raíz obligaría a quien llega por primera vez a mirar un formulario de una
+   * cuenta que no tiene y que además no puede crearse.
+   */
+  { path: '', loadComponent: () => import('./landing/landing').then((m) => m.Landing) },
+  { path: 'panel', loadComponent: () => import('./panel/panel').then((m) => m.Panel) },
   // El viewer va aparte para que su bundle sea mínimo.
   { path: 'v/:token', loadComponent: () => import('./viewer/viewer').then((m) => m.Viewer) },
   { path: 'demo', loadComponent: () => import('./demo/demo').then((m) => m.Demo) },

@@ -133,7 +133,10 @@ describe('Admin · la puerta', () => {
     });
     await estabiliza();
 
-    expect(navegado).toEqual([['/']]);
+    // A /panel y no a la raíz: desde que hay portada pública, la raíz es la
+    // página de producto. Mandar allí a alguien que acaba de identificarse
+    // sería sacarlo de la aplicación en vez de llevarlo a lo suyo.
+    expect(navegado).toEqual([['/panel']]);
   });
 
   it('dice que todo queda registrado: es verdad y es la mitad de para qué sirve', async () => {

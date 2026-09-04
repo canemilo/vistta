@@ -139,6 +139,8 @@ export interface LimitesDePlan {
   /** null = el plan no admite ventana. */
   ventanaMaxMs: number | null;
   plazoPrimeraAperturaMaxMs: number;
+  /** Si el plan registra actividad de lectura del destinatario. */
+  metricasDeLectura: boolean;
 }
 
 /**
@@ -158,6 +160,25 @@ export interface PaseListado {
   destinatarioRef: string | null;
   destinatarioNota: string | null;
   tema: TemaDePase;
+}
+
+/**
+ * El catálogo público de planes.
+ *
+ * Viene del servidor y no del HTML a propósito: la regla del proyecto es que
+ * ninguna cifra de plan vive fuera de `src/lib/planes.ts`. Una página de precios
+ * con los números escritos a mano es la forma más segura de acabar anunciando
+ * una oferta que ya no existe.
+ */
+export interface CatalogoPublico {
+  moneda: string;
+  periodos: string[];
+  planes: {
+    nombre: 'prueba' | 'pro' | 'boveda';
+    limites: LimitesDePlan;
+    precios: Record<string, number>;
+    seVende: boolean;
+  }[];
 }
 
 /** Lo que el dueño del pase ve de la lectura. Ya sumado por el servidor. */
@@ -589,6 +610,18 @@ export class Api {
       this.http.delete<{ ok: boolean }>(`/api/profiles/${profileId}/logo`, {
         headers: { authorization: `Bearer ${session}` },
       }),
+    );
+  }
+
+  /** Los planes, sin sesión: los mira quien todavía no es cliente. */
+  planes(): Promise<CatalogoPublico> {
+    return firstValueFrom(this.http.get<CatalogoPublico>('/api/planes'));
+  }
+
+  /** Identidad del titular, para el pie de la página pública. */
+  legal(): Promise<{ completo: boolean; contacto: string | null }> {
+    return firstValueFrom(
+      this.http.get<{ completo: boolean; contacto: string | null }>('/api/legal'),
     );
   }
 

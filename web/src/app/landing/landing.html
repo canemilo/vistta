@@ -1,0 +1,254 @@
+<!--
+  Portada pública de Vistta.
+  ============================================================================
+  El orden no es decorativo: primero QUÉ ES, después CÓMO SE USA, después lo que
+  promete y lo que NO promete, y solo al final los planes. Quien llega aquí no
+  sabe qué es un pase; enseñarle precios antes de eso sería pedirle que compre
+  algo que aún no entiende.
+-->
+<div class="min-h-screen bg-fondo text-texto">
+  <!-- Barra: la marca y las dos únicas salidas que tiene sentido ofrecer. -->
+  <header
+    class="sticky top-0 z-20 border-b border-borde-2 bg-fondo/85 backdrop-blur-md"
+    role="banner"
+  >
+    <div class="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-6 py-3.5">
+      <app-marca [alto]="34" class="text-titulo" />
+      <nav class="flex items-center gap-2" aria-label="Principal">
+        <a
+          routerLink="/panel"
+          class="rounded-lg border border-acento/50 bg-acento/10 px-3.5 py-2 font-mono text-[11px] tracking-[0.16em] text-acento uppercase hover:border-acento"
+        >
+          Entrar
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="mx-auto max-w-[1040px] px-6">
+    <!-- HERO ---------------------------------------------------------------
+         La frase es la del propio producto y no un eslogan nuevo: es lo que ya
+         dice la pantalla de entrada, y describe el mecanismo entero. -->
+    <section class="surge border-b border-borde-2 py-20 md:py-28">
+      <!-- La marca abre la página a tamaño de portada: es lo primero que se ve
+           y lo que hay que recordar. En la barra va pequeña porque allí solo
+           sitúa; aquí presenta. -->
+      <app-marca [alto]="120" class="block text-titulo" />
+      <p class="mt-9 font-mono text-[10px] tracking-[0.32em] text-acento uppercase">
+        Para enseñar trabajo, no para alojarlo
+      </p>
+      <h1
+        class="mt-6 max-w-[16ch] font-mono text-[clamp(2.4rem,7vw,4.6rem)] leading-[1.02] font-medium tracking-[-0.03em] text-titulo"
+      >
+        Un enlace. Una apertura.
+      </h1>
+      <p
+        class="mt-7 max-w-[54ch] font-serif text-[clamp(1.1rem,2.4vw,1.45rem)] leading-[1.6] text-texto-2"
+      >
+        Vistta enseña tu trabajo —fotografías, planos, un dosier— a
+        <em class="text-texto not-italic">una persona concreta</em>, con un enlace privado que se
+        cierra al abrirse. No es una nube ni una galería pública: es una cita.
+      </p>
+
+      <div class="mt-10 flex flex-wrap items-center gap-3">
+        <a
+          routerLink="/panel"
+          class="rounded-lg border border-acento/60 bg-acento/10 px-5 py-3 font-mono text-[12px] tracking-[0.18em] text-acento uppercase hover:border-acento"
+        >
+          Entrar al panel
+        </a>
+      </div>
+
+      <!-- El mecanismo, dicho como lo que es: dos respuestas HTTP. A quien
+           venga de un perfil técnico esto le dice más que tres párrafos. -->
+      <div class="mt-14 max-w-[30rem] rounded-xl border border-borde bg-sup p-5">
+        <p class="font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase">
+          El invariante del producto
+        </p>
+        <dl class="mt-4 space-y-2 font-mono text-[13px]">
+          <div class="flex items-baseline gap-3">
+            <dt class="text-texto-3">primera apertura</dt>
+            <dd class="ml-auto text-acento">200 · se abre</dd>
+          </div>
+          <div class="flex items-baseline gap-3 border-t border-borde-2 pt-2">
+            <dt class="text-texto-3">segunda apertura</dt>
+            <dd class="ml-auto text-peligro">410 · ya no existe</dd>
+          </div>
+        </dl>
+        <p class="mt-4 font-serif text-[14px] leading-[1.6] text-texto-2">
+          El consumo es atómico: aunque lleguen mil peticiones a la vez, no se abre ni una vez de
+          más.
+        </p>
+      </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA ------------------------------------------------------->
+    <section class="surge border-b border-borde-2 py-16 md:py-20">
+      <h2 class="font-mono text-[11px] tracking-[0.26em] text-texto-3 uppercase">Cómo funciona</h2>
+      <ol class="mt-8 grid gap-8 md:grid-cols-4">
+        @for (paso of pasos; track paso.n) {
+          <li>
+            <p class="font-mono text-[11px] tracking-[0.2em] text-acento">{{ paso.n }}</p>
+            <h3 class="mt-3 font-mono text-[15px] text-titulo">{{ paso.titulo }}</h3>
+            <p class="mt-2 font-serif text-[14px] leading-[1.65] text-texto-2">{{ paso.texto }}</p>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <!-- LO QUE PROMETE Y LO QUE NO ------------------------------------------
+         La sección que hace que esto no sea una landing genérica. Va entera y
+         no se recorta: la mitad derecha es la que da credibilidad a la
+         izquierda. -->
+    <section class="surge border-b border-borde-2 py-16 md:py-20">
+      <h2 class="font-mono text-[11px] tracking-[0.26em] text-texto-3 uppercase">
+        Lo que promete, y lo que no
+      </h2>
+      <div class="mt-8 grid gap-10 md:grid-cols-2">
+        <div class="rounded-xl border border-acento/30 bg-acento/5 p-6">
+          <p class="font-mono text-[11px] tracking-[0.2em] text-acento uppercase">Lo que hace</p>
+          <ul class="mt-4 space-y-4">
+            @for (p of promesas; track p) {
+              <li class="font-serif text-[15px] leading-[1.65] text-texto-2">{{ p }}</li>
+            }
+          </ul>
+        </div>
+        <div class="rounded-xl border border-borde bg-sup p-6">
+          <p class="font-mono text-[11px] tracking-[0.2em] text-texto-3 uppercase">
+            Lo que no hace
+          </p>
+          <ul class="mt-4 space-y-4">
+            @for (p of noPromesas; track p) {
+              <li class="font-serif text-[15px] leading-[1.65] text-texto-2">{{ p }}</li>
+            }
+          </ul>
+          <p
+            class="mt-5 border-t border-borde-2 pt-4 font-mono text-[11px] leading-relaxed text-texto-3"
+          >
+            Nada de esto es humildad. Un producto que prometiera impedir una captura de pantalla
+            estaría mintiendo, y el nuestro se sostiene justo sobre lo contrario: que cada copia
+            lleve escrito de dónde salió.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODOS --------------------------------------------------------------->
+    <section class="surge border-b border-borde-2 py-16 md:py-20">
+      <h2 class="font-mono text-[11px] tracking-[0.26em] text-texto-3 uppercase">
+        Cuando una cita no basta
+      </h2>
+      <p class="mt-4 max-w-[58ch] font-serif text-[15px] leading-[1.7] text-texto-2">
+        Un solo uso sirve para enseñar trabajo. No sirve para acompañar una negociación de días,
+        donde la otra parte vuelve al mismo dosier tres veces y lo comenta con alguien. Por eso el
+        enlace tiene tres formas de caducar, y se eligen al generarlo.
+      </p>
+      <div class="mt-8 grid gap-4 md:grid-cols-3">
+        @for (m of modos; track m.nombre) {
+          <div class="rounded-xl border border-borde bg-sup p-5">
+            <h3 class="font-mono text-[13px] tracking-[0.14em] text-titulo uppercase">
+              {{ m.nombre }}
+            </h3>
+            <p class="mt-3 font-serif text-[14px] leading-[1.65] text-texto-2">{{ m.texto }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- PLANES -------------------------------------------------------------->
+    <section class="surge border-b border-borde-2 py-16 md:py-20">
+      <h2 class="font-mono text-[11px] tracking-[0.26em] text-texto-3 uppercase">Planes</h2>
+      @if (catalogo(); as c) {
+        <div class="mt-8 grid gap-4 md:grid-cols-3">
+          @for (p of c.planes; track p.nombre) {
+            <div
+              class="rounded-xl border p-6"
+              [class.border-acento]="p.nombre === 'pro'"
+              [class.bg-acento\/5]="p.nombre === 'pro'"
+              [class.border-borde]="p.nombre !== 'pro'"
+              [class.bg-sup]="p.nombre !== 'pro'"
+            >
+              <h3 class="font-mono text-[13px] tracking-[0.2em] text-titulo uppercase">
+                {{ p.nombre }}
+              </h3>
+              <p class="mt-3 font-mono text-[26px] text-titulo">
+                {{ p.seVende ? precio(p.precios['mensual']) : 'gratis' }}
+                @if (p.seVende) {
+                  <span class="font-mono text-[12px] text-texto-3">/mes</span>
+                }
+              </p>
+              <dl class="mt-5 space-y-2 font-mono text-[12px] text-texto-2">
+                <div class="flex justify-between gap-3">
+                  <dt class="text-texto-3">Perfiles</dt>
+                  <dd>{{ limite(p.limites.perfiles) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-texto-3">Enlaces a la vez</dt>
+                  <dd>{{ limite(p.limites.pasesSimultaneos) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-texto-3">Espacio por perfil</dt>
+                  <dd>{{ enMegas(p.limites.cuotaPorPerfil) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-texto-3">El contenido</dt>
+                  <dd>{{ retencion(p.limites.retencionMs) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-texto-3">Modos de enlace</dt>
+                  <dd>{{ p.limites.modosDePase.length === 1 ? 'un solo uso' : 'los tres' }}</dd>
+                </div>
+              </dl>
+            </div>
+          }
+        </div>
+        <p class="mt-6 max-w-[62ch] font-serif text-[14px] leading-[1.7] text-texto-2">
+          El contenido de este producto <strong class="text-texto">caduca a propósito</strong>: es
+          para enseñar trabajo, no para guardarlo. «Bóveda» es el plan sin plazo. Y pasarse de un
+          límite nunca borra nada por sorpresa: lo que sobra se congela y tú eliges qué dejas
+          activo.
+        </p>
+      } @else {
+        <p class="mt-6 font-mono text-[12px] text-texto-3">
+          Los planes se están cargando. Si no aparecen, escríbenos y te los contamos.
+        </p>
+      }
+    </section>
+
+    <!-- CIERRE -------------------------------------------------------------->
+    <section class="surge py-16 md:py-24">
+      <h2 class="max-w-[20ch] font-mono text-[clamp(1.6rem,4vw,2.4rem)] leading-[1.15] text-titulo">
+        Aquí no hay registro público.
+      </h2>
+      <p class="mt-6 max-w-[56ch] font-serif text-[16px] leading-[1.7] text-texto-2">
+        Las cuentas las crea un administrador, una a una. No es un embudo de ventas: es que el
+        sistema no guarda tu correo —no hay ni columna donde guardarlo—, así que tampoco puede
+        mandarte un enlace de alta. Si quieres una cuenta, escríbenos.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        @if (contacto(); as correo) {
+          <a
+            [href]="'mailto:' + correo"
+            class="rounded-lg border border-acento/60 bg-acento/10 px-5 py-3 font-mono text-[12px] tracking-[0.18em] text-acento uppercase hover:border-acento"
+          >
+            Escribir a {{ correo }}
+          </a>
+        } @else {
+          <span class="font-mono text-[11px] text-texto-3">
+            Este despliegue todavía no tiene contacto configurado.
+          </span>
+        }
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-borde-2">
+    <div
+      class="mx-auto flex max-w-[1040px] flex-wrap items-center justify-center gap-x-4 gap-y-2 px-6 py-8 text-center font-mono text-[10px] tracking-[0.16em] text-texto-3"
+    >
+      <a routerLink="/legal" class="underline hover:text-acento">Aviso legal y privacidad</a>
+      <span class="text-borde" aria-hidden="true">·</span>
+      <a routerLink="/legal" class="underline hover:text-acento">Avisar de un contenido</a>
+    </div>
+  </footer>
+</div>
