@@ -10,6 +10,7 @@ import {
   type Usuario,
 } from '../core/api';
 import { BotonTema } from '../core/boton-tema';
+import { TemaApp } from '../core/tema';
 
 /**
  * Panel de administración.
@@ -25,6 +26,12 @@ import { BotonTema } from '../core/boton-tema';
 @Component({
   selector: 'app-admin',
   imports: [FormsModule, BotonTema],
+  /*
+   * Oscura por defecto, pero no a la fuerza: la clase solo se pone si el
+   * usuario NO ha elegido tema. En cuanto toca el botón, manda su elección.
+   * Es una herramienta interna que se usa a todas horas y su aspecto es este.
+   */
+  host: { '[class.paleta-oscura]': "tema.tema() === 'sistema'" },
   templateUrl: './admin.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -34,6 +41,7 @@ import { BotonTema } from '../core/boton-tema';
   `,
 })
 export class Admin {
+  protected readonly tema = inject(TemaApp);
   private static readonly CLAVE_SESION = 'vistta.sesion';
 
   private readonly api = inject(Api);

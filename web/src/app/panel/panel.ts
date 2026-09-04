@@ -143,6 +143,10 @@ export class Panel {
   }
   protected readonly perfilId = signal('');
   protected readonly nombre = signal('');
+  /** Logotipo del perfil, ya reducido por el servidor. Null si no hay. */
+  protected readonly logo = signal<string | null>(null);
+  protected readonly subiendoLogo = signal(false);
+  protected readonly errorLogo = signal('');
   protected readonly contenido = signal<ProfileContent>({ sections: [] });
   protected readonly miniaturas = signal<Record<string, string>>({});
   protected readonly enlace = signal('');
@@ -461,6 +465,8 @@ export class Panel {
     const perfil = await this.api.getProfile(sesion, id);
     this.nombre.set(perfil.displayName);
     this.contenido.set({ ...perfil.data, sections: perfil.data.sections ?? [] });
+    this.logo.set(perfil.logo ?? null);
+    this.errorLogo.set('');
     // Los enlaces ya generados de este perfil: con pases de varios accesos,
     // saber cuántos quedan es parte de poder usarlos.
     this.pases.set([]);
@@ -645,6 +651,43 @@ export class Panel {
   }
 
   /** Los enlaces ya generados de este perfil, con su estado real. */
+  /**
+   * Sube el logotipo del perfil.
+   *
+   * Se manda el archivo tal cual y el servidor devuelve el data URI ya
+   * reducido: aquí no se comprime nada. Reducirlo en el navegador daría un
+   * resultado distinto según el equipo, y además lo que hay que creerse es lo
+   * que guarda el servidor, no lo que dice el cliente que subió.
+   */
+  protected async elegirLogo(evento: Event): Promise<void> {
+    const archivo = (evento.target as HTMLInputElement).files?.[0];
+    if (!archivo) return;
+    const sesion = this.sesion();
+    if (!sesion) return;
+
+    this.subiendoLogo.set(true);
+    this.errorLogo.set('');
+    try {
+      const { logo } = await this.api.subirLogo(sesion, this.perfilId(), archivo);
+      this.logo.set(logo);
+    } catch {
+      this.errorLogo.set('No se pudo usar esa imagen. Prueba con un PNG o un SVG rasterizado.');
+    } finally {
+      this.subiendoLogo.set(false);
+    }
+  }
+
+  protected async quitarLogo(): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion) return;
+    try {
+      await this.api.quitarLogo(sesion, this.perfilId());
+      this.logo.set(null);
+    } catch {
+      this.errorLogo.set('No se pudo quitar el logotipo.');
+    }
+  }
+
   protected async cargarPases(): Promise<void> {
     const sesion = this.sesion();
     if (!sesion || !this.perfilId()) return;

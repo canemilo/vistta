@@ -22,6 +22,25 @@
     <p class="font-mono text-[10px] tracking-[0.32em] text-acento/80 uppercase">
       Pase privado · una sola apertura
     </p>
+    <!--
+      El logotipo del cliente, si lo puso. Va ANTES del nombre y no en su lugar:
+      el nombre sigue haciendo de encabezado del documento para quien usa un
+      lector de pantalla, y por eso el logotipo lleva alt vacío —es decorativo,
+      dice lo mismo que el h1 de debajo y repetirlo sería ruido—.
+
+      Altura fija y `w-auto`: el servidor ya lo dejó en 320x120 como mucho, así
+      que aquí solo hay que reservarle el hueco para que no salte la página al
+      cargar.
+    -->
+    @if (profile().logo) {
+      <img
+        [src]="profile().logo"
+        alt=""
+        width="320"
+        height="120"
+        class="mt-6 h-[clamp(2.5rem,7vw,4rem)] w-auto max-w-[min(20rem,70vw)] object-contain object-left"
+      />
+    }
     <h1
       class="mt-5 font-mono text-[clamp(2rem,6vw,3.4rem)] leading-[1.05] font-medium tracking-[-0.03em] text-titulo"
     >
@@ -193,7 +212,9 @@
   }
 
   <!-- Sello de cierre: el documento termina declarando su propia caducidad -->
-  <footer class="surge mt-24 rounded-xl border border-borde bg-sup/70 p-6">
+  <footer
+    class="surge mt-24 flex flex-col items-center rounded-xl border border-borde bg-sup/70 px-6 py-8 text-center"
+  >
     <p class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase">Pase cerrado</p>
     <p class="mt-3 font-mono text-[12px] text-texto-2">{{ marca() }}</p>
     <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-texto-2">
@@ -208,9 +229,13 @@
       `<a>` normal y no `routerLink`, para no meterle el router al bundle más
       ligero de la aplicación.
     -->
-    <p class="mt-4 font-mono text-[10px] tracking-[0.16em] text-texto-3">
+    <!-- Separador de verdad y no un punto suelto: en pantalla estrecha los dos
+         enlaces caen en líneas distintas y el punto se quedaba colgando solo. -->
+    <p
+      class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-borde-2 pt-4 font-mono text-[10px] tracking-[0.16em] text-texto-3"
+    >
       <a href="/legal" class="underline hover:text-acento">Aviso legal y privacidad</a>
-      <span aria-hidden="true"> · </span>
+      <span class="text-borde" aria-hidden="true">·</span>
       <a href="/legal" class="underline hover:text-acento">Avisar de un contenido</a>
     </p>
   </footer>

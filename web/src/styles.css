@@ -166,6 +166,47 @@
   --halo-1: var(--o-halo-1);
   --halo-2: var(--o-halo-2);
 }
+/*
+ * Una superficie que va SIEMPRE en oscuro, tenga el usuario el tema que tenga.
+ *
+ * Se usa en dos sitios y por el mismo motivo: son pantallas donde el tema del
+ * usuario todavía no significa nada.
+ *
+ *   - La entrada al panel. Quien está ahí aún no es nadie: la preferencia de
+ *     aspecto es de la persona que entra, y hasta que entra no se sabe quién es.
+ *     Además la elección se guarda por dispositivo, así que en uno compartido la
+ *     pantalla de entrada cambiaría de color según quién pasó por última vez.
+ *   - La administración, por defecto. Es una herramienta interna y se usa a
+ *     todas horas; el oscuro es su aspecto. Quien lo prefiera claro lo dice con
+ *     el botón, y entonces manda su elección.
+ */
+.paleta-oscura {
+  color-scheme: dark;
+  --color-fondo: var(--o-fondo);
+  --color-sup: var(--o-sup);
+  --color-sup-2: var(--o-sup-2);
+  --color-sup-3: var(--o-sup-3);
+  --color-borde: var(--o-borde);
+  --color-borde-2: var(--o-borde-2);
+  --color-borde-3: var(--o-borde-3);
+  --color-titulo: var(--o-titulo);
+  --color-texto: var(--o-texto);
+  --color-texto-2: var(--o-texto-2);
+  --color-texto-3: var(--o-texto-3);
+  --color-texto-4: var(--o-texto-4);
+  --color-acento: var(--o-acento);
+  --color-acento-2: var(--o-acento-2);
+  --color-acento-tenue: var(--o-acento-tenue);
+  --color-sobre-acento: var(--o-sobre-acento);
+  --color-peligro: var(--o-peligro);
+  --color-peligro-borde: var(--o-peligro-borde);
+  --color-peligro-fondo: var(--o-peligro-fondo);
+  --color-aviso: var(--o-aviso);
+  --color-aviso-borde: var(--o-aviso-borde);
+  --color-aviso-fondo: var(--o-aviso-fondo);
+  --halo-1: var(--o-halo-1);
+  --halo-2: var(--o-halo-2);
+}
 
 html,
 body {

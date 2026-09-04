@@ -156,11 +156,24 @@ oscuro. En tu lista de enlaces, el símbolo ☾ o ☀ dice con cuál salió cada
 Y es una decisión de presentación, no de gusto: una serie nocturna pide fondo
 oscuro; unos planos o un dosier con mucho texto se leen mejor en claro.
 
+**¿Puedo poner mi logotipo?**
+Sí, en el editor del perfil, debajo del nombre. Se sube el archivo y el servidor
+lo deja en 320 × 120 y en WebP: acaba pesando unos pocos kilobytes y viaja dentro
+del propio pase, así que no hace esperar a quien lo abre desde el móvil. Se
+conserva la transparencia, de modo que un PNG con fondo transparente se ve bien
+tanto en los pases claros como en los oscuros. Aparece encima del nombre, en la
+cabecera del documento.
+
 **¿Y el panel? ¿Puedo ponerlo yo en claro u oscuro?**
 Sí, con el botón de la cabecera, que rota entre **sistema**, **claro** y
 **oscuro**. Eso es solo tuyo: se guarda en el navegador de ese dispositivo y no
 afecta a los enlaces que envías. Puedes tener el panel en claro en el portátil y
 en oscuro en el móvil.
+
+Dos pantallas van siempre en oscuro y no es un olvido: **la de entrada**, porque
+ahí todavía no se sabe quién eres —y en un ordenador compartido cambiaría de
+color según quién pasó antes—, y **los textos legales**, que son de lectura
+larga. Si eliges tema, tu elección manda también en los legales.
 
 **¿Y la nota?**
 Solo la ves tú, en tu lista de enlaces, para reconocer cuál es cuál. No se pinta

@@ -26,6 +26,7 @@ import { cuentaDelUsuario, pasesAbiertos, perfilesActivos } from "../lib/cuentas
 import { GRACIA_CONGELADO_MS } from "../lib/planes";
 import { activarPerfil, borrarPerfil } from "../lib/congelado";
 import { CuerpoDemasiadoGrandeError, leerCuerpoConTope } from "../lib/body";
+import { prepararLogo, LogoNoValidoError, LOGO_ENTRADA_MAXIMA } from "../lib/logo";
 
 export function profilesRoutes({ config, db, storage }: Deps) {
   const profiles = new Hono<AppEnv>();
@@ -134,9 +135,10 @@ export function profilesRoutes({ config, db, storage }: Deps) {
       id: string;
       displayName: string;
       brandColor: string | null;
+      logo: string | null;
       data: unknown;
     }>(
-      `SELECT id, display_name AS "displayName", brand_color AS "brandColor", data
+      `SELECT id, display_name AS "displayName", brand_color AS "brandColor", logo, data
        FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
       [c.req.param("id"), c.get("usuario").id]
     );
@@ -369,6 +371,46 @@ export function profilesRoutes({ config, db, storage }: Deps) {
    * vez de por firma, y buscados por id. La clave de almacenamiento no aparece
    * en ninguna URL, así que no hay ruta que recorrer ni traversal que cortar.
    */
+  /*
+   * El logotipo del perfil.
+   *
+   * Ruta propia y no un campo del perfil porque lo que llega son BYTES, y hay
+   * que mirarlos: se decodifican, se reducen y se vuelven a codificar antes de
+   * guardar nada. Lo que se guarda ya no es lo que subió el cliente.
+   */
+  profiles.put("/api/profiles/:id/logo", async (c) => {
+    const usuario = c.get("usuario");
+    const suyo = await db.one<{ id: string }>(
+      `SELECT id FROM vistta.profiles WHERE id = $1 AND owner_id = $2 AND status = 'activo'`,
+      [c.req.param("id"), usuario.id]
+    );
+    if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
+
+    try {
+      const bytes = await leerCuerpoConTope(c.req.raw, LOGO_ENTRADA_MAXIMA);
+      const logo = await prepararLogo(bytes);
+      await db.query(`UPDATE vistta.profiles SET logo = $1 WHERE id = $2`, [logo, suyo.id]);
+      return c.json({ logo, bytes: logo.length });
+    } catch (err) {
+      // 413 y no 400: el archivo puede ser perfectamente válido y solo grande.
+      if (err instanceof CuerpoDemasiadoGrandeError) {
+        return c.json({ error: "archivo demasiado grande" }, 413);
+      }
+      if (err instanceof LogoNoValidoError) return c.json({ error: err.message }, 400);
+      throw err;
+    }
+  });
+
+  profiles.delete("/api/profiles/:id/logo", async (c) => {
+    const usuario = c.get("usuario");
+    const { rowCount } = await db.query(
+      `UPDATE vistta.profiles SET logo = NULL WHERE id = $1 AND owner_id = $2`,
+      [c.req.param("id"), usuario.id]
+    );
+    if (rowCount === 0) return c.json({ error: "perfil no encontrado" }, 404);
+    return c.json({ ok: true });
+  });
+
   profiles.get("/api/media/:id", async (c) => {
     const medio = await db.one<{ storage_key: string; mime: string; profile_id: string }>(
       `SELECT m.storage_key, m.mime, m.profile_id

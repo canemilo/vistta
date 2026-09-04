@@ -31,6 +31,8 @@ export interface DocSection {
 }
 
 export interface DocProfile {
+  /** Logotipo del cliente, ya reducido a data URI por el servidor. */
+  logo?: string | null;
   displayName: string;
   tagline?: string;
   intro?: string;

@@ -2,7 +2,15 @@
   <!-- Entrada al panel: cuenta y contraseña (el PIN único desapareció con las cuentas reales)
        `main` y no `div`: es la única región de la pantalla, y sin ella el enlace
        de «saltar al contenido» no lleva a ninguna parte. -->
-  <main id="contenido" class="flex min-h-screen items-center justify-center px-6 py-12">
+  <!--
+    La entrada va SIEMPRE en oscuro. Quien está aquí todavía no es nadie: la
+    preferencia de aspecto se guarda por dispositivo, así que en un ordenador
+    compartido esta pantalla cambiaría de color según quién pasó por última vez.
+  -->
+  <main
+    id="contenido"
+    class="paleta-oscura flex min-h-screen items-center justify-center bg-fondo px-6 py-12 text-texto"
+  >
     <div class="w-full max-w-[460px]">
       <img
         src="/vistta-logo.svg"
@@ -190,7 +198,12 @@
     </button>
   </div>
   <app-pass-document
-    [profile]="{ displayName: nombre(), tagline: contenido().tagline, intro: contenido().intro }"
+    [profile]="{
+      displayName: nombre(),
+      tagline: contenido().tagline,
+      intro: contenido().intro,
+      logo: logo(),
+    }"
     [secciones]="seccionesPrevia()"
     [marca]="'PASE · PREVIA · --:--'"
     [enlace]="'pase.app/v/…'"
@@ -199,76 +212,121 @@
 } @else {
   <!-- Edición del contenido -->
   <main id="contenido" class="mx-auto max-w-[860px] px-6 pb-24">
-    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-borde-2 py-5">
-      <div>
-        <p class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase">vistta · panel</p>
-        <p class="mt-1 font-mono text-[11px] text-acento">
-          Sesión abierta ·
+    <!--
+      Barra del panel.
+      ============================================================================
+      Ordenada por lo que se hace más veces, no por lo que es más fácil de
+      colocar. A la izquierda el CONTEXTO —quién eres y qué perfil estás
+      tocando—; a la derecha las ACCIONES, y de ellas solo dos a la vista: ver
+      como el cliente, que es a lo que se viene, y salir. El resto vive en un
+      desplegable, porque cambiar de plan o de contraseña se hace dos veces al
+      año y no merece ocupar sitio los otros trescientos sesenta y tres días.
+
+      El desplegable es `<details>` nativo, como la ampliación de foto es
+      `<dialog>`: se abre con el teclado, se cierra con Escape y no arrastra ni
+      una línea de JavaScript.
+    -->
+    <header class="border-b border-borde-2 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <!-- Contexto -->
+        <div class="flex min-w-0 items-center gap-3">
+          <img src="/vistta-logo.svg" alt="Vistta" class="h-7 w-auto shrink-0" />
+          <span class="hidden h-6 w-px bg-borde sm:block" aria-hidden="true"></span>
+          <!--
+            `ngModel` y no `[value]`: con `[value]`, un perfil recién creado se
+            selecciona en el componente pero el desplegable se queda enseñando
+            el anterior, porque su `<option>` todavía no existía cuando se
+            escribió el valor. El cliente veía el editor del perfil nuevo y el
+            nombre del viejo en la misma pantalla.
+          -->
+          <select
+            [ngModel]="perfilId()"
+            (ngModelChange)="elegirPerfil($event)"
+            name="perfilElegido"
+            aria-label="Perfil que se está editando"
+            class="min-w-0 max-w-[15rem] truncate rounded-lg border border-borde bg-sup-2 px-3 py-1.5 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
+          >
+            @for (p of perfiles(); track p.id) {
+              <option [value]="p.id" [disabled]="p.status === 'congelado'">
+                {{ p.displayName }}{{ p.status === 'congelado' ? ' · congelado' : '' }}
+              </option>
+            }
+          </select>
+
+          <!-- Crear un perfil. El plan da 1, 3 o 10; hasta que se añadió esto,
+               toda cuenta se quedaba con el que se crea al darla de alta. -->
           <button
             type="button"
-            (click)="cambiandoClave.set(!cambiandoClave())"
-            class="underline hover:text-acento"
+            (click)="creandoPerfil.set(!creandoPerfil()); errorPerfil.set('')"
+            [disabled]="!puedeCrearPerfil()"
+            [attr.aria-expanded]="creandoPerfil()"
+            [title]="
+              puedeCrearPerfil()
+                ? 'Crear un perfil nuevo'
+                : 'Tu plan no da para más perfiles activos'
+            "
+            class="shrink-0 rounded-lg border border-borde px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40 disabled:hover:border-borde disabled:hover:text-texto-2"
           >
-            cambiar contraseña
+            + PERFIL
           </button>
-        </p>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <!--
-          `ngModel` y no `[value]`: con `[value]`, un perfil recién creado se
-          selecciona en el componente pero el desplegable se queda enseñando el
-          anterior, porque su `<option>` todavía no existía cuando se escribió
-          el valor. El cliente veía el editor del perfil nuevo y el nombre del
-          viejo en la misma pantalla.
-        -->
-        <select
-          [ngModel]="perfilId()"
-          (ngModelChange)="elegirPerfil($event)"
-          name="perfilElegido"
-          aria-label="Perfil que se está editando"
-          class="rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
-        >
-          @for (p of perfiles(); track p.id) {
-            <option [value]="p.id" [disabled]="p.status === 'congelado'">
-              {{ p.displayName }}{{ p.status === 'congelado' ? ' · congelado' : '' }}
-            </option>
-          }
-        </select>
+        </div>
 
-        <!-- Crear un perfil. El plan da 1, 3 o 10; hasta ahora no había forma
-             de pedir el segundo y toda cuenta se quedaba en uno. -->
-        <button
-          type="button"
-          (click)="creandoPerfil.set(!creandoPerfil()); errorPerfil.set('')"
-          [disabled]="!puedeCrearPerfil()"
-          [attr.aria-expanded]="creandoPerfil()"
-          [title]="
-            puedeCrearPerfil() ? 'Crear un perfil nuevo' : 'Tu plan no da para más perfiles activos'
-          "
-          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40 disabled:hover:border-borde disabled:hover:text-texto-2"
-        >
-          + PERFIL
-        </button>
+        <!-- Acciones -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            (click)="vistaPrevia.set(true)"
+            class="rounded-lg border border-acento/50 bg-acento/10 px-3.5 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:border-acento"
+          >
+            VER COMO EL CLIENTE
+          </button>
 
-        <button
-          type="button"
-          (click)="vistaPrevia.set(true)"
-          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
-        >
-          VER COMO EL CLIENTE
-        </button>
+          <details class="relative" #menuCuenta>
+            <summary
+              class="cursor-pointer list-none rounded-lg border border-borde px-3.5 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 marker:content-none hover:border-acento/60 hover:text-acento"
+            >
+              MI CUENTA ▾
+            </summary>
+            <div
+              class="absolute right-0 z-30 mt-2 w-[15rem] rounded-xl border border-borde bg-sup p-2 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]"
+            >
+              <p class="px-2 py-1.5 font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+                {{ plan()?.nombre ?? 'sin plan' }} · {{ uso().perfilesActivos }} de
+                {{ topePerfiles() ?? '∞' }} perfiles
+              </p>
+              <p class="px-2 pb-2 font-mono text-[10px] text-texto-3">
+                {{ uso().pasesAbiertos }} pases abiertos
+              </p>
+              <div class="my-1 h-px bg-borde-2" aria-hidden="true"></div>
+              <button
+                type="button"
+                (click)="viendoPlanes.set(!viendoPlanes()); menuCuenta.open = false"
+                class="block w-full rounded-lg px-2 py-2 text-left font-mono text-[11px] tracking-[0.14em] text-texto-2 hover:bg-sup-2 hover:text-acento"
+              >
+                CAMBIAR DE PLAN
+              </button>
+              <button
+                type="button"
+                (click)="cambiandoClave.set(!cambiandoClave()); menuCuenta.open = false"
+                class="block w-full rounded-lg px-2 py-2 text-left font-mono text-[11px] tracking-[0.14em] text-texto-2 hover:bg-sup-2 hover:text-acento"
+              >
+                CAMBIAR CONTRASEÑA
+              </button>
+            </div>
+          </details>
 
-        <app-boton-tema />
+          <app-boton-tema />
 
-        <!-- Salir. Faltaba: se podía entrar y no había forma de cerrar la
-             sesión, que en un ordenador compartido no es un detalle. -->
-        <button
-          type="button"
-          (click)="salir()"
-          class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-peligro/60 hover:text-peligro"
-        >
-          SALIR
-        </button>
+          <!-- Salir. Faltaba: se podía entrar y no había forma de cerrar la
+               sesión, que en un ordenador compartido no es un detalle. -->
+          <button
+            type="button"
+            (click)="salir()"
+            class="rounded-lg border border-borde px-3.5 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-peligro/60 hover:text-peligro"
+          >
+            SALIR
+          </button>
+        </div>
       </div>
     </header>
 
@@ -611,6 +669,61 @@
           (input)="nombre.set($any($event.target).value); aviso.set('')"
           class="rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-mono text-[15px] text-titulo outline-none focus:border-acento/60"
         />
+
+        <!--
+          Logotipo del cliente.
+          ======================================================================
+          Se sube tal cual y el servidor lo reduce a 320x120 en WebP: unos 7 kB.
+          Va DENTRO de la respuesta del pase, así que no cuesta una petición más
+          a quien abre el enlace desde el móvil, que es el caso que importa.
+        -->
+        <span class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase">
+          Tu logotipo (opcional)
+        </span>
+        <div class="flex flex-wrap items-center gap-4">
+          @if (logo()) {
+            <img
+              [src]="logo()"
+              alt="Logotipo actual del perfil"
+              class="h-12 w-auto max-w-[12rem] rounded border border-borde-2 bg-sup-2 object-contain p-1.5"
+            />
+          } @else {
+            <span
+              class="flex h-12 w-[12rem] items-center justify-center rounded border border-dashed border-borde font-mono text-[10px] tracking-[0.18em] text-texto-3"
+            >
+              SIN LOGOTIPO
+            </span>
+          }
+          <label
+            class="cursor-pointer rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+          >
+            {{ subiendoLogo() ? 'SUBIENDO…' : logo() ? 'CAMBIAR' : 'SUBIR' }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+              [disabled]="subiendoLogo()"
+              (change)="elegirLogo($event)"
+            />
+          </label>
+          @if (logo()) {
+            <button
+              type="button"
+              (click)="quitarLogo()"
+              class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-3 hover:border-peligro/60 hover:text-peligro"
+            >
+              QUITAR
+            </button>
+          }
+        </div>
+        <p class="font-mono text-[11px] text-texto-3">
+          Se reduce a 320 × 120 y se guarda en WebP; queda en unos pocos kilobytes y viaja dentro
+          del propio pase. Se conserva la transparencia, así que un PNG con fondo transparente se ve
+          bien en los dos aspectos.
+        </p>
+        @if (errorLogo()) {
+          <p class="font-mono text-[11px] text-peligro">{{ errorLogo() }}</p>
+        }
 
         <label
           class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase"

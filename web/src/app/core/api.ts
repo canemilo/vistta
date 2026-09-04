@@ -25,6 +25,8 @@ export interface PassView {
     id: string;
     displayName: string;
     brandColor: string | null;
+    /** Logotipo del cliente, ya reducido. Null si no puso ninguno. */
+    logo?: string | null;
     tagline?: string;
     intro?: string;
   };
@@ -218,6 +220,8 @@ export interface ProfileContent {
 }
 
 export interface ProfileDetail {
+  /** Logotipo del perfil, ya reducido por el servidor. */
+  logo?: string | null;
   id: string;
   displayName: string;
   brandColor: string | null;
@@ -565,6 +569,26 @@ export class Api {
         { profileId, ...opciones },
         { headers: { authorization: `Bearer ${session}` } },
       ),
+    );
+  }
+
+  /**
+   * Sube el logotipo del perfil. Lo que se manda son los BYTES tal cual: el
+   * servidor los decodifica, los reduce y devuelve ya el data URI pequeño.
+   */
+  subirLogo(session: string, profileId: string, archivo: File): Promise<{ logo: string }> {
+    return firstValueFrom(
+      this.http.put<{ logo: string }>(`/api/profiles/${profileId}/logo`, archivo, {
+        headers: { authorization: `Bearer ${session}`, 'content-type': archivo.type },
+      }),
+    );
+  }
+
+  quitarLogo(session: string, profileId: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/profiles/${profileId}/logo`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
     );
   }
 

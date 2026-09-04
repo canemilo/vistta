@@ -35,7 +35,10 @@
 
   @default {
     <main class="flex min-h-screen items-center justify-center px-6">
-      <div class="w-full max-w-[420px] rounded-xl border border-borde bg-sup/70 p-6" role="alert">
+      <div
+        class="flex w-full max-w-[440px] flex-col items-center rounded-xl border border-borde bg-sup/70 px-6 py-8 text-center"
+        role="alert"
+      >
         <div class="flex items-center gap-2.5">
           <!-- El punto es decorativo: el estado ya lo dice el texto de al lado.
                Sin esto, un lector lo lee como una imagen sin descripción. -->
@@ -44,11 +47,21 @@
             Pase cerrado
           </h1>
         </div>
-        <p class="mt-4 font-serif text-[16px] leading-[1.7] text-texto">
+        <p class="mt-4 max-w-[36ch] font-serif text-[16px] leading-[1.7] text-texto">
           Este enlace ya se usó o ha caducado.
         </p>
-        <p class="mt-2 font-serif text-[15px] leading-[1.7] text-texto-2">
+        <p class="mt-2 max-w-[38ch] font-serif text-[15px] leading-[1.7] text-texto-2">
           Pide uno nuevo a quien te lo envió: cada pase se abre una sola vez.
+        </p>
+        <!-- El camino para avisar de un contenido tiene que existir también
+             aquí: quien llega a esta pantalla puede ser justamente quien
+             necesita reclamar, y no tiene cuenta con la que entrar. -->
+        <p
+          class="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-borde-2 pt-4 font-mono text-[10px] tracking-[0.16em] text-texto-3"
+        >
+          <a href="/legal" class="underline hover:text-acento">Aviso legal y privacidad</a>
+          <span class="text-borde" aria-hidden="true">·</span>
+          <a href="/legal" class="underline hover:text-acento">Avisar de un contenido</a>
         </p>
       </div>
     </main>

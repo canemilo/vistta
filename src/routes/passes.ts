@@ -173,6 +173,7 @@ export function passesRoutes({ config, db }: Deps) {
         id: view.profileId,
         displayName: view.displayName,
         brandColor: view.brandColor,
+        logo: view.logo,
         tagline: view.tagline,
         intro: view.intro,
       },

@@ -124,14 +124,16 @@ describe("la mecánica del tema oscuro", () => {
    * token en un sitio y olvidarse del otro da un tema a medias que solo aparece
    * por uno de los dos caminos, que es de los fallos más difíciles de ver.
    */
-  it("los dos caminos asignan exactamente lo mismo", () => {
-    const bloques = [...CSS.matchAll(/color-scheme: dark;([\s\S]*?)\n  \}/g)].map((m) =>
-      [...m[1].matchAll(/--([a-z0-9-]+):\s*var\(--([a-z0-9-]+)\)/g)]
+  it("todos los caminos al oscuro asignan exactamente lo mismo", () => {
+    const bloques = [...CSS.matchAll(/color-scheme: dark;([\s\S]*?)\n\}/g)].map((m) =>
+      [...m[1].matchAll(/--color-([a-z0-9-]+):\s*var\(--o-([a-z0-9-]+)\)/g)]
         .map((a) => `${a[1]}=${a[2]}`)
         .join(",")
     );
-    expect(bloques).toHaveLength(2);
-    expect(bloques[0]).toBe(bloques[1]);
+    // Tres: la preferencia del sistema, el botón, y la clase de las pantallas
+    // que van en oscuro pase lo que pase (entrada al panel y administración).
+    expect(bloques.length).toBeGreaterThanOrEqual(3);
+    expect(bloques.every((b) => b === bloques[0] && b.length > 0)).toBe(true);
   });
 
   /*

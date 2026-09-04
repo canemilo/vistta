@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { marked } from 'marked';
+import { TemaApp } from '../core/tema';
 
 interface AvisoLegal {
   titular: { nombre: string | null; identificacion: string | null; direccion: string | null };
@@ -32,6 +33,12 @@ interface Documento {
   selector: 'app-legal',
   imports: [RouterLink],
   templateUrl: './legal.html',
+  /*
+   * Oscura por defecto, igual que la administración: son textos largos que se
+   * leen de corrido y este es el aspecto de la casa. Si el usuario ha elegido
+   * tema, manda su elección —la clase solo se pone cuando no ha elegido—.
+   */
+  host: { '[class.paleta-oscura]': "tema.tema() === 'sistema'" },
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -40,6 +47,7 @@ interface Documento {
   `,
 })
 export class Legal {
+  protected readonly tema = inject(TemaApp);
   private readonly http = inject(HttpClient);
 
   protected readonly DOCUMENTOS: Documento[] = [

@@ -48,6 +48,8 @@ export interface PassView {
   profileId: string;
   displayName: string;
   brandColor: string | null;
+  /** Logotipo del cliente, ya reducido, como data URI. Null si no puso ninguno. */
+  logo: string | null;
   tagline?: string;
   intro?: string;
   sections: SeccionDePase[];
@@ -313,9 +315,10 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     id: string;
     display_name: string;
     brand_color: string | null;
+    logo: string | null;
     data: unknown;
   }>(
-    `SELECT p.id, p.display_name, p.brand_color, p.data
+    `SELECT p.id, p.display_name, p.brand_color, p.logo, p.data
      FROM vistta.profiles p
      LEFT JOIN vistta.users u ON u.id = p.owner_id
      WHERE p.id = $1 AND p.status = 'activo'
@@ -342,6 +345,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     profileId: profile.id,
     displayName: profile.display_name,
     brandColor: profile.brand_color,
+    logo: profile.logo,
     tagline: data.tagline,
     intro: data.intro ?? data.bio,
     sections: resolverSecciones(normalizeSections(data), medios),
