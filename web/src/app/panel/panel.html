@@ -13,16 +13,11 @@
   >
     <div class="w-full max-w-[460px]">
       <!--
-        La marca va SIEMPRE en su versión clara —palabra en negro—, así que
-        sobre fondo oscuro se apoya en una placa blanca. La alternativa era
-        invertirla, y eso son dos marcas distintas según la pantalla.
+        La marca hereda el color del texto: clara sobre el fondo oscuro de esta
+        pantalla, negra donde el fondo es claro. Un solo archivo y ninguna placa.
       -->
-      <div class="flex justify-center">
-        <span
-          class="mx-auto inline-flex rounded-xl bg-white px-5 py-3 shadow-[0_10px_30px_-16px_rgba(0,0,0,0.6)]"
-        >
-          <img src="/vistta-logo.svg" alt="Vistta" width="430" height="170" class="h-12 w-auto" />
-        </span>
+      <div class="flex justify-center text-titulo">
+        <app-marca [alto]="56" class="h-14" />
       </div>
 
       <!--
@@ -235,9 +230,7 @@
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <!-- Contexto -->
         <div class="flex min-w-0 items-center gap-3">
-          <span class="inline-flex shrink-0 rounded-lg bg-white px-2.5 py-1.5">
-            <img src="/vistta-logo.svg" alt="Vistta" class="h-5 w-auto" />
-          </span>
+          <app-marca [alto]="26" class="h-[26px] shrink-0 text-titulo" />
           <span class="hidden h-6 w-px bg-borde sm:block" aria-hidden="true"></span>
           <!--
             `ngModel` y no `[value]`: con `[value]`, un perfil recién creado se
@@ -407,6 +400,17 @@
       Pide la actual aunque haya sesión abierta: un ordenador sin bloquear no
       puede convertirse en un cambio de credenciales.
     -->
+    @if (errorCarga()) {
+      <!-- Va justo debajo de la cabecera y no al pie: mientras esto esté
+           puesto, el editor de abajo no enseña el contenido real. -->
+      <p
+        class="mt-4 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] leading-relaxed text-peligro"
+        role="alert"
+      >
+        {{ errorCarga() }}
+      </p>
+    }
+
     @if (miCuenta()) {
       <!--
         Ficha de la cuenta.

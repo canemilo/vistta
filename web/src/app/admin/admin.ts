@@ -10,6 +10,7 @@ import {
   type Usuario,
 } from '../core/api';
 import { BotonTema } from '../core/boton-tema';
+import { Marca } from '../core/marca';
 import { TemaApp } from '../core/tema';
 
 /**
@@ -25,7 +26,7 @@ import { TemaApp } from '../core/tema';
  */
 @Component({
   selector: 'app-admin',
-  imports: [FormsModule, BotonTema],
+  imports: [FormsModule, BotonTema, Marca],
   /*
    * Oscura por defecto, pero no a la fuerza: la clase solo se pone si el
    * usuario NO ha elegido tema. En cuanto toca el botón, manda su elección.

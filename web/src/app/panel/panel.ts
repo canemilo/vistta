@@ -12,16 +12,18 @@ import {
   type PaseListado,
   type ResumenDeLectura,
   type ProfileContent,
+  type ProfileDetail,
   type ProfileRow,
   type Usuario,
 } from '../core/api';
 import { PassDocument, type DocSection } from '../document/pass-document';
 import { BotonTema } from '../core/boton-tema';
+import { Marca } from '../core/marca';
 
 /** Panel: entrar con PIN, montar el contenido y generar el enlace. */
 @Component({
   selector: 'app-panel',
-  imports: [FormsModule, PassDocument, BotonTema],
+  imports: [FormsModule, PassDocument, BotonTema, Marca],
   templateUrl: './panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -48,6 +50,12 @@ export class Panel {
   protected readonly viendoPlanes = signal(false);
   /** La ficha de la cuenta: quién eres, qué plan tienes y en qué lo estás gastando. */
   protected readonly miCuenta = signal(false);
+  /**
+   * Fallo al cargar el perfil. Señal propia y no el `error` compartido, que se
+   * pinta al final de una página larga: esto hay que verlo arriba, porque
+   * mientras esté puesto el editor de abajo no enseña nada de verdad.
+   */
+  protected readonly errorCarga = signal('');
   /** Cuota del perfil abierto. La devuelve `getProfile`; hasta ahora se tiraba. */
   protected readonly cuotaPerfil = signal<{ usados: number; total: number }>({
     usados: 0,
@@ -463,13 +471,33 @@ export class Panel {
 
   // --- contenido ------------------------------------------------------------
 
+  /**
+   * Abre un perfil para editarlo.
+   *
+   * El `try` no es decorativo y se puso después de ver el fallo: si esta llamada
+   * reventaba —por ejemplo con la base sin migrar, que devuelve 500—, la
+   * promesa se rechazaba sin que nadie la mirara y el panel se quedaba con el
+   * editor vacío y sin decir nada. Desde fuera eso parece «no puedo entrar»,
+   * cuando en realidad has entrado y lo que falla es cargar el contenido.
+   */
   protected async elegirPerfil(id: string): Promise<void> {
     const sesion = this.sesion();
     if (!sesion) return;
     this.perfilId.set(id);
     this.enlace.set('');
     this.aviso.set('');
-    const perfil = await this.api.getProfile(sesion, id);
+    this.errorCarga.set('');
+
+    let perfil: ProfileDetail;
+    try {
+      perfil = await this.api.getProfile(sesion, id);
+    } catch {
+      this.errorCarga.set(
+        'No se ha podido cargar este perfil. Si Vistta se acaba de actualizar, puede que falten migraciones de la base de datos.',
+      );
+      return;
+    }
+
     this.nombre.set(perfil.displayName);
     this.contenido.set({ ...perfil.data, sections: perfil.data.sections ?? [] });
     this.logo.set(perfil.logo ?? null);

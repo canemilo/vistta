@@ -19,16 +19,11 @@
   <main id="contenido" class="flex min-h-screen items-center justify-center px-6 py-12">
     <div class="w-full max-w-[420px]">
       <!--
-        La marca va SIEMPRE en su versión clara —palabra en negro—, así que
-        sobre fondo oscuro se apoya en una placa blanca. La alternativa era
-        invertirla, y eso son dos marcas distintas según la pantalla.
+        La marca hereda el color del texto: clara sobre el fondo oscuro de esta
+        pantalla, negra donde el fondo es claro. Un solo archivo y ninguna placa.
       -->
-      <div class="flex justify-center">
-        <span
-          class="mx-auto inline-flex rounded-xl bg-white px-5 py-3 shadow-[0_10px_30px_-16px_rgba(0,0,0,0.6)]"
-        >
-          <img src="/vistta-logo.svg" alt="Vistta" width="430" height="170" class="h-12 w-auto" />
-        </span>
+      <div class="flex justify-center text-titulo">
+        <app-marca [alto]="56" class="h-14" />
       </div>
 
       <!-- Esquinas marcadas: el panel se lee como un instrumento, no como una
