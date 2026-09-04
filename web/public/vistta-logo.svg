@@ -1,24 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 410 170" role="img" aria-label="Vistta">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 170" role="img" aria-label="Vistta">
   <title>Vistta</title>
+  <!--
+    La marca, en su VERSIÓN CLARA: palabra en negro y los dos acentos en verde.
+    Se usa siempre esta, así que allí donde el fondo es oscuro va sobre una
+    placa clara. Invertirla daría dos marcas distintas según la pantalla.
+
+    Aviso para quien la toque: el texto va como <text>, así que depende de las
+    tipografías del equipo que lo dibuja. Si hace falta que se vea idéntico en
+    todas partes, hay que trazar la palabra a curvas.
+  -->
   <defs>
     <linearGradient id="nodo" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#38a3dd"/>
-      <stop offset="1" stop-color="#34d399"/>
+      <stop offset="0" stop-color="#14532d"/>
+      <stop offset="0.5" stop-color="#1f7a45"/>
+      <stop offset="0.5" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#22c55e"/>
     </linearGradient>
-    <linearGradient id="estela" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#34d399" stop-opacity="0.35"/>
+    <linearGradient id="estela" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="0.55" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="veta" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#166534"/>
       <stop offset="1" stop-color="#4ade80"/>
     </linearGradient>
   </defs>
 
-  <!-- La estela de la última letra: sube hacia la derecha, como en la marca. -->
-  <path d="M340 132 L364 46 L388 46 L364 132 Z" fill="url(#estela)"/>
+  <!-- La veta verde dentro de la «v», como en la marca. -->
+  <path d="M26 46 L44 46 L62 132 L44 132 Z" fill="url(#veta)"/>
 
-  <!-- «vıstta» con la i sin punto: el punto lo pone el nodo de abajo. -->
+  <!-- «vıstta» con la i sin punto: el punto lo pone el nodo. -->
   <text x="20" y="132"
         font-family="'Poppins','Montserrat','Avenir Next','Century Gothic','Futura','Nunito Sans',system-ui,sans-serif"
-        font-size="140" font-weight="600" letter-spacing="-4" fill="#e6f4f1">vıstta</text>
+        font-size="140" font-weight="600" letter-spacing="-4" fill="#111111">vıstta</text>
 
-  <!-- El nodo sobre la i. Es el mismo punto que abre el enlace en la marca. -->
-  <circle cx="128" cy="44" r="16" fill="url(#nodo)"/>
+  <!-- La estela final: sube hacia la derecha. -->
+  <path d="M352 132 L392 30 L420 30 L380 132 Z" fill="url(#estela)"/>
+
+  <!-- El nodo sobre la i, partido en diagonal como en la marca. -->
+  <circle cx="128" cy="44" r="17" fill="url(#nodo)"/>
 </svg>

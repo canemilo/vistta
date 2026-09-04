@@ -702,6 +702,23 @@ describe('Panel · cómo caduca el enlace', () => {
    * la cambia por «evita filtraciones», esto se pone rojo: no las evita, las
    * hace atribuibles.
    */
+  /*
+   * La ficha de la cuenta. Lo que se comprueba no es que se pinten unos datos,
+   * es que diga lo que NO hay: sin esa frase, un cliente que olvida la
+   * contraseña se queda esperando un correo que no va a llegar nunca, porque no
+   * existe columna donde guardar su dirección.
+   */
+  it('«mi perfil» enseña los datos de la cuenta y dice qué no se guarda', async () => {
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').trim().startsWith('MI PERFIL'))!
+      .click();
+    await estabiliza();
+
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('marina');
+    expect(texto).toContain('No hay correo ni teléfono');
+  });
+
   it('el panel no promete que impida nada', async () => {
     const texto = (fixture.nativeElement.textContent ?? '') as string;
     expect(texto).toContain('No impide una captura de pantalla');

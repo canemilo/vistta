@@ -181,6 +181,15 @@
  *     el botón, y entonces manda su elección.
  */
 .paleta-oscura {
+  /*
+   * Se pinta a sí misma, y esto no es adorno: redefinir las variables no basta.
+   * El `body` sigue pintando el fondo de la página con SU tema, así que con el
+   * sistema en claro esta superficie quedaba con los colores de texto del tema
+   * oscuro —claros— sobre un fondo claro. Ilegible. Se vio en `/legal`.
+   */
+  min-height: 100vh;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
   color-scheme: dark;
   --color-fondo: var(--o-fondo);
   --color-sup: var(--o-sup);

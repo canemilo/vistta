@@ -9,16 +9,21 @@
   -->
   <main
     id="contenido"
-    class="paleta-oscura flex min-h-screen items-center justify-center bg-fondo px-6 py-12 text-texto"
+    class="paleta-oscura flex min-h-screen items-center justify-center px-6 py-12"
   >
     <div class="w-full max-w-[460px]">
-      <img
-        src="/vistta-logo.svg"
-        alt="Vistta"
-        width="410"
-        height="170"
-        class="mx-auto h-16 w-auto"
-      />
+      <!--
+        La marca va SIEMPRE en su versión clara —palabra en negro—, así que
+        sobre fondo oscuro se apoya en una placa blanca. La alternativa era
+        invertirla, y eso son dos marcas distintas según la pantalla.
+      -->
+      <div class="flex justify-center">
+        <span
+          class="mx-auto inline-flex rounded-xl bg-white px-5 py-3 shadow-[0_10px_30px_-16px_rgba(0,0,0,0.6)]"
+        >
+          <img src="/vistta-logo.svg" alt="Vistta" width="430" height="170" class="h-12 w-auto" />
+        </span>
+      </div>
 
       <!--
         El marco.
@@ -230,7 +235,9 @@
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <!-- Contexto -->
         <div class="flex min-w-0 items-center gap-3">
-          <img src="/vistta-logo.svg" alt="Vistta" class="h-7 w-auto shrink-0" />
+          <span class="inline-flex shrink-0 rounded-lg bg-white px-2.5 py-1.5">
+            <img src="/vistta-logo.svg" alt="Vistta" class="h-5 w-auto" />
+          </span>
           <span class="hidden h-6 w-px bg-borde sm:block" aria-hidden="true"></span>
           <!--
             `ngModel` y no `[value]`: con `[value]`, un perfil recién creado se
@@ -285,7 +292,7 @@
             <summary
               class="cursor-pointer list-none rounded-lg border border-borde px-3.5 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 marker:content-none hover:border-acento/60 hover:text-acento"
             >
-              MI CUENTA ▾
+              CUENTA ▾
             </summary>
             <div
               class="absolute right-0 z-30 mt-2 w-[15rem] rounded-xl border border-borde bg-sup p-2 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]"
@@ -298,6 +305,13 @@
                 {{ uso().pasesAbiertos }} pases abiertos
               </p>
               <div class="my-1 h-px bg-borde-2" aria-hidden="true"></div>
+              <button
+                type="button"
+                (click)="miCuenta.set(!miCuenta()); menuCuenta.open = false"
+                class="block w-full rounded-lg px-2 py-2 text-left font-mono text-[11px] tracking-[0.14em] text-texto-2 hover:bg-sup-2 hover:text-acento"
+              >
+                MI PERFIL
+              </button>
               <button
                 type="button"
                 (click)="viendoPlanes.set(!viendoPlanes()); menuCuenta.open = false"
@@ -393,6 +407,106 @@
       Pide la actual aunque haya sesión abierta: un ordenador sin bloquear no
       puede convertirse en un cambio de credenciales.
     -->
+    @if (miCuenta()) {
+      <!--
+        Ficha de la cuenta.
+        ======================================================================
+        Enseña lo que Vistta SABE de ti, que es poco a propósito, y lo dice al
+        final con todas las letras: aquí no hay correo ni teléfono porque no hay
+        columna donde guardarlos. Es una propiedad del diseño declarada en
+        `legal/rat.md`, no una casilla que nadie rellenó.
+      -->
+      <section class="mt-6 rounded-xl border border-borde bg-sup p-5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">Mi perfil</h2>
+          <button
+            type="button"
+            (click)="miCuenta.set(false)"
+            class="font-mono text-[11px] tracking-[0.16em] text-texto-3 hover:text-acento"
+          >
+            CERRAR
+          </button>
+        </div>
+
+        <dl class="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Cuenta</dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">{{ usuario()?.id }}</dd>
+          </div>
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Nombre</dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">{{ usuario()?.displayName }}</dd>
+          </div>
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Plan</dt>
+            <dd class="mt-1 font-mono text-[14px] text-acento">
+              {{ plan()?.nombre ?? 'sin plan' }}
+            </dd>
+          </div>
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Vence</dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">{{ vencimiento() }}</dd>
+          </div>
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Perfiles</dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">
+              {{ uso().perfilesActivos }} de {{ topePerfiles() ?? '∞' }}
+            </dd>
+          </div>
+          <div>
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+              Pases abiertos
+            </dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">
+              {{ uso().pasesAbiertos }} de {{ topePases() ?? '∞' }}
+            </dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+              Espacio de este perfil
+            </dt>
+            <dd class="mt-1 font-mono text-[14px] text-texto">
+              {{ enMegas(cuotaPerfil().usados) }} de {{ enMegas(cuotaPerfil().total) }} MB
+            </dd>
+            <!-- La barra es decorativa: la cifra de arriba ya lo dice, y un
+                 lector de pantalla no tiene por qué leer un adorno. -->
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-sup-2" aria-hidden="true">
+              <div
+                class="h-full rounded-full bg-acento"
+                [style.width.%]="
+                  cuotaPerfil().total ? (cuotaPerfil().usados / cuotaPerfil().total) * 100 : 0
+                "
+              ></div>
+            </div>
+          </div>
+        </dl>
+
+        <div class="mt-5 flex flex-wrap gap-2 border-t border-borde-2 pt-4">
+          <button
+            type="button"
+            (click)="viendoPlanes.set(true); miCuenta.set(false)"
+            class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+          >
+            CAMBIAR DE PLAN
+          </button>
+          <button
+            type="button"
+            (click)="cambiandoClave.set(true); miCuenta.set(false)"
+            class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+          >
+            CAMBIAR CONTRASEÑA
+          </button>
+        </div>
+
+        <p class="mt-4 max-w-[62ch] font-mono text-[11px] leading-relaxed text-texto-3">
+          Esto es todo lo que Vistta guarda de tu cuenta.
+          <strong>No hay correo ni teléfono</strong>, y no es que estén vacíos: no existe dónde
+          guardarlos. Por eso, si olvidas la contraseña, la reactiva quien administra el servicio y
+          no un enlace por correo.
+        </p>
+      </section>
+    }
+
     @if (cambiandoClave()) {
       <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
         <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">

@@ -46,6 +46,13 @@ export class Panel {
   protected readonly facturacion = signal<EstadoFacturacion | null>(null);
   /** Abre el bloque de mejora de plan. Cerrado por defecto: no es lo que vienen a hacer. */
   protected readonly viendoPlanes = signal(false);
+  /** La ficha de la cuenta: quién eres, qué plan tienes y en qué lo estás gastando. */
+  protected readonly miCuenta = signal(false);
+  /** Cuota del perfil abierto. La devuelve `getProfile`; hasta ahora se tiraba. */
+  protected readonly cuotaPerfil = signal<{ usados: number; total: number }>({
+    usados: 0,
+    total: 0,
+  });
   protected periodoElegido = 'mensual';
 
   // --- contraseña -----------------------------------------------------------
@@ -466,6 +473,7 @@ export class Panel {
     this.nombre.set(perfil.displayName);
     this.contenido.set({ ...perfil.data, sections: perfil.data.sections ?? [] });
     this.logo.set(perfil.logo ?? null);
+    this.cuotaPerfil.set(perfil.quota ?? { usados: 0, total: 0 });
     this.errorLogo.set('');
     // Los enlaces ya generados de este perfil: con pases de varios accesos,
     // saber cuántos quedan es parte de poder usarlos.
@@ -686,6 +694,31 @@ export class Panel {
     } catch {
       this.errorLogo.set('No se pudo quitar el logotipo.');
     }
+  }
+
+  /** Megabytes con un decimal. En bytes no lo entiende nadie. */
+  protected enMegas(bytes: number): string {
+    return (bytes / 1048576).toFixed(1);
+  }
+
+  /**
+   * Cuándo vence el plan, en fecha corta. `null` es Bóveda: sin caducidad, y se
+   * dice con palabras y no con una fecha muy lejana.
+   */
+  protected vencimiento(): string {
+    const f = this.facturacion();
+    if (!f || f.plan === null) return 'sin plan';
+    if (f.planHasta === null) return 'sin caducidad';
+    return new Date(f.planHasta).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  /** El tope de pases a la vez. `null` en Bóveda: ausencia de límite, no un número. */
+  protected topePases(): number | null {
+    return this.plan()?.limites?.pasesSimultaneos ?? null;
   }
 
   protected async cargarPases(): Promise<void> {
