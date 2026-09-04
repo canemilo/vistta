@@ -17,6 +17,11 @@ export const CreatePassSchema = z
       .optional(),
     modo: z.enum(["unico", "accesos", "ventana"]).default("unico"),
     /**
+     * Con qué aspecto se enseña. Lo elige quien manda el enlace, no quien lo
+     * abre: es una decisión sobre el trabajo que se está enseñando.
+     */
+    tema: z.enum(["oscuro", "claro"]).default("oscuro"),
+    /**
      * A quién se le enseña. Lo escribe el cliente y va DENTRO de la imagen.
      *
      * Es un dato personal de un tercero: el tope de longitud está también en la

@@ -43,22 +43,59 @@ export interface DocProfile {
 @Component({
   selector: 'app-pass-document',
   templateUrl: './pass-document.html',
+  host: { '[class.tema-claro]': "tema() === 'claro'" },
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /*
-     * El documento es SIEMPRE oscuro, tenga el sistema el tema que tenga.
+     * El documento trae SU PROPIA paleta, y esto es lo importante de todo el
+     * archivo: redefine los mismos tokens que usa el resto de la aplicación,
+     * pero acotados a este componente. Así las utilidades de dentro
+     * (text-texto-2, bg-sup…) pintan con los colores del PASE.
      *
-     * No es un descuido de la tokenización: es la cara del producto. Lo que
-     * recibe el cliente de nuestro cliente tiene que verse igual en todas
-     * partes, y sobre fondo oscuro la marca de agua incrustada se lee sin pelear
-     * con la foto. Hasta ahora heredaba el fondo del body; al volverse claro el
-     * panel, se lo pinta él.
+     * La consecuencia es la que se busca: el aspecto del documento lo decide
+     * quien manda el enlace, no el navegador de quien lo abre. Alguien con el
+     * móvil en modo oscuro que reciba un pase claro lo verá claro, que es como
+     * su remitente quiso enseñar ese trabajo.
      */
     :host {
       display: block;
       min-height: 100%;
-      background-color: #060e17;
-      color: #d7e9e6;
+      --color-fondo: #060e17;
+      --color-sup: #0a1620;
+      --color-sup-2: #081420;
+      --color-sup-3: #04101a;
+      --color-borde: #1c3b44;
+      --color-borde-2: #16303a;
+      --color-borde-3: #12262f;
+      --color-titulo: #e9f6f3;
+      --color-texto: #d7e9e6;
+      --color-texto-2: #a8c3c5;
+      --color-texto-3: #8aa8b0;
+      --color-texto-4: #7b989f;
+      --color-acento: #34d399;
+      --color-acento-tenue: #7fd8bd;
+      --color-sobre-acento: #04140e;
+      background-color: var(--color-fondo);
+      color: var(--color-texto);
+    }
+
+    /* El mismo documento, en claro. Mismos nombres, otros valores. */
+    :host(.tema-claro) {
+      --color-fondo: #f7f9fa;
+      --color-sup: #ffffff;
+      --color-sup-2: #eef3f4;
+      --color-sup-3: #e4ebed;
+      --color-borde: #d3dfe2;
+      --color-borde-2: #e2eaec;
+      --color-borde-3: #edf2f3;
+      --color-titulo: #07242f;
+      --color-texto: #0f2c37;
+      --color-texto-2: #33545e;
+      --color-texto-3: #4c6a73;
+      --color-texto-4: #556d75;
+      --color-acento: #09714f;
+      --color-acento-tenue: #0f8f66;
+      --color-sobre-acento: #ffffff;
     }
   `,
 })
@@ -66,6 +103,11 @@ export class PassDocument {
   readonly profile = input.required<DocProfile>();
   readonly secciones = input<DocSection[]>([]);
   readonly marca = input('');
+  /**
+   * Aspecto del documento. Se aplica como clase en el host, que es donde vive
+   * la paleta: `host: { '[class.tema-claro]': ... }` de abajo.
+   */
+  readonly tema = input<'oscuro' | 'claro'>('oscuro');
   /** Enlace mostrado en la barra de estado. */
   readonly enlace = input('');
 

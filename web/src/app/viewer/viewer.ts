@@ -25,12 +25,25 @@ type Estado = 'cargando' | 'abierto' | 'denegado';
   templateUrl: './viewer.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    /* Mismo criterio que el documento: lo público es oscuro siempre. */
+    /*
+     * Las pantallas del viewer que NO son el documento —cargando y pase
+     * cerrado— van en oscuro siempre, y a propósito: cuando se pintan todavía
+     * no se sabe (o ya no importa) qué tema pidió el pase. Un pase cerrado no
+     * tiene aspecto que respetar.
+     */
     :host {
       display: block;
       min-height: 100vh;
-      background-color: #060e17;
-      color: #d7e9e6;
+      --color-fondo: #060e17;
+      --color-sup: #0a1620;
+      --color-borde: #1c3b44;
+      --color-borde-3: #12262f;
+      --color-texto: #d7e9e6;
+      --color-texto-2: #a8c3c5;
+      --color-texto-3: #8aa8b0;
+      --color-acento: #34d399;
+      background-color: var(--color-fondo);
+      color: var(--color-texto);
     }
   `,
 })

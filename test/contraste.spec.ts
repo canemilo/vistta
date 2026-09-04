@@ -41,14 +41,33 @@ export function contraste(a: string, b: string): number {
  * copia aquí se quedaría vieja, que es exactamente el fallo que esto persigue.
  */
 function tokensDe(tema: "claro" | "oscuro"): Record<string, string> {
-  const bloque =
-    tema === "claro"
-      ? CSS.slice(CSS.indexOf("@theme {"), CSS.indexOf("@media (prefers-color-scheme: dark)"))
-      : CSS.slice(CSS.indexOf("@media (prefers-color-scheme: dark)"));
+  if (tema === "claro") {
+    // El claro es el bloque `@theme`, con los colores escritos directamente.
+    const bloque = CSS.slice(CSS.indexOf("@theme {"), CSS.indexOf("/*\n * Los valores del tema"));
+    return Object.fromEntries(
+      [...bloque.matchAll(/--color-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]])
+    );
+  }
+
+  /*
+   * El oscuro va en dos partes: los valores (`--o-*`, escritos una vez) y la
+   * asignación (`--color-x: var(--o-y)`, escrita en los dos caminos: la
+   * preferencia del sistema y el botón).
+   *
+   * Se resuelven los alias en vez de leer los `--o-*` a pelo para que esto mida
+   * los colores que de verdad se aplican. El mapeo en sí lo vigila la prueba de
+   * más abajo, porque un cruce entre dos tokens parecidos puede seguir pasando
+   * el contraste y aun así ser un error.
+   */
+  const valores = Object.fromEntries(
+    [...CSS.matchAll(/--o-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]])
+  );
+  const asignacion = CSS.slice(CSS.indexOf("[data-theme='dark']"));
   const tokens: Record<string, string> = {};
-  for (const [, nombre, valor] of bloque.matchAll(/--color-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)) {
-    // El primero gana: en oscuro hay un segundo bloque (los halos) que no pinta.
-    if (!(nombre in tokens)) tokens[nombre] = valor;
+  for (const [, nombre, alias] of asignacion.matchAll(
+    /--color-([a-z0-9-]+):\s*var\(--o-([a-z0-9-]+)\)/g
+  )) {
+    if (valores[alias]) tokens[nombre] = valores[alias];
   }
   return tokens;
 }
@@ -94,6 +113,38 @@ describe.each(["claro", "oscuro"] as const)("paleta: tema %s", (tema) => {
         escalones[i]
       );
     }
+  });
+});
+
+describe("la mecánica del tema oscuro", () => {
+  /*
+   * El oscuro se aplica por dos caminos —la preferencia del sistema y el
+   * botón— y los dos repiten la misma lista de asignaciones. Es la única
+   * duplicación del archivo, y esto es lo que impide que se separen: cambiar un
+   * token en un sitio y olvidarse del otro da un tema a medias que solo aparece
+   * por uno de los dos caminos, que es de los fallos más difíciles de ver.
+   */
+  it("los dos caminos asignan exactamente lo mismo", () => {
+    const bloques = [...CSS.matchAll(/color-scheme: dark;([\s\S]*?)\n  \}/g)].map((m) =>
+      [...m[1].matchAll(/--([a-z0-9-]+):\s*var\(--([a-z0-9-]+)\)/g)]
+        .map((a) => `${a[1]}=${a[2]}`)
+        .join(",")
+    );
+    expect(bloques).toHaveLength(2);
+    expect(bloques[0]).toBe(bloques[1]);
+  });
+
+  /*
+   * Y que cada token vaya a su homólogo. Un `--color-texto-3: var(--o-texto-4)`
+   * puede pasar el contraste tan campante y ser igualmente un error: el texto de
+   * tercer nivel se pintaría con el color del cuarto.
+   */
+  it("cada token oscuro apunta a su homólogo, sin cruces", () => {
+    const asignacion = CSS.slice(CSS.indexOf("[data-theme='dark']"));
+    const cruces = [...asignacion.matchAll(/--color-([a-z0-9-]+):\s*var\(--o-([a-z0-9-]+)\)/g)]
+      .filter((m) => m[1] !== m[2])
+      .map((m) => `--color-${m[1]} → --o-${m[2]}`);
+    expect(cruces).toEqual([]);
   });
 });
 

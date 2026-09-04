@@ -147,6 +147,21 @@ Si esa imagen aparece donde no debe, se sabe de qué entrega salió. **No impide
 que la copien**: hace que la copia sea atribuible. Es opcional, y si la escribes
 estás tratando un dato de otra persona: hazlo solo si tienes motivo.
 
+**¿Puedo elegir cómo se ve el enlace que envío?**
+Sí. Al generarlo eliges **oscuro o claro**, y viaja con el enlace: quien lo abra
+lo verá así aunque tenga el móvil en el modo contrario. La vista previa del panel
+lo enseña antes de generar nada, para que no elijas a ciegas. Por defecto va en
+oscuro. En tu lista de enlaces, el símbolo ☾ o ☀ dice con cuál salió cada uno.
+
+Y es una decisión de presentación, no de gusto: una serie nocturna pide fondo
+oscuro; unos planos o un dosier con mucho texto se leen mejor en claro.
+
+**¿Y el panel? ¿Puedo ponerlo yo en claro u oscuro?**
+Sí, con el botón de la cabecera, que rota entre **sistema**, **claro** y
+**oscuro**. Eso es solo tuyo: se guarda en el navegador de ese dispositivo y no
+afecta a los enlaces que envías. Puedes tener el panel en claro en el portátil y
+en oscuro en el móvil.
+
 **¿Y la nota?**
 Solo la ves tú, en tu lista de enlaces, para reconocer cuál es cuál. No se pinta
 en ninguna imagen ni la ve quien abre el pase.

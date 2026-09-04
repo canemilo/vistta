@@ -1,41 +1,41 @@
 <!-- Barra de estado: la capa "máquina" que enmarca el trabajo del cliente. -->
 <div
-  class="sticky top-0 z-10 border-b border-[#12262f] bg-[#060e17]/85 backdrop-blur-md"
+  class="sticky top-0 z-10 border-b border-borde-3 bg-fondo/85 backdrop-blur-md"
   role="complementary"
   aria-label="Estado del pase"
 >
   <div class="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-6 py-3">
     <div class="flex min-w-0 items-center gap-2.5">
       <span
-        class="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(52,211,153,0.55)]"
+        class="h-2 w-2 shrink-0 rounded-full bg-acento shadow-[0_0_10px_2px_rgba(52,211,153,0.55)]"
         aria-hidden="true"
       ></span>
-      <span class="truncate font-mono text-[12px] text-[#8fb0b2]">{{ enlace() }}</span>
+      <span class="truncate font-mono text-[12px] text-texto-2">{{ enlace() }}</span>
     </div>
-    <span class="shrink-0 font-mono text-[10px] tracking-[0.24em] text-emerald-400">ACTIVO</span>
+    <span class="shrink-0 font-mono text-[10px] tracking-[0.24em] text-acento">ACTIVO</span>
   </div>
 </div>
 
 <article id="contenido" class="mx-auto max-w-[1040px] px-6 pb-24" role="main">
   <!-- Hero: quién presenta y en qué condiciones se está viendo -->
-  <header class="surge border-b border-[#12262f] pt-16 pb-12 md:pt-24 md:pb-16">
-    <p class="font-mono text-[10px] tracking-[0.32em] text-emerald-400/80 uppercase">
+  <header class="surge border-b border-borde-3 pt-16 pb-12 md:pt-24 md:pb-16">
+    <p class="font-mono text-[10px] tracking-[0.32em] text-acento/80 uppercase">
       Pase privado · una sola apertura
     </p>
     <h1
-      class="mt-5 font-mono text-[clamp(2rem,6vw,3.4rem)] leading-[1.05] font-medium tracking-[-0.03em] text-[#e6f4f1]"
+      class="mt-5 font-mono text-[clamp(2rem,6vw,3.4rem)] leading-[1.05] font-medium tracking-[-0.03em] text-titulo"
     >
       {{ profile().displayName }}
     </h1>
     @if (profile().tagline) {
       <p
-        class="mt-4 max-w-[46ch] font-serif text-[clamp(1.05rem,2.4vw,1.4rem)] leading-[1.5] text-[#9fbcbd] italic"
+        class="mt-4 max-w-[46ch] font-serif text-[clamp(1.05rem,2.4vw,1.4rem)] leading-[1.5] text-texto-2 italic"
       >
         {{ profile().tagline }}
       </p>
     }
     <p
-      class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-[#63848d] uppercase"
+      class="mt-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase"
     >
       @if (hora()) {
         <span>Abierto {{ hora() }}</span>
@@ -49,7 +49,7 @@
 
   @if (profile().intro) {
     <p
-      class="surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-[#c2d9d5]"
+      class="surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-texto"
       style="animation-delay: 90ms"
     >
       {{ profile().intro }}
@@ -62,20 +62,20 @@
          sabe dónde empieza y acaba una sección. Sin métricas, no lo mira nadie. -->
     <section
       [attr.data-seccion]="$index"
-      class="surge mt-20 grid gap-x-10 gap-y-6 border-t border-[#12262f] pt-10 md:mt-24 md:grid-cols-[180px_1fr]"
+      class="surge mt-20 grid gap-x-10 gap-y-6 border-t border-borde-3 pt-10 md:mt-24 md:grid-cols-[180px_1fr]"
       [style.animation-delay]="120 + $index * 70 + 'ms'"
     >
       <!-- El título se queda anclado mientras se recorre el bloque -->
       <div class="md:sticky md:top-20 md:self-start">
         @if (seccion.title) {
           <h2
-            class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-[#7fd8bd] uppercase"
+            class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-acento-tenue uppercase"
           >
             {{ seccion.title }}
           </h2>
         }
         @if (seccion.items.length) {
-          <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-[#5e848f]">
+          <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-texto-3">
             {{ seccion.items.length }} {{ seccion.items.length === 1 ? 'foto' : 'fotos' }}
           </p>
         }
@@ -83,7 +83,7 @@
 
       <div class="min-w-0">
         @if (seccion.body) {
-          <div class="max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-[#b9d2ce]">
+          <div class="max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-texto">
             @for (parrafo of seccion.body.split('\n\n'); track $index) {
               <p>{{ parrafo }}</p>
             }
@@ -115,7 +115,7 @@
                       'Ampliar ' +
                       (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
                     "
-                    class="relative block h-[260px] cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
+                    class="relative block h-[260px] cursor-zoom-in overflow-hidden rounded-lg border border-borde-2 focus-visible:border-acento/70 focus-visible:outline-none"
                     [style.width.px]="260 * proporcionDe(foto)"
                     [style.background-image]="fondo($index, foto)"
                     [style.background-size]="'cover'"
@@ -133,7 +133,7 @@
                   </button>
                   @if (foto.caption) {
                     <figcaption
-                      class="mt-2 max-w-[260px] font-mono text-[10px] tracking-[0.06em] text-[#63848b]"
+                      class="mt-2 max-w-[260px] font-mono text-[10px] tracking-[0.06em] text-texto-3"
                     >
                       {{ foto.caption }}
                     </figcaption>
@@ -161,7 +161,7 @@
                       'Ampliar ' +
                       (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
                     "
-                    class="relative block aspect-4/3 w-full cursor-zoom-in overflow-hidden rounded-lg border border-[#16303a] focus-visible:border-emerald-400/70 focus-visible:outline-none"
+                    class="relative block aspect-4/3 w-full cursor-zoom-in overflow-hidden rounded-lg border border-borde-2 focus-visible:border-acento/70 focus-visible:outline-none"
                     [style.background-image]="fondo($index, foto)"
                     [style.background-size]="'cover'"
                   >
@@ -177,7 +177,7 @@
                     />
                   </button>
                   @if (foto.caption) {
-                    <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-[#63848b]">
+                    <figcaption class="mt-2 font-mono text-[10px] tracking-[0.06em] text-texto-3">
                       {{ foto.caption }}
                     </figcaption>
                   }
@@ -189,14 +189,14 @@
       </div>
     </section>
   } @empty {
-    <p class="mt-20 font-mono text-[12px] text-[#63848d]">Este pase todavía no tiene contenido.</p>
+    <p class="mt-20 font-mono text-[12px] text-texto-3">Este pase todavía no tiene contenido.</p>
   }
 
   <!-- Sello de cierre: el documento termina declarando su propia caducidad -->
-  <footer class="surge mt-24 rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6">
-    <p class="font-mono text-[10px] tracking-[0.28em] text-[#5e848f] uppercase">Pase cerrado</p>
-    <p class="mt-3 font-mono text-[12px] text-[#8fb0b2]">{{ marca() }}</p>
-    <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
+  <footer class="surge mt-24 rounded-xl border border-borde bg-sup/70 p-6">
+    <p class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase">Pase cerrado</p>
+    <p class="mt-3 font-mono text-[12px] text-texto-2">{{ marca() }}</p>
+    <p class="mt-3 max-w-[52ch] font-serif text-[15px] leading-[1.7] text-texto-2">
       Este enlace se cerró al abrirse: recargar esta página ya no muestra nada. Si necesitas volver
       a verlo, pide uno nuevo a quien te lo envió.
     </p>
@@ -208,10 +208,10 @@
       `<a>` normal y no `routerLink`, para no meterle el router al bundle más
       ligero de la aplicación.
     -->
-    <p class="mt-4 font-mono text-[10px] tracking-[0.16em] text-[#5e848f]">
-      <a href="/legal" class="underline hover:text-emerald-400">Aviso legal y privacidad</a>
+    <p class="mt-4 font-mono text-[10px] tracking-[0.16em] text-texto-3">
+      <a href="/legal" class="underline hover:text-acento">Aviso legal y privacidad</a>
       <span aria-hidden="true"> · </span>
-      <a href="/legal" class="underline hover:text-emerald-400">Avisar de un contenido</a>
+      <a href="/legal" class="underline hover:text-acento">Avisar de un contenido</a>
     </p>
   </footer>
 </article>
@@ -232,7 +232,7 @@
   (close)="ampliada.set(null)"
   (keydown)="teclas($event)"
   aria-label="Foto ampliada"
-  class="max-h-[100dvh] max-w-[100vw] bg-transparent p-0 backdrop:bg-[#040a11]/92 backdrop:backdrop-blur-sm"
+  class="max-h-[100dvh] max-w-[100vw] bg-transparent p-0 backdrop:bg-fondo/92 backdrop:backdrop-blur-sm"
 >
   @if (ampliada(); as foto) {
     <div class="flex max-h-[100dvh] flex-col items-center justify-center gap-3 p-4 sm:p-8">
@@ -243,12 +243,12 @@
       />
 
       <div class="flex w-full max-w-[900px] flex-wrap items-center justify-between gap-3">
-        <p class="min-w-0 font-mono text-[11px] text-[#8fb0b2]">
+        <p class="min-w-0 font-mono text-[11px] text-texto-2">
           @if (foto.caption) {
-            <span class="text-[#cfe3e0]">{{ foto.caption }}</span>
+            <span class="text-texto">{{ foto.caption }}</span>
             <span aria-hidden="true"> · </span>
           }
-          <span class="text-[#63848b]">{{ posicionAmpliada() }} de {{ todas().length }}</span>
+          <span class="text-texto-3">{{ posicionAmpliada() }} de {{ todas().length }}</span>
         </p>
 
         <div class="flex items-center gap-2">
@@ -259,7 +259,7 @@
             (click)="mover(-1)"
             [disabled]="!hayVecina(-1)"
             aria-label="Foto anterior"
-            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300 disabled:opacity-30 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+            class="rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-30 disabled:hover:border-borde disabled:hover:text-texto-2"
           >
             ←
           </button>
@@ -268,14 +268,14 @@
             (click)="mover(1)"
             [disabled]="!hayVecina(1)"
             aria-label="Foto siguiente"
-            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[12px] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300 disabled:opacity-30 disabled:hover:border-[#1c3b44] disabled:hover:text-[#8fb0b2]"
+            class="rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-30 disabled:hover:border-borde disabled:hover:text-texto-2"
           >
             →
           </button>
           <button
             type="button"
             (click)="cerrarAmpliada()"
-            class="rounded-lg border border-[#1c3b44] bg-[#081420] px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-[#8fb0b2] hover:border-emerald-400/60 hover:text-emerald-300"
+            class="rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
           >
             CERRAR
           </button>

@@ -177,6 +177,7 @@ export function passesRoutes({ config, db }: Deps) {
         intro: view.intro,
       },
       sections,
+      tema: view.tema,
       watermark: watermarkFor(view.passId, new Date(), view.destinatarioRef),
       /*
        * Testigo para la telemetría de ESTA lectura. Se emite solo si el plan de

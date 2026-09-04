@@ -4,6 +4,7 @@
       [profile]="vista()!.profile"
       [secciones]="vista()!.sections"
       [marca]="vista()!.watermark"
+      [tema]="vista()!.tema"
       [enlace]="enlace()"
     />
 
@@ -12,7 +13,7 @@
            Discreto pero no escondido: al final del documento, con el mismo peso
            visual que el resto de la letra pequeña. -->
       <p
-        class="mx-auto max-w-[900px] px-6 pb-10 font-mono text-[10px] leading-[1.8] tracking-[0.14em] text-[#4d6b73]"
+        class="mx-auto max-w-[900px] px-6 pb-10 font-mono text-[10px] leading-[1.8] tracking-[0.14em] text-texto-3"
       >
         Quien te ha enviado este enlace verá cuánto tiempo has mirado cada apartado. No se registra
         tu nombre, tu dirección IP ni tu dispositivo.
@@ -26,7 +27,7 @@
          y una sola vez: si no se anuncia, no se enteran de que está pasando
          algo. -->
     <div class="flex min-h-screen items-center justify-center px-6" role="status">
-      <p class="font-mono text-[12px] tracking-[0.28em] text-[#5e848f] uppercase">
+      <p class="font-mono text-[12px] tracking-[0.28em] text-texto-3 uppercase">
         Abriendo el pase…
       </p>
     </div>
@@ -34,22 +35,19 @@
 
   @default {
     <main class="flex min-h-screen items-center justify-center px-6">
-      <div
-        class="w-full max-w-[420px] rounded-xl border border-[#1c3b44] bg-[#0a1620]/70 p-6"
-        role="alert"
-      >
+      <div class="w-full max-w-[420px] rounded-xl border border-borde bg-sup/70 p-6" role="alert">
         <div class="flex items-center gap-2.5">
           <!-- El punto es decorativo: el estado ya lo dice el texto de al lado.
                Sin esto, un lector lo lee como una imagen sin descripción. -->
-          <span class="h-2 w-2 rounded-full bg-slate-500/70" aria-hidden="true"></span>
-          <h1 class="font-mono text-[10px] tracking-[0.28em] text-[#63848d] uppercase">
+          <span class="h-2 w-2 rounded-full bg-texto-3/70" aria-hidden="true"></span>
+          <h1 class="font-mono text-[10px] tracking-[0.28em] text-texto-3 uppercase">
             Pase cerrado
           </h1>
         </div>
-        <p class="mt-4 font-serif text-[16px] leading-[1.7] text-[#b9d2ce]">
+        <p class="mt-4 font-serif text-[16px] leading-[1.7] text-texto">
           Este enlace ya se usó o ha caducado.
         </p>
-        <p class="mt-2 font-serif text-[15px] leading-[1.7] text-[#6f8f93]">
+        <p class="mt-2 font-serif text-[15px] leading-[1.7] text-texto-2">
           Pide uno nuevo a quien te lo envió: cada pase se abre una sola vez.
         </p>
       </div>

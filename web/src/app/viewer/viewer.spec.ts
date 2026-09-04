@@ -8,9 +8,10 @@ import { Api, type PassView } from '../core/api';
  * decírselo. Si alguien lo quita para «limpiar» el pie del documento, esto se
  * pone rojo, que es exactamente para lo que está.
  */
-const VISTA = (eventos: string | null): PassView => ({
+const VISTA = (eventos: string | null, tema: 'oscuro' | 'claro' = 'oscuro'): PassView => ({
   profile: { id: 'p1', displayName: 'Estudio', brandColor: null },
   sections: [],
+  tema,
   watermark: 'PASE · abcdef12 · 10:15',
   eventos,
 });
@@ -32,9 +33,12 @@ describe('Viewer · se mide, y se dice', () => {
     fixture.detectChanges();
   }
 
-  async function montar(eventos: string | null): Promise<void> {
+  async function montar(
+    eventos: string | null,
+    tema: 'oscuro' | 'claro' = 'oscuro',
+  ): Promise<void> {
     api = new ApiFalsa();
-    api.vista = VISTA(eventos);
+    api.vista = VISTA(eventos, tema);
     await TestBed.configureTestingModule({
       imports: [Viewer],
       providers: [{ provide: Api, useValue: api }, provideRouter([])],
@@ -57,5 +61,23 @@ describe('Viewer · se mide, y se dice', () => {
     await montar(null);
     const texto = (fixture.nativeElement.textContent ?? '') as string;
     expect(texto).not.toContain('verá cuánto tiempo has mirado');
+  });
+
+  /*
+   * El aspecto del pase lo decide QUIEN LO MANDA. La paleta del documento vive
+   * acotada a su propio componente por esto: si dependiera de
+   * `prefers-color-scheme`, alguien con el móvil en oscuro vería en oscuro un
+   * pase que su remitente quiso claro.
+   */
+  it('un pase claro se pinta claro, venga quien venga a abrirlo', async () => {
+    await montar(null, 'claro');
+    const doc = fixture.nativeElement.querySelector('app-pass-document') as HTMLElement;
+    expect(doc.classList.contains('tema-claro')).toBe(true);
+  });
+
+  it('y uno oscuro, oscuro', async () => {
+    await montar(null, 'oscuro');
+    const doc = fixture.nativeElement.querySelector('app-pass-document') as HTMLElement;
+    expect(doc.classList.contains('tema-claro')).toBe(false);
   });
 });

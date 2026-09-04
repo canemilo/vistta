@@ -190,6 +190,16 @@ no se negocian:
 - **No hay alta pública ni «he olvidado mi contraseña»**, y es coherente con F: las cuentas las crea
   un administrador y las contraseñas se generan. Lo que sí existe es que el cliente cambie la
   temporal (`PUT /api/panel/password`), que exige la actual y cierra las demás sesiones.
+- **Dos temas, y no se mezclan.** El de la APLICACIÓN lo elige cada usuario con el botón de la
+  cabecera (sistema / claro / oscuro), vive en `localStorage` y no sale de su navegador. El del
+  PASE lo elige quien manda el enlace (`passes.tema`, por defecto `oscuro`) y viaja con él: el
+  documento redefine los tokens acotados a su propio componente, así que **quien lo abre no
+  decide** cómo se ve. Comprobado con un navegador en oscuro abriendo un pase claro.
+- **El color va en tokens y nunca a mano.** `web/src/styles.css` los define por FUNCIÓN
+  (`--color-texto-3`, no «gris»), y `test/contraste.spec.ts` mide la paleta entera contra las
+  cuatro superficies en los dos temas: falla por debajo de 4,5 de la AA, si se cruza un token o si
+  alguien vuelve a escribir un hexadecimal en una plantilla. Existe porque pasó: los grises tenues
+  se habían quedado en 4,38 y el texto de los perfiles se leía mal.
 - **Nada se indexa, en tres sitios**: `robots.txt`, la etiqueta `robots` del HTML y la cabecera
   `X-Robots-Tag` de la API. Por eso el SEO de Lighthouse marca 63 y **debe seguir marcándolo**: lo
   único que falla es `is-crawlable`. Un buscador que abra un pase lo consume.

@@ -29,6 +29,8 @@ export interface PassView {
     intro?: string;
   };
   sections: SectionView[];
+  /** Aspecto con el que lo quiso enseñar quien mandó el enlace. */
+  tema: TemaDePase;
   watermark: string;
   /**
    * Testigo para mandar la telemetría de esta lectura. `null` si el plan de
@@ -118,6 +120,9 @@ export interface ProfileRow {
 
 export type ModoDePase = 'unico' | 'accesos' | 'ventana';
 
+/** Aspecto de un pase. Lo elige quien lo manda, no quien lo abre. */
+export type TemaDePase = 'oscuro' | 'claro';
+
 export interface LimitesDePlan {
   perfiles: number;
   /** null = sin límite. */
@@ -150,6 +155,7 @@ export interface PaseListado {
   maxAccesos: number | null;
   destinatarioRef: string | null;
   destinatarioNota: string | null;
+  tema: TemaDePase;
 }
 
 /** Lo que el dueño del pase ve de la lectura. Ya sumado por el servidor. */
@@ -163,6 +169,7 @@ export interface ResumenDeLectura {
 /** Lo que se pide al crear un pase. Sin `modo`, sale de un solo uso. */
 export interface OpcionesDePase {
   modo?: ModoDePase;
+  tema?: TemaDePase;
   maxAccesos?: number;
   ventanaMs?: number;
   /** A quién se le enseña. Va DENTRO de la imagen, en cada visita. */

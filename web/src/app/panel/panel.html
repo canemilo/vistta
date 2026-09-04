@@ -194,6 +194,7 @@
     [secciones]="seccionesPrevia()"
     [marca]="'PASE · PREVIA · --:--'"
     [enlace]="'pase.app/v/…'"
+    [tema]="temaPase()"
   />
 } @else {
   <!-- Edición del contenido -->
@@ -256,6 +257,8 @@
         >
           VER COMO EL CLIENTE
         </button>
+
+        <app-boton-tema />
 
         <!-- Salir. Faltaba: se podía entrar y no había forma de cerrar la
              sesión, que en un ordenador compartido no es un detalle. -->
@@ -914,6 +917,39 @@
           }
 
           <div class="mt-3 border-t border-borde pt-3">
+            <span class="block font-mono text-[11px] tracking-[0.18em] text-texto-3">
+              CON QUÉ ASPECTO SE ENVÍA
+            </span>
+            <div class="mt-2 flex gap-2" role="radiogroup" aria-label="Aspecto del enlace">
+              @for (
+                t of [
+                  { v: 'oscuro', n: 'Oscuro' },
+                  { v: 'claro', n: 'Claro' },
+                ];
+                track t.v
+              ) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="temaPase() === t.v"
+                  (click)="temaPase.set($any(t.v))"
+                  class="rounded-lg border px-3 py-1.5 font-mono text-[11px] tracking-[0.16em]"
+                  [class.border-acento]="temaPase() === t.v"
+                  [class.text-acento]="temaPase() === t.v"
+                  [class.border-borde]="temaPase() !== t.v"
+                  [class.text-texto-3]="temaPase() !== t.v"
+                >
+                  {{ t.n }}
+                </button>
+              }
+            </div>
+            <p class="mt-1.5 font-mono text-[11px] leading-relaxed text-texto-3">
+              Lo eliges tú y viaja con el enlace: quien lo abra lo verá así aunque tenga el móvil en
+              el modo contrario. La vista previa de arriba ya lo enseña.
+            </p>
+          </div>
+
+          <div class="mt-3 border-t border-borde pt-3">
             <label class="block font-mono text-[11px] tracking-[0.18em] text-texto-3">
               A QUIÉN SE LO ENSEÑAS (opcional)
               <input
@@ -996,6 +1032,9 @@
                     {{ p.destinatarioNota || p.destinatarioRef }}
                   </span>
                 }
+                <span class="font-mono text-[11px] text-texto-3" [title]="'Aspecto: ' + p.tema">
+                  {{ p.tema === 'claro' ? '☀' : '☾' }}
+                </span>
                 <span class="font-mono text-[11px] text-texto-2">
                   @switch (p.modo) {
                     @case ('unico') {

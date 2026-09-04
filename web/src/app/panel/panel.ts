@@ -8,6 +8,7 @@ import {
   type EstadoFacturacion,
   type MediaRef,
   type ModoDePase,
+  type TemaDePase,
   type PaseListado,
   type ResumenDeLectura,
   type ProfileContent,
@@ -15,11 +16,12 @@ import {
   type Usuario,
 } from '../core/api';
 import { PassDocument, type DocSection } from '../document/pass-document';
+import { BotonTema } from '../core/boton-tema';
 
 /** Panel: entrar con PIN, montar el contenido y generar el enlace. */
 @Component({
   selector: 'app-panel',
-  imports: [FormsModule, PassDocument],
+  imports: [FormsModule, PassDocument, BotonTema],
   templateUrl: './panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -66,6 +68,12 @@ export class Panel {
    * modos se eligen a conciencia o no se eligen.
    */
   protected readonly modoPase = signal<ModoDePase>('unico');
+  /**
+   * Con qué aspecto se enviará el enlace. Oscuro por defecto, que es como se ha
+   * visto Vistta siempre; la vista previa de arriba lo refleja al momento, para
+   * que no se elija a ciegas.
+   */
+  protected readonly temaPase = signal<TemaDePase>('oscuro');
   protected accesosPase = 3;
   protected ventanaHoras = 24;
   /** A quién se le enseña. Se pinta dentro de la foto, en cada visita. */
@@ -623,6 +631,7 @@ export class Panel {
         modo,
         maxAccesos: modo === 'accesos' ? this.accesosPase : undefined,
         ventanaMs: modo === 'ventana' ? this.ventanaHoras * 3_600_000 : undefined,
+        tema: this.temaPase(),
         destinatarioRef: this.destinatarioRef.trim() || undefined,
         destinatarioNota: this.destinatarioNota.trim() || undefined,
       });

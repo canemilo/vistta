@@ -36,6 +36,8 @@ export interface PassView {
   passId: string;
   /** A quién se le enseña, si el cliente lo escribió. Va en la marca de agua. */
   destinatarioRef: string | null;
+  /** Aspecto con el que hay que pintar el documento. */
+  tema: TemaDePase;
   /**
    * Si el plan de quien generó el pase registra actividad de lectura.
    *
@@ -50,6 +52,9 @@ export interface PassView {
   intro?: string;
   sections: SeccionDePase[];
 }
+
+/** Aspecto con el que se enseña un pase. Lo elige quien lo manda. */
+export type TemaDePase = "oscuro" | "claro";
 
 export class ProfileNotFoundError extends Error {}
 
@@ -116,6 +121,8 @@ export interface OpcionesDePase {
   destinatarioRef?: string;
   /** Nota privada de quien manda el pase. No sale del panel de su dueño. */
   destinatarioNota?: string;
+  /** Aspecto con el que se enseña el documento. Por defecto, oscuro. */
+  tema?: TemaDePase;
 }
 
 export async function createPass(
@@ -215,8 +222,8 @@ export async function createPass(
     await tx.query(
       `INSERT INTO vistta.passes
          (id, token_hash, profile_id, status, created_at, expires_at,
-          modo, max_accesos, ventana_ms, destinatario_ref, destinatario_nota)
-       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10)`,
+          modo, max_accesos, ventana_ms, destinatario_ref, destinatario_nota, tema)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         id,
         tokenHash,
@@ -228,6 +235,7 @@ export async function createPass(
         ventanaMs,
         opts.destinatarioRef ?? null,
         opts.destinatarioNota ?? null,
+        opts.tema ?? "oscuro",
       ]
     );
     if (medios.size > 0) {
@@ -269,6 +277,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     id: string;
     profile_id: string;
     destinatario_ref: string | null;
+    tema: TemaDePase;
   }>(
     `UPDATE vistta.passes AS p SET
        accesos_usados      = p.accesos_usados + 1,
@@ -290,7 +299,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
                              END
      WHERE p.token_hash = $2
        AND ${pasAbribleSql("p", "$1")}
-     RETURNING p.id, p.profile_id, p.destinatario_ref`,
+     RETURNING p.id, p.profile_id, p.destinatario_ref, p.tema`,
     [now, tokenHash]
   );
 
@@ -328,6 +337,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
   return {
     passId: claimed.id,
     destinatarioRef: claimed.destinatario_ref,
+    tema: claimed.tema,
     mideLectura: cuenta?.limites.metricasDeLectura ?? false,
     profileId: profile.id,
     displayName: profile.display_name,
@@ -358,6 +368,7 @@ export interface PaseListado {
    */
   destinatarioRef: string | null;
   destinatarioNota: string | null;
+  tema: TemaDePase;
 }
 
 /**
@@ -386,10 +397,11 @@ export async function pasesDelPerfil(
     max_accesos: number | null;
     destinatario_ref: string | null;
     destinatario_nota: string | null;
+    tema: TemaDePase;
     abrible: boolean;
   }>(
     `SELECT p.id, p.modo, p.status, p.created_at, p.expires_at, p.valido_hasta,
-            p.accesos_usados, p.max_accesos, p.destinatario_ref, p.destinatario_nota,
+            p.accesos_usados, p.max_accesos, p.destinatario_ref, p.destinatario_nota, p.tema,
             (${pasAbribleSql("p", "$2")}) AS abrible
      FROM vistta.passes AS p
      WHERE p.profile_id = $1
@@ -409,6 +421,7 @@ export async function pasesDelPerfil(
     maxAccesos: r.max_accesos,
     destinatarioRef: r.destinatario_ref,
     destinatarioNota: r.destinatario_nota,
+    tema: r.tema,
   }));
 }
 

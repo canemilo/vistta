@@ -64,35 +64,107 @@
  * Y hay una razón de producto: un pase se abre muchas veces de noche, desde el
  * móvil. Servirle una pantalla blanca a quemarropa es peor producto.
  */
+/*
+ * Los valores del tema oscuro, definidos UNA vez.
+ *
+ * Se guardan aparte y luego se asignan, en vez de repetir los colores en los
+ * dos sitios donde hacen falta (la preferencia del sistema y el botón). Con la
+ * repetición, cambiar un color y olvidarse de una copia da un tema a medias que
+ * solo se ve en uno de los dos caminos.
+ */
+:root {
+  --o-fondo: #060e17;
+  --o-sup: #0b1a24;
+  --o-sup-2: #081420;
+  --o-sup-3: #04101a;
+  --o-borde: #1c3b44;
+  --o-borde-2: #16303a;
+  --o-borde-3: #0f2630;
+  --o-titulo: #e9f6f3;
+  --o-texto: #d7e9e6;
+  --o-texto-2: #a8c3c5;
+  --o-texto-3: #8aa8b0;
+  --o-texto-4: #7b989f;
+  --o-acento: #34d399;
+  --o-acento-2: #6fc6dd;
+  --o-acento-tenue: #7fd8bd;
+  --o-sobre-acento: #04140e;
+  --o-peligro: #e88fa0;
+  --o-peligro-borde: #3b1c22;
+  --o-peligro-fondo: #160b0e;
+  --o-aviso: #fcd34d;
+  --o-aviso-borde: #3d3117;
+  --o-aviso-fondo: #17120a;
+  --o-halo-1: rgba(29, 78, 90, 0.45);
+  --o-halo-2: rgba(16, 60, 72, 0.35);
+}
+
+/*
+ * Y aquí se aplican, por los DOS caminos:
+ *
+ *   1. el sistema lo pide y el usuario no ha elegido lo contrario;
+ *   2. el usuario le ha dado al botón.
+ *
+ * El `:not([data-theme='light'])` es lo que hace que el botón gane en los dos
+ * sentidos. Sin él, quien tiene el sistema en oscuro no podría poner la
+ * aplicación en claro: su elección quedaría pisada por la del sistema.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-fondo: #060e17;
-    --color-sup: #0b1a24;
-    --color-sup-2: #081420;
-    --color-sup-3: #04101a;
-
-    --color-borde: #1c3b44;
-    --color-borde-2: #16303a;
-    --color-borde-3: #0f2630;
-
-    --color-titulo: #e9f6f3;
-    --color-texto: #d7e9e6;
-    --color-texto-2: #a8c3c5;
-    /* Antes #63848b: 4,38 sobre el panel. Ahora 7,00. */
-    --color-texto-3: #8aa8b0;
-    --color-texto-4: #7b989f;
-
-    --color-acento: #34d399;
-    --color-acento-2: #6fc6dd;
-    --color-acento-tenue: #7fd8bd;
-    --color-sobre-acento: #04140e;
-    --color-peligro: #e88fa0;
-    --color-peligro-borde: #3b1c22;
-    --color-peligro-fondo: #160b0e;
-    --color-aviso: #fcd34d;
-    --color-aviso-borde: #3d3117;
-    --color-aviso-fondo: #17120a;
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-fondo: var(--o-fondo);
+    --color-sup: var(--o-sup);
+    --color-sup-2: var(--o-sup-2);
+    --color-sup-3: var(--o-sup-3);
+    --color-borde: var(--o-borde);
+    --color-borde-2: var(--o-borde-2);
+    --color-borde-3: var(--o-borde-3);
+    --color-titulo: var(--o-titulo);
+    --color-texto: var(--o-texto);
+    --color-texto-2: var(--o-texto-2);
+    --color-texto-3: var(--o-texto-3);
+    --color-texto-4: var(--o-texto-4);
+    --color-acento: var(--o-acento);
+    --color-acento-2: var(--o-acento-2);
+    --color-acento-tenue: var(--o-acento-tenue);
+    --color-sobre-acento: var(--o-sobre-acento);
+    --color-peligro: var(--o-peligro);
+    --color-peligro-borde: var(--o-peligro-borde);
+    --color-peligro-fondo: var(--o-peligro-fondo);
+    --color-aviso: var(--o-aviso);
+    --color-aviso-borde: var(--o-aviso-borde);
+    --color-aviso-fondo: var(--o-aviso-fondo);
+    --halo-1: var(--o-halo-1);
+    --halo-2: var(--o-halo-2);
   }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-fondo: var(--o-fondo);
+  --color-sup: var(--o-sup);
+  --color-sup-2: var(--o-sup-2);
+  --color-sup-3: var(--o-sup-3);
+  --color-borde: var(--o-borde);
+  --color-borde-2: var(--o-borde-2);
+  --color-borde-3: var(--o-borde-3);
+  --color-titulo: var(--o-titulo);
+  --color-texto: var(--o-texto);
+  --color-texto-2: var(--o-texto-2);
+  --color-texto-3: var(--o-texto-3);
+  --color-texto-4: var(--o-texto-4);
+  --color-acento: var(--o-acento);
+  --color-acento-2: var(--o-acento-2);
+  --color-acento-tenue: var(--o-acento-tenue);
+  --color-sobre-acento: var(--o-sobre-acento);
+  --color-peligro: var(--o-peligro);
+  --color-peligro-borde: var(--o-peligro-borde);
+  --color-peligro-fondo: var(--o-peligro-fondo);
+  --color-aviso: var(--o-aviso);
+  --color-aviso-borde: var(--o-aviso-borde);
+  --color-aviso-fondo: var(--o-aviso-fondo);
+  --halo-1: var(--o-halo-1);
+  --halo-2: var(--o-halo-2);
 }
 
 html,
@@ -120,13 +192,6 @@ body {
 :root {
   --halo-1: rgba(18, 90, 112, 0.07);
   --halo-2: rgba(10, 122, 87, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --halo-1: rgba(29, 78, 90, 0.45);
-    --halo-2: rgba(16, 60, 72, 0.35);
-  }
 }
 
 ::selection {

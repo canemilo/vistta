@@ -9,6 +9,7 @@ import {
   type Sesion,
   type Usuario,
 } from '../core/api';
+import { BotonTema } from '../core/boton-tema';
 
 /**
  * Panel de administración.
@@ -23,7 +24,7 @@ import {
  */
 @Component({
   selector: 'app-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, BotonTema],
   templateUrl: './admin.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `

@@ -603,6 +603,7 @@ describe('Panel · cómo caduca el enlace', () => {
         maxAccesos: 3,
         destinatarioRef: 'ana@example.com',
         destinatarioNota: 'piso de la calle mayor',
+        tema: 'oscuro',
       },
     ];
     // Se recarga el perfil para que el panel pida la lista.
@@ -642,6 +643,7 @@ describe('Panel · cómo caduca el enlace', () => {
         maxAccesos: null,
         destinatarioRef: null,
         destinatarioNota: null,
+        tema: 'oscuro',
       },
     ];
     api.lectura = {
@@ -678,6 +680,7 @@ describe('Panel · cómo caduca el enlace', () => {
         maxAccesos: null,
         destinatarioRef: null,
         destinatarioNota: null,
+        tema: 'oscuro',
       },
     ];
     api.lectura = { hayDatos: false, msTotales: 0, secciones: [], medios: [] };
