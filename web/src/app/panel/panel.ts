@@ -56,6 +56,8 @@ export class Panel {
    * mientras esté puesto el editor de abajo no enseña nada de verdad.
    */
   protected readonly errorCarga = signal('');
+  /** Mientras gira la tarjeta de entrada. Solo pinta; no decide nada. */
+  protected readonly saliendoDelLogin = signal(false);
   /** Cuota del perfil abierto. La devuelve `getProfile`; hasta ahora se tiraba. */
   protected readonly cuotaPerfil = signal<{ usados: number; total: number }>({
     usados: 0,
@@ -217,6 +219,9 @@ export class Panel {
       const { token, user } = await this.api.login(this.usuarioId.trim(), this.contrasena);
       this.contrasena = '';
       sessionStorage.setItem(Panel.CLAVE_SESION, token);
+      // El giro de la tarjeta, ya con la sesión guardada: si algo fallara a
+      // partir de aquí, la sesión está a salvo y basta con recargar.
+      await this.girarYEntrar();
       await this.abrirPanel(token, user);
     } catch (err: unknown) {
       const status = (err as { status?: number }).status;
@@ -228,6 +233,26 @@ export class Panel {
     } finally {
       this.ocupado.set(false);
     }
+  }
+
+  /** Lo que tarda el giro. Tiene que coincidir con `girar-salida` del CSS. */
+  private static readonly GIRO_MS = 420;
+
+  /**
+   * Gira la tarjeta de entrada y espera a que termine.
+   *
+   * La espera es un plazo FIJO y no un `animationend`, y es a propósito: si ese
+   * evento no llegara —animación desactivada por el sistema, pestaña en segundo
+   * plano, un navegador que no la ejecute—, quien acaba de meter bien su
+   * contraseña se quedaría mirando una pantalla que no avanza. Un adorno no
+   * puede dejar a nadie fuera de su propio panel.
+   *
+   * Y quien pide menos movimiento no espera nada: entra en el acto.
+   */
+  private async girarYEntrar(): Promise<void> {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.saliendoDelLogin.set(true);
+    await new Promise((listo) => setTimeout(listo, Panel.GIRO_MS));
   }
 
   /**

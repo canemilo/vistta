@@ -725,3 +725,61 @@ describe('Panel · cómo caduca el enlace', () => {
     expect(texto.toLowerCase()).not.toContain('evita filtraciones');
   });
 });
+
+describe('Panel · el giro al entrar', () => {
+  let fixture: ComponentFixture<Panel>;
+  let api: ApiFalsa;
+
+  async function estabiliza(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    api = new ApiFalsa();
+    // Sin sesión guardada: así se ve la pantalla de entrada de verdad.
+    sessionStorage.clear();
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+  });
+
+  afterEach(() => sessionStorage.clear());
+
+  /*
+   * LO QUE ESTA PRUEBA PROTEGE no es la animación, es que la animación no
+   * impida entrar. El giro mete una espera entre la contraseña correcta y el
+   * panel; si esa espera se rompiera —o dependiera de un evento que no llega—,
+   * alguien con sus credenciales bien puestas se quedaría mirando una pantalla
+   * parada. Un adorno no puede dejar a nadie fuera de su propio panel.
+   */
+  it('tras entrar bien, el panel acaba apareciendo', async () => {
+    const usuario = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const clave = fixture.nativeElement.querySelector('input[type="password"]') as HTMLInputElement;
+    usuario.value = 'marina';
+    usuario.dispatchEvent(new Event('input'));
+    clave.value = 'una-contrasena-larga';
+    clave.dispatchEvent(new Event('input'));
+    await estabiliza();
+
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find((b) => (b.textContent ?? '').trim().startsWith('ENTRAR'))!
+      .click();
+
+    // Más de lo que dura el giro: si hiciera falta esperar más, es que el
+    // adorno se ha vuelto un obstáculo.
+    await new Promise((listo) => setTimeout(listo, 700));
+    await estabiliza();
+
+    expect(sessionStorage.getItem('vistta.sesion')).toBe('sesion-nueva');
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('VER COMO EL CLIENTE');
+  });
+});

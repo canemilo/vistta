@@ -264,8 +264,50 @@ body {
   animation: surgir 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
 
+/*
+ * La entrada al panel: la tarjeta gira sobre su eje y deja pasar a la página.
+ *
+ * Dura poco a propósito. Es una transición, no un espectáculo: quien entra
+ * viene a trabajar, y lo va a ver cada vez. Y la salida es más rápida que la
+ * entrada porque lo que interesa es lo que hay detrás, no lo que se va.
+ */
+@keyframes girar-salida {
+  from {
+    opacity: 1;
+    transform: perspective(1200px) rotateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(-72deg) scale(0.93);
+  }
+}
+
+.gira-salida {
+  animation: girar-salida 0.42s cubic-bezier(0.6, 0.04, 0.98, 0.34) forwards;
+}
+
+@keyframes girar-entrada {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(22deg) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.gira-entrada {
+  animation: girar-entrada 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .surge {
+    animation: none;
+  }
+  /* Quien pide menos movimiento no ve el giro: entra y ya está. */
+  .gira-salida,
+  .gira-entrada {
     animation: none;
   }
   * {

@@ -11,7 +11,7 @@
     id="contenido"
     class="paleta-oscura flex min-h-screen items-center justify-center px-6 py-12"
   >
-    <div class="w-full max-w-[460px]">
+    <div class="w-full max-w-[460px]" [class.gira-salida]="saliendoDelLogin()">
       <!--
         La marca hereda el color del texto: clara sobre el fondo oscuro de esta
         pantalla, negra donde el fondo es claro. Un solo archivo y ninguna placa.
@@ -211,7 +211,7 @@
   />
 } @else {
   <!-- Edición del contenido -->
-  <main id="contenido" class="mx-auto max-w-[860px] px-6 pb-24">
+  <main id="contenido" class="gira-entrada mx-auto max-w-[860px] px-6 pb-24">
     <!--
       Barra del panel.
       ============================================================================
