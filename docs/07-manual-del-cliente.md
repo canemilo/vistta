@@ -158,7 +158,7 @@ oscuro; unos planos o un dosier con mucho texto se leen mejor en claro.
 
 **¿Puedo poner mi logotipo?**
 Sí, en el editor del perfil, debajo del nombre. Se sube el archivo y el servidor
-lo deja en 320 × 120 y en WebP: acaba pesando unos pocos kilobytes y viaja dentro
+lo deja en 480 × 180 y en WebP: acaba pesando unos pocos kilobytes y viaja dentro
 del propio pase, así que no hace esperar a quien lo abre desde el móvil. Se
 conserva la transparencia, de modo que un PNG con fondo transparente se ve bien
 tanto en los pases claros como en los oscuros. Aparece encima del nombre, en la

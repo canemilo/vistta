@@ -153,10 +153,42 @@ export class Panel {
     return Math.round(ms / 86_400_000);
   }
 
-  /** Días que faltan para que se borre un perfil congelado. */
-  protected diasHasta(purgeAt: number | null): number {
-    if (purgeAt === null) return 0;
-    return Math.max(0, Math.ceil((purgeAt - Date.now()) / 86_400_000));
+  /**
+   * Días que faltan HASTA una fecha, redondeados hacia ABAJO.
+   *
+   * No confundir con `dias(ms)`, de aquí arriba, que convierte una DURACIÓN.
+   *
+   * Hacia abajo, y esto se corrigió al añadir los avisos: antes redondeaba
+   * hacia arriba, así que con 29 horas por delante decía «2 días». En avisos
+   * que existen para que nadie pierda su trabajo, redondear hacia arriba REGALA
+   * un día que no existe y el cliente se confía justo el día que no debe. Una
+   * sola regla para las tres cuentas atrás —perfil congelado, limpieza del
+   * contenido y fin de plan—, y la prudente.
+   */
+  protected diasHasta(cuando: number | null): number {
+    if (cuando === null) return 0;
+    return Math.max(0, Math.floor((cuando - Date.now()) / 86_400_000));
+  }
+
+  /** Días hasta que la purga se lleve el contenido más antiguo. `null` = no caduca. */
+  protected readonly diasParaLimpieza = computed(() => {
+    const c = this.facturacion()?.limpieza?.cuando;
+    return c === null || c === undefined ? null : this.diasHasta(c);
+  });
+
+  /** Días hasta que venza el plan. `null` = sin plazo. */
+  protected readonly diasParaVencer = computed(() => {
+    const h = this.facturacion()?.planHasta;
+    return h === null || h === undefined ? null : this.diasHasta(h);
+  });
+
+  /**
+   * Cuánto apremia una cuenta atrás. De esto depende el color, y el color es lo
+   * único que hace que alguien mire un aviso que lleva semanas ahí.
+   */
+  protected urgencia(dias: number | null): 'ninguna' | 'aviso' | 'urgente' {
+    if (dias === null) return 'ninguna';
+    return dias <= 1 ? 'urgente' : dias <= 3 ? 'aviso' : 'ninguna';
   }
   protected readonly perfilId = signal('');
   protected readonly nombre = signal('');

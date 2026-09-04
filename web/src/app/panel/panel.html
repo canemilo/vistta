@@ -410,6 +410,79 @@
       Pide la actual aunque haya sesión abierta: un ordenador sin bloquear no
       puede convertirse en un cambio de credenciales.
     -->
+    <!--
+      Las dos cuentas atrás.
+      ========================================================================
+      Van juntas y arriba porque las dos hablan de perder algo: una, el trabajo
+      que ya está subido; la otra, el plan que lo sostiene. El color solo cambia
+      cuando queda poco: un aviso encendido siempre deja de leerse a la semana.
+    -->
+    @if (facturacion(); as f) {
+      @if (diasParaLimpieza() !== null || diasParaVencer() !== null) {
+        <div class="mt-4 flex flex-wrap gap-3">
+          @if (diasParaLimpieza(); as diasL) {
+            <div
+              class="flex-1 rounded-lg border px-4 py-3"
+              [class.border-peligro]="urgencia(diasL) === 'urgente'"
+              [class.bg-peligro-fondo]="urgencia(diasL) === 'urgente'"
+              [class.border-aviso]="urgencia(diasL) === 'aviso'"
+              [class.bg-aviso-fondo]="urgencia(diasL) === 'aviso'"
+              [class.border-borde]="urgencia(diasL) === 'ninguna'"
+              [class.bg-sup]="urgencia(diasL) === 'ninguna'"
+            >
+              <p class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+                Limpieza del contenido
+              </p>
+              <p class="mt-1.5 font-mono text-[15px] text-texto">
+                {{ diasL === 0 ? 'hoy' : diasL === 1 ? 'mañana' : 'en ' + diasL + ' días' }}
+              </p>
+              <p class="mt-1 font-mono text-[11px] leading-relaxed text-texto-3">
+                @if (f.limpieza.enRiesgo > 0) {
+                  {{ f.limpieza.enRiesgo }} de {{ f.limpieza.total }}
+                  {{ f.limpieza.total === 1 ? 'archivo se borra' : 'archivos se borran' }} pronto.
+                  Descárgalos si los necesitas: no se pueden recuperar.
+                } @else {
+                  Se borrará el archivo más antiguo de los {{ f.limpieza.total }} que tienes. Es lo
+                  que dura el contenido en tu plan.
+                }
+              </p>
+            </div>
+          }
+
+          @if (diasParaVencer(); as diasV) {
+            <div
+              class="flex-1 rounded-lg border px-4 py-3"
+              [class.border-peligro]="urgencia(diasV) === 'urgente'"
+              [class.bg-peligro-fondo]="urgencia(diasV) === 'urgente'"
+              [class.border-aviso]="urgencia(diasV) === 'aviso'"
+              [class.bg-aviso-fondo]="urgencia(diasV) === 'aviso'"
+              [class.border-borde]="urgencia(diasV) === 'ninguna'"
+              [class.bg-sup]="urgencia(diasV) === 'ninguna'"
+            >
+              <p class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+                Tu plan {{ f.plan }} termina
+              </p>
+              <p class="mt-1.5 font-mono text-[15px] text-texto">
+                {{ diasV === 0 ? 'hoy' : diasV === 1 ? 'mañana' : 'en ' + diasV + ' días' }}
+              </p>
+              <p class="mt-1 font-mono text-[11px] leading-relaxed text-texto-3">
+                Al vencer bajas al plan de prueba.
+                <strong class="text-texto">No se borra nada</strong>: lo que sobre se congela y
+                vuelve en cuanto pagues.
+                <button
+                  type="button"
+                  (click)="viendoPlanes.set(true)"
+                  class="underline hover:text-acento"
+                >
+                  Renovar
+                </button>
+              </p>
+            </div>
+          }
+        </div>
+      }
+    }
+
     @if (errorCarga()) {
       <!-- Va justo debajo de la cabecera y no al pie: mientras esto esté
            puesto, el editor de abajo no enseña el contenido real. -->
@@ -813,11 +886,11 @@
             <img
               [src]="logo()"
               alt="Logotipo actual del perfil"
-              class="h-12 w-auto max-w-[12rem] rounded border border-borde-2 bg-sup-2 object-contain p-1.5"
+              class="h-16 w-auto max-w-[16rem] rounded border border-borde-2 bg-sup-2 object-contain p-2"
             />
           } @else {
             <span
-              class="flex h-12 w-[12rem] items-center justify-center rounded border border-dashed border-borde font-mono text-[10px] tracking-[0.18em] text-texto-3"
+              class="flex h-16 w-[16rem] items-center justify-center rounded border border-dashed border-borde font-mono text-[10px] tracking-[0.18em] text-texto-3"
             >
               SIN LOGOTIPO
             </span>
@@ -845,7 +918,7 @@
           }
         </div>
         <p class="font-mono text-[11px] text-texto-3">
-          Se reduce a 320 × 120 y se guarda en WebP; queda en unos pocos kilobytes y viaja dentro
+          Se reduce a 480 × 180 y se guarda en WebP; queda en unos pocos kilobytes y viaja dentro
           del propio pase. Se conserva la transparencia, así que un PNG con fondo transparente se ve
           bien en los dos aspectos.
         </p>

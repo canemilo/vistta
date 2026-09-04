@@ -12,9 +12,20 @@ import sharp from "sharp";
  * agua de la visita incrustada, y un logotipo marcado no tiene sentido.
  */
 
-/** Lo que ocupa en la cabecera del documento. Más grande no se ve mejor. */
-export const LOGO_ANCHO = 320;
-export const LOGO_ALTO = 120;
+/**
+ * Lo que se guarda, y está atado a lo que se ENSEÑA.
+ *
+ * El documento lo pinta hasta 88 px de alto, así que 180 da el doble de
+ * resolución: en una pantalla de retina se ve nítido y no pixelado.
+ *
+ * Medido antes de elegirlo, con un logotipo real: 320x120 pesaba 13,7 kB de
+ * data URI; 480x180, 21,6 kB; y 640x240 se iba a 29,6 kB, pegado al tope de
+ * 30 kB de salida y al CHECK de 32 kB de la base. 480x180 es el punto donde
+ * gana nitidez sin acercarse al techo, y esto viaja DENTRO de la respuesta de
+ * cada apertura de pase.
+ */
+export const LOGO_ANCHO = 480;
+export const LOGO_ALTO = 180;
 
 /** Tope de lo que ENTRA. Un logotipo no es una fotografía. */
 export const LOGO_ENTRADA_MAXIMA = 4 * 1024 * 1024;

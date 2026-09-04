@@ -140,6 +140,80 @@
       <p class="mt-4 font-mono text-[12px] text-aviso" role="alert">{{ error() }}</p>
     }
 
+    <!--
+      Lo que hay que hacer HOY.
+      ========================================================================
+      La tabla de abajo lo tiene todo, pero tenerlo todo no es saber qué toca.
+      Estas dos listas son el trabajo del cobro manual: a quién le he emitido un
+      código y no he visto el ingreso, y a quién se le acaba el plan antes de
+      que me dé tiempo a enterarme. Solo aparecen si hay algo en ellas: una
+      bandeja vacía permanente enseña a no mirar.
+    -->
+    @if (conPagoPendiente().length || porVencer().length) {
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        @if (conPagoPendiente().length) {
+          <section class="rounded-xl border border-aviso/40 bg-aviso-fondo p-5">
+            <h2 class="font-mono text-[11px] tracking-[0.22em] text-aviso uppercase">
+              Esperando cobro · {{ conPagoPendiente().length }}
+            </h2>
+            <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+              Códigos emitidos y sin conciliar. Búscalos en el concepto del extracto y confírmalos
+              abajo, en «Pagos».
+            </p>
+            <ul class="mt-3 space-y-2">
+              @for (c of conPagoPendiente(); track c.id) {
+                <li class="flex flex-wrap items-baseline gap-x-3 font-mono text-[12px] text-texto">
+                  <span class="text-texto-3">{{ c.id }}</span>
+                  <span class="tracking-[0.1em] select-all">{{ c.pagoPendiente!.codigo }}</span>
+                  <span>{{ euros(c.pagoPendiente!.importe) }}</span>
+                  <span class="text-texto-3">{{ c.pagoPendiente!.plan }}</span>
+                  <span class="ml-auto text-[11px] text-texto-3">
+                    el código caduca en {{ diasHasta(c.pagoPendiente!.caduca) }} d
+                  </span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (porVencer().length) {
+          <section class="rounded-xl border border-peligro/40 bg-peligro-fondo p-5">
+            <h2 class="font-mono text-[11px] tracking-[0.22em] text-peligro uppercase">
+              Bajan de plan si no pagan · {{ porVencer().length }}
+            </h2>
+            <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+              Al vencer caen a Prueba. No se borra nada: lo que sobre se congela y vuelve al pagar.
+            </p>
+            <ul class="mt-3 space-y-2">
+              @for (c of porVencer(); track c.id) {
+                <li class="flex flex-wrap items-baseline gap-x-3 font-mono text-[12px] text-texto">
+                  <span class="text-texto-3">{{ c.id }}</span>
+                  <span>{{ c.plan }}</span>
+                  <span
+                    class="ml-auto"
+                    [class.text-peligro]="diasHasta(c.planHasta) <= 1"
+                    [class.text-aviso]="diasHasta(c.planHasta) > 1"
+                  >
+                    @if (diasHasta(c.planHasta) === 0) {
+                      vence hoy
+                    } @else {
+                      vence en {{ diasHasta(c.planHasta) }}
+                      {{ diasHasta(c.planHasta) === 1 ? 'día' : 'días' }}
+                    }
+                  </span>
+                  @if (c.pagoPendiente) {
+                    <span class="w-full text-[11px] text-aviso">
+                      · ya tiene código {{ c.pagoPendiente.codigo }} sin cobrar
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    }
+
     <!-- La contraseña recién generada. Se enseña una vez y no hay forma de
          volver a verla: si se pierde, hay que generar otra. -->
     @if (credencial(); as cred) {

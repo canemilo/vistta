@@ -11,7 +11,14 @@ import {
   pagoPendiente,
   solicitarPago,
 } from "../lib/facturacion";
-import { AVISO_VENCIMIENTO_MS, PLANES_DE_PAGO, PRECIOS, PERIODOS } from "../lib/planes";
+import {
+  AVISO_LIMPIEZA_MS,
+  AVISO_VENCIMIENTO_MS,
+  PLANES_DE_PAGO,
+  PRECIOS,
+  PERIODOS,
+} from "../lib/planes";
+import { proximaLimpieza } from "../lib/purga";
 
 /**
  * Facturación vista por el cliente.
@@ -66,6 +73,14 @@ export function billingRoutes({ config, db }: Deps) {
       },
       // De dónde salen: de la configuración del despliegue, no del código.
       pago: { bizum: config.BIZUM_TELEFONO ?? null, paypal: config.PAYPAL_DESTINO ?? null },
+      /*
+       * Cuándo se lleva la purga el contenido más antiguo, y cuánto está a
+       * punto de irse. Lo calcula `proximaLimpieza`, que vive pegada al SELECT
+       * que borra: si el aviso se calculara aquí por su cuenta, acabaría
+       * diciendo un día y el borrado ocurriendo otro, y el cliente perdería su
+       * trabajo el día en que el panel le decía que estaba a salvo.
+       */
+      limpieza: await proximaLimpieza(db, usuario.id, AVISO_LIMPIEZA_MS),
     });
   });
 

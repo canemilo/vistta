@@ -31,11 +31,14 @@ describe("el logotipo se reduce a lo mínimo", () => {
     /*
      * Y el tope que de verdad importa: que sea PEQUEÑO en absoluto, no que sea
      * más pequeño que lo que subieron. Esto viaja dentro de la respuesta que se
-     * pide al abrir un pase, muchas veces desde el móvil y con datos: 12 kB es
-     * un logotipo; 300 kB es una foto disfrazada. Medido: un PNG de 1600x600
-     * sale en unos 7 kB.
+     * pide al abrir un pase, muchas veces desde el móvil y con datos: 24 kB es
+     * un logotipo; 300 kB es una foto disfrazada.
+     *
+     * La cifra sube con el tamaño de guardado, que pasó de 320x120 a 480x180
+     * para que no se vea pixelado al enseñarlo más grande. Medido con el
+     * logotipo de esta prueba: 10,3 kB. Con uno rico en detalle, 21,6 kB.
      */
-    expect(uri.length).toBeLessThan(12 * 1024);
+    expect(uri.length).toBeLessThan(24 * 1024);
     expect(uri.length).toBeLessThan(entrada.length);
   });
 

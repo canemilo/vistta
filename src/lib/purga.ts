@@ -139,6 +139,68 @@ async function purgarMediosCaducados(db: Db, storage: Storage, ahora: number): P
   return borrados;
 }
 
+/**
+ * Cuándo le toca la próxima limpieza a una cuenta, y a cuánto contenido.
+ *
+ * Vive AQUÍ, pegado al SELECT que borra, y no en el módulo del panel: si el
+ * aviso se calculara por su cuenta acabaría diciendo un día y la purga borrando
+ * otro, y el cliente perdería trabajo justo el día que el panel le decía que
+ * estaba a salvo. Las dos condiciones que se comparten son las que más se
+ * olvidan: la retención cuenta desde `plan_since`, y un medio que lleva dentro
+ * un pase todavía abrible no se toca.
+ *
+ * Devuelve `null` en `cuando` si no hay nada que caduque: o el plan no caduca
+ * —Bóveda—, o la cuenta no tiene contenido.
+ */
+export interface ProximaLimpieza {
+  /** Cuándo caduca el medio más antiguo. `null` = nada que caduque. */
+  cuando: number | null;
+  /** Cuántos medios caducan en los próximos `avisoMs`. */
+  enRiesgo: number;
+  /** Cuántos medios hay en total sujetos a esta retención. */
+  total: number;
+}
+
+export async function proximaLimpieza(
+  db: Db,
+  userId: string,
+  avisoMs: number,
+  ahora = Date.now()
+): Promise<ProximaLimpieza> {
+  const cuenta = await db.one<{ plan: Plan; plan_since: number }>(
+    `SELECT plan, plan_since FROM vistta.users WHERE id = $1`,
+    [userId]
+  );
+  const retencion = cuenta ? PLANES[cuenta.plan].retencionMs : null;
+  // Bóveda: no caduca. No es un plazo muy largo, es la ausencia de plazo.
+  if (!cuenta || retencion === null) return { cuando: null, enRiesgo: 0, total: 0 };
+
+  const fila = await db.one<{ primero: number | null; en_riesgo: number; total: number }>(
+    `SELECT min(m.confirmed_at) + $2 AS primero,
+            count(*) FILTER (WHERE m.confirmed_at + $2 <= $3)::int AS en_riesgo,
+            count(*)::int AS total
+     FROM vistta.media m
+     JOIN vistta.profiles p ON p.id = m.profile_id
+     WHERE p.owner_id = $1
+       AND m.status = 'ready'
+       -- Las mismas dos excepciones que aplica el borrado, palabra por palabra.
+       AND $4 > (SELECT plan_since FROM vistta.users WHERE id = $1)
+       AND NOT EXISTS (
+         SELECT 1 FROM vistta.pass_media pm
+         JOIN vistta.passes ps ON ps.id = pm.pass_id
+         WHERE pm.media_id = m.id
+           AND ${pasAbribleSql("ps", "$4")}
+       )`,
+    [userId, retencion, ahora + avisoMs, ahora]
+  );
+
+  return {
+    cuando: fila?.primero === null || fila?.primero === undefined ? null : Number(fila.primero),
+    enRiesgo: fila?.en_riesgo ?? 0,
+    total: fila?.total ?? 0,
+  };
+}
+
 /** Perfiles congelados que han agotado la gracia entera. */
 async function purgarCongelados(db: Db, storage: Storage, ahora: number): Promise<number> {
   const { rows: perfiles } = await db.query<{ id: string }>(

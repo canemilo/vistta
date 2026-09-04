@@ -43,6 +43,10 @@ export interface CuentaAdmin {
   createdAt: number;
   suspendedAt: number | null;
   perfilesActivos: number;
+  /** Hasta cuándo tiene pagado. `null` = sin plazo (Prueba, o Bóveda sin vencer). */
+  planHasta: number | null;
+  /** El código sin cobrar, si lo hay: lo que el administrador coteja con el extracto. */
+  pagoPendiente: { codigo: string; importe: number; plan: string; caduca: number } | null;
   perfilesCongelados: number;
   pasesAbiertos: number;
   bytesUsados: number;
@@ -86,8 +90,29 @@ export async function listarCuentas(db: Db, ahora = Date.now()): Promise<CuentaA
     pases_abiertos: number;
     bytes_usados: number;
     clave_pedida: number | null;
+    plan_until: number | null;
+    pago_codigo: string | null;
+    pago_importe: number | null;
+    pago_plan: string | null;
+    pago_caduca: number | null;
   }>(
     `SELECT u.id, u.display_name, u.plan, u.status, u.role, u.created_at, u.suspended_at,
+       -- Hasta cuándo tiene pagado. NULL en Prueba y en Bóveda de por vida.
+       u.plan_until,
+       -- El código pendiente, si lo hay: es lo que el administrador cotejará
+       -- contra el extracto. Uno por cuenta, el más reciente sin cobrar.
+       (SELECT pg.code FROM vistta.payments pg
+         WHERE pg.user_id = u.id AND pg.status = 'pendiente' AND pg.expires_at > $1
+         ORDER BY pg.created_at DESC LIMIT 1)      AS pago_codigo,
+       (SELECT pg.importe FROM vistta.payments pg
+         WHERE pg.user_id = u.id AND pg.status = 'pendiente' AND pg.expires_at > $1
+         ORDER BY pg.created_at DESC LIMIT 1)      AS pago_importe,
+       (SELECT pg.plan FROM vistta.payments pg
+         WHERE pg.user_id = u.id AND pg.status = 'pendiente' AND pg.expires_at > $1
+         ORDER BY pg.created_at DESC LIMIT 1)      AS pago_plan,
+       (SELECT pg.expires_at FROM vistta.payments pg
+         WHERE pg.user_id = u.id AND pg.status = 'pendiente' AND pg.expires_at > $1
+         ORDER BY pg.created_at DESC LIMIT 1)      AS pago_caduca,
        (SELECT count(*)::int FROM vistta.profiles p
          WHERE p.owner_id = u.id AND p.status = 'activo')     AS perfiles_activos,
        (SELECT count(*)::int FROM vistta.profiles p
@@ -122,6 +147,16 @@ export async function listarCuentas(db: Db, ahora = Date.now()): Promise<CuentaA
     pasesAbiertos: r.pases_abiertos,
     bytesUsados: r.bytes_usados,
     clavePedidaEl: r.clave_pedida,
+    planHasta: r.plan_until === null ? null : Number(r.plan_until),
+    pagoPendiente:
+      r.pago_codigo === null
+        ? null
+        : {
+            codigo: r.pago_codigo,
+            importe: Number(r.pago_importe),
+            plan: r.pago_plan!,
+            caduca: Number(r.pago_caduca),
+          },
   }));
 }
 

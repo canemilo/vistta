@@ -45,6 +45,33 @@ import { CLAVE_SESION } from '../core/sesion';
 export class Admin {
   protected readonly tema = inject(TemaApp);
 
+  /**
+   * Días hasta una fecha, hacia ABAJO. Misma regla que en el panel del cliente:
+   * en un aviso sobre perder algo, redondear hacia arriba regala un día que no
+   * existe.
+   */
+  protected diasHasta(cuando: number | null): number {
+    if (cuando === null) return 0;
+    return Math.max(0, Math.floor((cuando - Date.now()) / 86_400_000));
+  }
+
+  /** Quién debe pagar: tiene un código emitido y sin cobrar. */
+  protected readonly conPagoPendiente = computed(() =>
+    this.cuentas().filter((c) => c.pagoPendiente !== null),
+  );
+
+  /**
+   * Quién se va a caer de plan si no paga, dentro de una semana.
+   *
+   * Es la lista que hace falta para trabajar: no dice quién ha pagado —eso ya
+   * se ve en el plan— sino a quién hay que perseguir antes de que baje.
+   */
+  protected readonly porVencer = computed(() =>
+    this.cuentas()
+      .filter((c) => c.planHasta !== null && this.diasHasta(c.planHasta) <= 7)
+      .sort((a, b) => (a.planHasta ?? 0) - (b.planHasta ?? 0)),
+  );
+
   private readonly api = inject(Api);
   private readonly router = inject(Router);
 

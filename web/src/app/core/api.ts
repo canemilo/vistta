@@ -62,6 +62,10 @@ export interface CuentaAdmin {
   bytesUsados: number;
   /** Cuándo pidió una contraseña nueva, o null si no la ha pedido. */
   clavePedidaEl: number | null;
+  /** Hasta cuándo tiene pagado. `null` = sin plazo. */
+  planHasta: number | null;
+  /** El código sin cobrar, si lo hay: lo que se coteja con el extracto. */
+  pagoPendiente: { codigo: string; importe: number; plan: string; caduca: number } | null;
 }
 
 export interface Pago {
@@ -95,6 +99,12 @@ export interface EstadoFacturacion {
     moneda: string;
   };
   pago: { bizum: string | null; paypal: string | null };
+  /**
+   * Cuándo se lleva la purga el contenido más antiguo. Lo calcula el servidor
+   * con el mismo criterio que borra: aquí no se deduce ninguna fecha, porque
+   * dos cálculos distintos acabarían diciendo días distintos.
+   */
+  limpieza: { cuando: number | null; enRiesgo: number; total: number };
 }
 
 export interface RegistroAuditoria {

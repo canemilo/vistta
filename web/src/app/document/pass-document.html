@@ -28,17 +28,17 @@
       lector de pantalla, y por eso el logotipo lleva alt vacío —es decorativo,
       dice lo mismo que el h1 de debajo y repetirlo sería ruido—.
 
-      Altura fija y `w-auto`: el servidor ya lo dejó en 320x120 como mucho, así
-      que aquí solo hay que reservarle el hueco para que no salte la página al
-      cargar.
+      Altura fija y `w-auto`: el servidor lo deja en 480x180 como mucho, o sea
+      el doble de lo que se pinta, así que aquí solo hay que reservarle el hueco
+      para que no salte la página al cargar.
     -->
     @if (profile().logo) {
       <img
         [src]="profile().logo"
         alt=""
-        width="320"
-        height="120"
-        class="mt-6 h-[clamp(2.5rem,7vw,4rem)] w-auto max-w-[min(20rem,70vw)] object-contain object-left"
+        width="480"
+        height="180"
+        class="mt-6 h-[clamp(3rem,8vw,5.5rem)] w-auto max-w-[min(26rem,80vw)] object-contain object-left"
       />
     }
     <h1

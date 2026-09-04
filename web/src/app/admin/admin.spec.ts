@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Admin } from './admin';
+import type { CuentaAdmin } from '../core/api';
 import { Api, type Usuario } from '../core/api';
 
 /**
@@ -29,7 +30,9 @@ class ApiFalsa {
 
   me = () => Promise.resolve({ user: { id: 'soporte', displayName: 'Soporte', role: this.rol } });
 
-  adminCuentas = () => Promise.resolve({ cuentas: [], planes: ['prueba', 'pro', 'boveda'] });
+  cuentas: CuentaAdmin[] = [];
+  adminCuentas = () =>
+    Promise.resolve({ cuentas: this.cuentas, planes: ['prueba', 'pro', 'boveda'] });
   adminAuditoria = () => Promise.resolve({ registros: [] });
   adminPagos = () => Promise.resolve({ pagos: [] });
 
@@ -142,5 +145,107 @@ describe('Admin · la puerta', () => {
   it('dice que todo queda registrado: es verdad y es la mitad de para qué sirve', async () => {
     expect(texto()).toContain('queda registrada');
     expect(texto()).toContain('desde la máquina que tiene la base');
+  });
+});
+
+const DIA = 86_400_000;
+
+/** Una cuenta cualquiera, para retocarle solo lo que interesa en cada prueba. */
+function cuenta(id: string, extra: Partial<CuentaAdmin> = {}): CuentaAdmin {
+  return {
+    id,
+    displayName: id,
+    plan: 'pro',
+    status: 'activa',
+    role: 'cliente',
+    createdAt: Date.now() - 30 * DIA,
+    suspendedAt: null,
+    perfilesActivos: 1,
+    perfilesCongelados: 0,
+    pasesAbiertos: 0,
+    bytesUsados: 0,
+    clavePedidaEl: null,
+    planHasta: null,
+    pagoPendiente: null,
+    ...extra,
+  };
+}
+
+/**
+ * El control del cobro manual.
+ *
+ * La tabla de cuentas lo tiene todo, pero tenerlo todo no es saber qué toca
+ * hoy. Estas dos listas son el trabajo: a quién le emití un código y no he
+ * visto el ingreso, y a quién se le acaba el plan antes de que me entere.
+ */
+describe('Admin · el control del cobro', () => {
+  let fixture: ComponentFixture<Admin>;
+  let api: ApiFalsa;
+
+  async function estabiliza(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  async function montar(cuentas: CuentaAdmin[]): Promise<string> {
+    api = new ApiFalsa();
+    api.rol = 'admin';
+    api.cuentas = cuentas;
+    sessionStorage.setItem('vistta.sesion', 'sesion-admin');
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Admin],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Admin);
+    await estabiliza();
+    return (fixture.nativeElement.textContent ?? '') as string;
+  }
+
+  afterEach(() => sessionStorage.clear());
+
+  it('enseña quién debe pagar, con su código y su importe', async () => {
+    const texto = await montar([
+      cuenta('marina', {
+        pagoPendiente: {
+          codigo: 'VISTTA-ABC123',
+          importe: 1200,
+          plan: 'pro',
+          caduca: Date.now() + 10 * DIA,
+        },
+      }),
+    ]);
+    expect(texto).toContain('Esperando cobro');
+    expect(texto).toContain('VISTTA-ABC123');
+    expect(texto).toContain('12,00 €');
+  });
+
+  it('enseña quién baja de plan si no paga, y cuándo', async () => {
+    // 2,5 días y no 2 exactos: con el filo justo, los milisegundos que pasan
+    // entre montar el doble y pintar bastan para que el redondeo hacia abajo
+    // diga «1 día». Que es correcto, pero hace frágil la prueba.
+    const texto = await montar([cuenta('marina', { planHasta: Date.now() + 2.5 * DIA })]);
+    expect(texto).toContain('Bajan de plan si no pagan');
+    expect(texto).toContain('vence en 2 días');
+    // Y dice que no se pierde nada, que es lo que evita una llamada asustada.
+    expect(texto).toContain('No se borra nada');
+  });
+
+  /*
+   * Una bandeja vacía permanente enseña a no mirar. Si no hay nada que cobrar
+   * ni nadie a punto de caer, estas listas no salen.
+   */
+  it('sin trabajo pendiente, no enseña listas vacías', async () => {
+    const texto = await montar([cuenta('marina', { plan: 'prueba' })]);
+    expect(texto).not.toContain('Esperando cobro');
+    expect(texto).not.toContain('Bajan de plan');
+  });
+
+  it('un plan que vence dentro de un mes todavía no aparece', async () => {
+    const texto = await montar([cuenta('marina', { planHasta: Date.now() + 30 * DIA })]);
+    expect(texto).not.toContain('Bajan de plan');
   });
 });

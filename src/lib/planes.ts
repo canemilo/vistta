@@ -233,6 +233,18 @@ export const CADUCIDAD_CODIGO_MS = 14 * DIA;
 /** Con cuánta antelación se avisa al cliente de que su plan vence. */
 export const AVISO_VENCIMIENTO_MS = 7 * DIA;
 
+/**
+ * Con cuánta antelación se marca como EN RIESGO el contenido que va a borrar la
+ * purga.
+ *
+ * Tres días, y tiene que ser menor que la retención más corta (7, en Prueba).
+ * Se descubrió probándolo: con una ventana igual a la retención, todo el
+ * contenido está siempre dentro de ella —lo que se sube hoy caduca justo al
+ * final del aviso—, así que el panel gritaría todos los días y nadie volvería a
+ * mirar ese aviso. Un aviso que siempre está encendido no avisa de nada.
+ */
+export const AVISO_LIMPIEZA_MS = 3 * DIA;
+
 /** A dónde cae una cuenta cuando su plan vence. No se borra nada: baja de plan. */
 export const PLAN_AL_VENCER: Plan = "prueba";
 
