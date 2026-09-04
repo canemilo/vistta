@@ -782,6 +782,43 @@ export class Panel {
     return this.plan()?.limites?.pasesSimultaneos ?? null;
   }
 
+  /** Cuántos de la lista ya no se abren: es lo que se puede limpiar. */
+  protected readonly pasesCerrados = computed(
+    () => this.pases().filter((p) => p.estado !== 'abrible').length,
+  );
+
+  /**
+   * Limpia los enlaces cerrados de este perfil.
+   *
+   * Solo los cerrados, y el servidor lo aplica otra vez por su cuenta: un
+   * enlace todavía abrible está en manos de otra persona —ya se lo mandaste—,
+   * así que no puede desaparecer desde un botón que dice «limpiar».
+   *
+   * Se pide confirmación porque se pierde algo que no vuelve: lo que se sabía
+   * de cómo leyó cada uno de esos enlaces.
+   */
+  protected async limpiarPases(): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion || this.pasesCerrados() === 0) return;
+    if (
+      !confirm(
+        `Se borrarán ${this.pasesCerrados()} enlaces ya cerrados y lo que se sabe de su lectura. ` +
+          'Los que todavía se pueden abrir no se tocan.',
+      )
+    ) {
+      return;
+    }
+    try {
+      const { borrados } = await this.api.limpiarPases(sesion, this.perfilId());
+      this.aviso.set(
+        `${borrados} enlace${borrados === 1 ? '' : 's'} cerrado${borrados === 1 ? '' : 's'} fuera de la lista.`,
+      );
+      await this.cargarPases();
+    } catch {
+      this.error.set('No se pudieron limpiar los enlaces.');
+    }
+  }
+
   protected async cargarPases(): Promise<void> {
     const sesion = this.sesion();
     if (!sesion || !this.perfilId()) return;

@@ -625,6 +625,15 @@ export class Api {
     );
   }
 
+  /** Borra los enlaces de un perfil que YA NO se pueden abrir. Los vivos, no. */
+  limpiarPases(session: string, profileId: string): Promise<{ borrados: number }> {
+    return firstValueFrom(
+      this.http.delete<{ borrados: number }>(`/api/passes?profileId=${profileId}`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
   lecturaDelPase(session: string, passId: string): Promise<ResumenDeLectura> {
     return firstValueFrom(
       this.http.get<ResumenDeLectura>(`/api/passes/${passId}/lectura`, {

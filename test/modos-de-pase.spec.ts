@@ -4,6 +4,7 @@ import {
   ModoNoPermitidoError,
   ParametroDeModoError,
   consumePass,
+  pasesDelPerfil,
 } from "../src/lib/pass";
 import { cambiarPlan } from "../src/lib/congelado";
 import { PLANES, VENTANA_MINIMA_MS } from "../src/lib/planes";
@@ -299,5 +300,99 @@ describe("el listado de pases del panel", () => {
       headers: { authorization: `Bearer ${sesion}` },
     });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("limpiar la lista de enlaces", () => {
+  const JSON_HEADERS = { "content-type": "application/json" };
+
+  /*
+   * LA PRUEBA QUE SOSTIENE ESTA FUNCIÓN. Un enlace todavía abrible está en
+   * manos de otra persona: ya se lo mandaste. Borrarlo desde un botón que dice
+   * «limpiar» sería romperle el acceso a alguien sin decírselo. Si esto se pone
+   * rojo, la función se ha vuelto destructiva.
+   */
+  it("borra los cerrados y NO toca los que siguen vivos", async () => {
+    const { perfilId } = await cuenta("pro");
+    const sesion = await panelSession("marina");
+
+    const gastado = await createPass(db, { profileId: perfilId });
+    await call("/api/open/" + gastado.token);
+
+    const caducado = await createPass(db, { profileId: perfilId });
+    await db.query("UPDATE vistta.passes SET expires_at = $1 WHERE id = $2", [
+      Date.now() - 1000,
+      caducado.id,
+    ]);
+
+    const vivo = await createPass(db, { profileId: perfilId });
+    const conAccesos = await createPass(db, {
+      profileId: perfilId,
+      modo: "accesos",
+      maxAccesos: 3,
+    });
+    await call("/api/open/" + conAccesos.token); // abierto una vez: sigue vivo
+
+    const res = await call(`/api/passes?profileId=${perfilId}`, {
+      method: "DELETE",
+      headers: { ...JSON_HEADERS, authorization: `Bearer ${sesion}` },
+    });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { borrados: number }).borrados).toBe(2);
+
+    const quedan = await pasesDelPerfil(db, perfilId);
+    expect(quedan.map((p) => p.id).sort()).toEqual([conAccesos.id, vivo.id].sort());
+
+    // Y lo que importa de verdad: los que quedaron siguen abriéndose.
+    expect((await call("/api/open/" + vivo.token)).status).toBe(200);
+    expect((await call("/api/open/" + conAccesos.token)).status).toBe(200);
+  });
+
+  it("se lleva la actividad de lectura del pase que borra, y solo la suya", async () => {
+    const { perfilId } = await cuenta("pro");
+    const sesion = await panelSession("marina");
+
+    const gastado = await createPass(db, { profileId: perfilId });
+    const abierto = (await (await call("/api/open/" + gastado.token)).json()) as {
+      eventos: string;
+    };
+    await call("/api/passes/eventos", {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify({
+        testigo: abierto.eventos,
+        eventos: [{ tipo: "seccion", seccionIdx: 0, msVisible: 5000 }],
+      }),
+    });
+    const antes = await db.one<{ n: number }>("SELECT count(*)::int AS n FROM vistta.pass_events");
+    expect(antes?.n).toBe(1);
+
+    await call(`/api/passes?profileId=${perfilId}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${sesion}` },
+    });
+
+    const despues = await db.one<{ n: number }>(
+      "SELECT count(*)::int AS n FROM vistta.pass_events"
+    );
+    expect(despues?.n).toBe(0);
+  });
+
+  it("no limpia la lista de otro", async () => {
+    await cuenta("pro", "marina");
+    await crearCuenta("otro", "Otro");
+    const ajena = await panelSession("otro", "203.0.113.44");
+    const res = await call("/api/passes?profileId=p_marina", {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${ajena}` },
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("sin sesión, nada", async () => {
+    const { perfilId } = await cuenta("pro");
+    expect((await call(`/api/passes?profileId=${perfilId}`, { method: "DELETE" })).status).toBe(
+      401
+    );
   });
 });

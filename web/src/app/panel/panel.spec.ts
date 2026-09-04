@@ -125,6 +125,14 @@ class ApiFalsa {
 
   listPasses = () => Promise.resolve({ passes: this.pases });
 
+  limpiados: string[] = [];
+  limpiarPases = (_s: string, perfil: string) => {
+    this.limpiados.push(perfil);
+    const antes = this.pases.length;
+    this.pases = this.pases.filter((p) => p.estado === 'abrible');
+    return Promise.resolve({ borrados: antes - this.pases.length });
+  };
+
   lectura: ResumenDeLectura = { hayDatos: false, msTotales: 0, secciones: [], medios: [] };
   lecturaDelPase = () => Promise.resolve(this.lectura);
 }
@@ -718,6 +726,62 @@ describe('Panel · cómo caduca el enlace', () => {
     const texto = (fixture.nativeElement.textContent ?? '') as string;
     expect(texto).toContain('marina');
     expect(texto).toContain('No hay correo ni teléfono');
+  });
+
+  /*
+   * El botón solo aparece si hay algo cerrado, y al usarlo NO puede llevarse
+   * los enlaces vivos: esos ya están en manos de otra persona. Aquí se
+   * comprueba lo primero y que el aviso diga lo que se pierde.
+   */
+  it('no ofrece limpiar cuando no hay nada cerrado', async () => {
+    api.pases = [
+      {
+        id: 'vivo',
+        modo: 'unico',
+        estado: 'abrible',
+        creadoEn: Date.now(),
+        expiraEn: Date.now() + 3_600_000,
+        validoHasta: null,
+        accesosUsados: 0,
+        maxAccesos: null,
+        destinatarioRef: null,
+        destinatarioNota: null,
+        tema: 'oscuro',
+      },
+    ];
+    fixture.componentInstance['elegirPerfil']('p_uno');
+    await estabiliza();
+
+    const botones = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    expect(botones.filter((b) => (b.textContent ?? '').includes('LIMPIAR'))).toEqual([]);
+  });
+
+  it('con enlaces cerrados, ofrece limpiarlos y dice qué se pierde', async () => {
+    api.pases = [
+      {
+        id: 'gastado',
+        modo: 'unico',
+        estado: 'agotado',
+        creadoEn: Date.now(),
+        expiraEn: Date.now(),
+        validoHasta: null,
+        accesosUsados: 1,
+        maxAccesos: null,
+        destinatarioRef: null,
+        destinatarioNota: null,
+        tema: 'oscuro',
+      },
+    ];
+    fixture.componentInstance['elegirPerfil']('p_uno');
+    await estabiliza();
+
+    const texto = (fixture.nativeElement.textContent ?? '') as string;
+    expect(texto).toContain('LIMPIAR 1 CERRADO');
+    // Y advierte de las dos cosas: qué se lleva y qué no.
+    expect(texto).toContain('lo que se sabe de su lectura');
+    expect(texto).toContain('Los que siguen vivos no se tocan');
   });
 
   it('el panel no promete que impida nada', async () => {

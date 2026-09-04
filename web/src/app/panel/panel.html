@@ -1262,9 +1262,22 @@
 
       @if (pases().length) {
         <div class="mt-4 rounded-lg border border-borde bg-sup-2 p-4">
-          <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto-3">
-            ENLACES DE ESTE PERFIL
-          </h3>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto-3">
+              ENLACES DE ESTE PERFIL
+            </h3>
+            <!-- Solo aparece si hay algo que limpiar, y dice cuántos: un botón
+                 que no hace nada es peor que no tenerlo. -->
+            @if (pasesCerrados() > 0) {
+              <button
+                type="button"
+                (click)="limpiarPases()"
+                class="rounded-lg border border-borde px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:border-peligro/60 hover:text-peligro"
+              >
+                LIMPIAR {{ pasesCerrados() }} CERRADO{{ pasesCerrados() === 1 ? '' : 'S' }}
+              </button>
+            }
+          </div>
           <ul class="mt-2 space-y-1">
             @for (p of pases(); track p.id) {
               <li class="flex flex-wrap items-baseline gap-x-3 text-[13px] text-texto">
@@ -1327,6 +1340,14 @@
               </li>
             }
           </ul>
+          @if (pasesCerrados() > 0) {
+            <p
+              class="mt-3 border-t border-borde-2 pt-3 font-mono text-[10px] leading-relaxed text-texto-3"
+            >
+              Limpiar quita de la lista los enlaces que ya no se abren, y con ellos lo que se sabe
+              de su lectura. Los que siguen vivos no se tocan: esos ya están en manos de alguien.
+            </p>
+          }
         </div>
       }
 

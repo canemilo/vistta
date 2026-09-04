@@ -8,6 +8,7 @@ import {
   ModoNoPermitidoError,
   ParametroDeModoError,
   ProfileNotFoundError,
+  pasAbribleSql,
   pasesDelPerfil,
 } from "../lib/pass";
 import type { SeccionDePase } from "../lib/pass";
@@ -130,6 +131,46 @@ export function passesRoutes({ config, db }: Deps) {
     if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
 
     return c.json({ passes: await pasesDelPerfil(db, profileId) });
+  });
+
+  /*
+   * Limpiar la lista de enlaces de un perfil.
+   *
+   * Borra SOLO los que ya no se pueden abrir. Los que siguen vivos no se tocan,
+   * y esa es la decisión entera de esta ruta: un enlace abrible está en manos de
+   * otra persona —ya se lo mandaste—, así que borrarlo aquí no sería «limpiar
+   * una lista», sería romperle el acceso a alguien desde una pantalla que dice
+   * limpiar. En este proyecto nada se borra por sorpresa.
+   *
+   * Lo que se va con cada pase, por clave ajena en cascada: su instantánea de
+   * medios (`pass_media`) y su actividad de lectura (`pass_events`). Lo segundo
+   * importa y el panel lo advierte: al limpiar se pierde lo que se sabía de
+   * cómo se leyó ese enlace.
+   *
+   * Los medios NO se tocan: viven en `vistta.media` y son del perfil, no del
+   * pase. Y como estos pases ya no eran abribles, tampoco estaban protegiendo
+   * nada de la purga.
+   */
+  passes.delete("/api/passes", async (c) => {
+    const usuario = await usuarioDeLaSesion(db, bearer(c.req.header("Authorization")));
+    if (!usuario) return c.json({ error: "no autorizado" }, 401);
+
+    const profileId = c.req.query("profileId") ?? "";
+    const suyo = await db.one<{ id: string }>(
+      `SELECT id FROM vistta.profiles WHERE id = $1 AND owner_id = $2`,
+      [profileId, usuario.id]
+    );
+    if (!suyo) return c.json({ error: "perfil no encontrado" }, 404);
+
+    // El mismo predicado que decide si un pase se abre, negado. Se usa el
+    // compartido para que «cerrado» signifique aquí exactamente lo mismo que
+    // en el consumo: si divergieran, esto borraría enlaces todavía vivos.
+    const { rowCount } = await db.query(
+      `DELETE FROM vistta.passes AS p
+       WHERE p.profile_id = $1 AND NOT (${pasAbribleSql("p", "$2")})`,
+      [suyo.id, Date.now()]
+    );
+    return c.json({ borrados: rowCount });
   });
 
   // Abrir un pase (cliente). Se consume en el primer acceso.
