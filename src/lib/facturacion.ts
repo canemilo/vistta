@@ -158,6 +158,39 @@ export interface ResultadoConfirmacion {
 }
 
 /**
+ * Hasta cuándo queda pagado un plan al concederle un periodo.
+ *
+ * LA REGLA VIVE AQUÍ Y SOLO AQUÍ, porque hay dos caminos que conceden plan
+ * —confirmar un pago y asignarlo a mano desde el panel— y si cada uno la
+ * calculara por su cuenta acabarían discrepando en el caso que importa.
+ *
+ * ENCADENA cuando el plan no cambia: si a la cuenta le quedaban tres semanas de
+ * Pro y se le da otro mes de Pro, el periodo nuevo empieza cuando acaben esas
+ * tres semanas, no hoy. Dos razones, y las dos pesan:
+ *
+ *   - Pagar antes de tiempo no puede castigar al que paga antes de tiempo.
+ *   - Y al revés, desde el panel: reasignar el mismo plan a alguien que tenía
+ *     un año comprado no puede RECORTARLE a treinta días. Empezar de cero
+ *     siempre sería una forma silenciosa de quitar tiempo ya pagado.
+ *
+ * Cambiar de plan sí empieza de cero: Pro y Bóveda son productos distintos y
+ * los días de uno no se arrastran al otro.
+ */
+export function vencimientoTras(
+  planActual: string,
+  planNuevo: Plan,
+  vencimientoActual: number | null,
+  periodo: Periodo,
+  ahora: number
+): number {
+  const desde =
+    planActual === planNuevo && vencimientoActual !== null && vencimientoActual > ahora
+      ? vencimientoActual
+      : ahora;
+  return desde + DURACION_PERIODO_MS[periodo];
+}
+
+/**
  * Da un pago por cobrado y activa el plan.
  *
  * La fecha de vencimiento ENCADENA: si a la cuenta le quedaban tres semanas, el
@@ -189,13 +222,13 @@ export async function confirmarPago(
     );
     if (!cuenta) return null;
 
-    // Se encadena solo si la cuenta sigue en el MISMO plan y no ha vencido.
-    // Cambiar de Pro a Bóveda no arrastra los días de Pro: son otro producto.
-    const restante =
-      cuenta.plan === pago.plan && cuenta.plan_until !== null && cuenta.plan_until > ahora
-        ? cuenta.plan_until
-        : ahora;
-    const planHasta = restante + DURACION_PERIODO_MS[pago.periodo];
+    const planHasta = vencimientoTras(
+      cuenta.plan,
+      pago.plan,
+      cuenta.plan_until,
+      pago.periodo,
+      ahora
+    );
 
     const confirmado = await tx.one<Pago>(
       `UPDATE vistta.payments

@@ -6,8 +6,11 @@ import { hitRateLimit } from "../lib/ratelimit";
 import { PLANES_VALIDOS } from "../lib/planes";
 import { anularPago, confirmarPago, listarPagos } from "../lib/facturacion";
 import {
+  ACCIONES_ADMIN,
   asignarPlan,
   borrarCuenta,
+  diasConAuditoria,
+  listarAuditoria,
   listarCuentas,
   reactivar,
   registrar,
@@ -58,6 +61,33 @@ const PlanSchema = z.object({ plan: z.enum(["prueba", "pro", "boveda"]) });
 
 /** Borrar exige teclear el id de la cuenta: un clic de más no basta. */
 const BorrarSchema = z.object({ confirmacion: z.string() });
+
+/*
+ * Filtro del registro.
+ *
+ * Todo es opcional y todo se valida, incluida la zona horaria: es texto que
+ * llega del navegador y acaba dentro de una consulta. Va como parámetro, no
+ * concatenada, y además `diasConAuditoria` la contrasta con el catálogo de
+ * PostgreSQL antes de usarla.
+ *
+ * `coerce` porque una query string son cadenas: sin él, `desde=1757` sería el
+ * texto "1757" y la comparación con un BIGINT fallaría en la base en vez de
+ * aquí.
+ */
+const AuditoriaSchema = z.object({
+  desde: z.coerce.number().int().nonnegative().optional(),
+  hasta: z.coerce.number().int().nonnegative().optional(),
+  antes: z.coerce.number().int().nonnegative().optional(),
+  accion: z.enum(ACCIONES_ADMIN).optional(),
+  objetivo: z.string().min(1).max(64).optional(),
+  // Nombre IANA: `Europe/Madrid`, `UTC`. Lo da el propio navegador.
+  zona: z
+    .string()
+    .max(64)
+    .regex(/^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+)*$/)
+    .optional(),
+  limite: z.coerce.number().int().min(1).max(200).optional(),
+});
 
 const ConfirmarPagoSchema = z.object({
   metodo: z.enum(["bizum", "paypal", "transferencia", "otro"]),
@@ -266,19 +296,40 @@ export function adminRoutes({ db, storage }: Deps) {
     return c.json({ ok: true });
   });
 
+  /*
+   * El registro, filtrado y por páginas.
+   *
+   * La franja llega YA RESUELTA en milisegundos, calculada por el navegador a
+   * partir del día que se ha elegido. Es a propósito: el día de quien mira
+   * empieza y acaba en SU reloj, y el servidor no tiene por qué adivinar en qué
+   * huso está. Lo único que se le manda es el nombre de la zona, y solo para
+   * agrupar el índice de días.
+   */
   admin.get("/api/admin/auditoria", async (c) => {
-    const { rows } = await db.query<{
-      id: string;
-      adminId: string;
-      accion: string;
-      objetivo: string | null;
-      detalle: unknown;
-      createdAt: number;
-    }>(
-      `SELECT id, admin_id AS "adminId", accion, objetivo, detalle, created_at AS "createdAt"
-       FROM vistta.admin_audit ORDER BY created_at DESC LIMIT 200`
-    );
-    return c.json({ registros: rows });
+    const parsed = AuditoriaSchema.safeParse(c.req.query());
+    if (!parsed.success) return c.json({ error: "filtro no válido" }, 400);
+    const f = parsed.data;
+
+    const [pagina, dias] = await Promise.all([
+      listarAuditoria(db, {
+        desde: f.desde ?? null,
+        hasta: f.hasta ?? null,
+        accion: f.accion ?? null,
+        objetivo: f.objetivo ?? null,
+        antes: f.antes ?? null,
+        limite: f.limite,
+      }),
+      // El índice de días NO se filtra por la franja elegida: es el mapa desde
+      // el que se navega, y un mapa que solo enseña dónde ya estás no sirve.
+      diasConAuditoria(db, f.zona ?? "UTC"),
+    ]);
+
+    return c.json({
+      registros: pagina.registros,
+      hayMas: pagina.hayMas,
+      dias,
+      acciones: ACCIONES_ADMIN,
+    });
   });
 
   return admin;

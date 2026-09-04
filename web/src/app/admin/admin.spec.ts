@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Admin } from './admin';
-import type { CuentaAdmin } from '../core/api';
+import type { CatalogoPublico, CuentaAdmin, FiltroAuditoria, RegistroAuditoria } from '../core/api';
 import { Api, type Usuario } from '../core/api';
 
 /**
@@ -33,8 +33,31 @@ class ApiFalsa {
   cuentas: CuentaAdmin[] = [];
   adminCuentas = () =>
     Promise.resolve({ cuentas: this.cuentas, planes: ['prueba', 'pro', 'boveda'] });
-  adminAuditoria = () => Promise.resolve({ registros: [] });
+  /** Lo que pidió la última llamada al registro, para comprobar el filtro. */
+  ultimoFiltro: FiltroAuditoria | null = null;
+  registros: RegistroAuditoria[] = [];
+  dias: { dia: string; total: number }[] = [];
+  hayMas = false;
+  adminAuditoria = (_s: string, filtro: FiltroAuditoria = {}) => {
+    this.ultimoFiltro = filtro;
+    return Promise.resolve({
+      registros: this.registros,
+      hayMas: this.hayMas,
+      dias: this.dias,
+      acciones: ['crear_cuenta', 'cambiar_plan', 'reiniciar_password', 'cobrar_pago'],
+    });
+  };
   adminPagos = () => Promise.resolve({ pagos: [] });
+
+  /** El catálogo público. Solo se le mira la retención de cada plan. */
+  planes = () =>
+    Promise.resolve({
+      planes: [
+        { nombre: 'prueba', limites: { retencionMs: 7 * 86_400_000 }, precios: {}, seVende: false },
+        { nombre: 'pro', limites: { retencionMs: 15 * 86_400_000 }, precios: {}, seVende: true },
+        { nombre: 'boveda', limites: { retencionMs: null }, precios: {}, seVende: true },
+      ],
+    } as unknown as CatalogoPublico);
 
   logout = (t: string) => {
     this.sesionesCerradas.push(t);
@@ -232,11 +255,39 @@ describe('Admin · el control del cobro', () => {
   it('enseña cuánto le queda pagado a cada plan con plazo', async () => {
     const texto = await montar([
       cuenta('nordeste', { plan: 'pro', planHasta: Date.now() + 20.5 * DIA }),
-      cuenta('milo', { plan: 'boveda', planHasta: null }),
     ]);
     expect(texto).toContain('20 días');
-    // Bóveda de por vida: se dice con palabras, no con una fecha inventada.
-    expect(texto).toContain('sin plazo');
+  });
+
+  /*
+   * «Sin plazo» era mentira en las dos direcciones y decirla costaba dinero.
+   *
+   * En un plan de pago significaba un Pro o un Bóveda regalado de por vida sin
+   * que nadie lo supiera: el trabajo de vencimientos solo mira las filas que
+   * TIENEN fecha, así que esa cuenta no bajaba nunca. Ahora conceder plan es
+   * conceder periodo, y si aun así apareciera una sin fecha, se marca en ámbar
+   * en vez de disimularse.
+   */
+  it('un plan de pago sin fecha se señala, no se disimula', async () => {
+    const texto = await montar([cuenta('milo', { plan: 'boveda', planHasta: null })]);
+    expect(texto).toContain('sin plazo asignado');
+  });
+
+  /*
+   * Y en Prueba «sin plazo» era peor todavía: es justo la cuenta que MÁS plazo
+   * tiene encima. Ahí no vence el plan, vence el trabajo del cliente.
+   */
+  it('en prueba se enseña cuándo se borra el contenido, no «sin plazo»', async () => {
+    const texto = await montar([cuenta('marina', { plan: 'prueba', planHasta: null })]);
+    expect(texto).toContain('el contenido se borra a los 7 días');
+    expect(texto).not.toContain('sin plazo');
+  });
+
+  it('a un administrador no se le avisa de un contenido que no tiene', async () => {
+    const texto = await montar([cuenta('soporte', { plan: 'prueba', role: 'admin' })]);
+    // Un administrador no tiene perfiles —el panel entero se apoya en eso—, así
+    // que avisarle de que se le borra el trabajo es enseñar a no leer avisos.
+    expect(texto).not.toContain('el contenido se borra');
   });
 
   it('enseña quién debe pagar, con su código y su importe', async () => {
@@ -279,5 +330,166 @@ describe('Admin · el control del cobro', () => {
   it('un plan que vence dentro de un mes todavía no aparece', async () => {
     const texto = await montar([cuenta('marina', { planHasta: Date.now() + 30 * DIA })]);
     expect(texto).not.toContain('Bajan de plan');
+  });
+});
+
+/**
+ * El registro de administración.
+ *
+ * Dejó de ser una lista sin fin. Lo que se prueba aquí no es que se vea bonito,
+ * es que se pueda RESPONDER con él: qué pasó ese día, quién tocó los planes,
+ * qué se le hizo a esta cuenta. Un registro que hay que leer entero con los
+ * ojos no se lee.
+ */
+describe('Admin · el registro', () => {
+  let fixture: ComponentFixture<Admin>;
+  let api: ApiFalsa;
+
+  const DIA_MS = 86_400_000;
+
+  async function estabiliza(): Promise<void> {
+    for (let i = 0; i < 3; i++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+    }
+    fixture.detectChanges();
+  }
+
+  function apunte(extra: Partial<RegistroAuditoria> = {}): RegistroAuditoria {
+    return {
+      id: Math.random().toString(36).slice(2),
+      adminId: 'soporte',
+      accion: 'cambiar_plan',
+      objetivo: 'marina',
+      detalle: { de: 'prueba', a: 'pro' },
+      createdAt: Date.now(),
+      ...extra,
+    };
+  }
+
+  async function montar(registros: RegistroAuditoria[], dias = [{ dia: hoy(), total: 3 }]) {
+    api = new ApiFalsa();
+    api.rol = 'admin';
+    api.cuentas = [cuenta('marina', { plan: 'prueba' })];
+    api.registros = registros;
+    api.dias = dias;
+    sessionStorage.setItem('vistta.sesion', 'sesion-admin');
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Admin],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Admin);
+    await estabiliza();
+  }
+
+  function hoy(desplazamiento = 0): string {
+    const f = new Date(Date.now() + desplazamiento);
+    const dos = (n: number) => String(n).padStart(2, '0');
+    return `${f.getFullYear()}-${dos(f.getMonth() + 1)}-${dos(f.getDate())}`;
+  }
+
+  const texto = () => (fixture.nativeElement.textContent ?? '') as string;
+  const select = (etiqueta: string) =>
+    fixture.nativeElement.querySelector(`select[aria-label="${etiqueta}"]`) as HTMLSelectElement;
+
+  afterEach(() => sessionStorage.clear());
+
+  it('las acciones se leen en castellano, no por su nombre técnico', async () => {
+    await montar([apunte({ accion: 'reiniciar_password', detalle: {} })]);
+    // El nombre técnico es el que va en la base y no cambia; este es el que se
+    // lee. Nadie repasa un registro traduciendo `reiniciar_password`.
+    expect(texto()).toContain('Contraseña reiniciada');
+    expect(texto()).not.toContain('reiniciar_password');
+  });
+
+  it('el desplegable de días ofrece solo los días con apuntes, y cuántos', async () => {
+    await montar(
+      [apunte()],
+      [
+        { dia: hoy(), total: 4 },
+        { dia: hoy(-DIA_MS), total: 12 },
+      ],
+    );
+    const opciones = Array.from(select('Día del registro').options).map((o) =>
+      o.textContent!.trim(),
+    );
+    // Un calendario abierto obligaría a probar fechas a ciegas: aquí la mayoría
+    // de los días de este panel están vacíos.
+    expect(opciones[0]).toContain('Todos los días · 16');
+    expect(opciones[1]).toContain('hoy · 4');
+    expect(opciones[2]).toContain('ayer · 12');
+  });
+
+  it('elegir un día pide justo esa jornada, en la hora de quien mira', async () => {
+    await montar([apunte()], [{ dia: hoy(-DIA_MS), total: 2 }]);
+    const dia = hoy(-DIA_MS);
+    const s = select('Día del registro');
+    s.value = dia;
+    s.dispatchEvent(new Event('change'));
+    await estabiliza();
+
+    const filtro = api.ultimoFiltro!;
+    const [a, m, d] = dia.split('-').map(Number);
+    // La franja se calcula con el reloj LOCAL: en UTC, lo hecho de noche en
+    // España caería en el día siguiente y el registro contradiría a su autor.
+    expect(filtro.desde).toBe(new Date(a, m - 1, d).getTime());
+    expect(filtro.hasta).toBe(new Date(a, m - 1, d + 1).getTime());
+  });
+
+  it('filtrar por acción se le pide al servidor, no se recorta aquí', async () => {
+    await montar([apunte()]);
+    const s = select('Acción del registro');
+    s.value = 'cobrar_pago';
+    s.dispatchEvent(new Event('change'));
+    await estabiliza();
+    // Filtrar en el navegador solo escondería lo que ya se trajo: las líneas
+    // que importan pueden estar más abajo, sin haberse pedido nunca.
+    expect(api.ultimoFiltro!.accion).toBe('cobrar_pago');
+  });
+
+  it('un clic en la cuenta sigue su rastro', async () => {
+    await montar([apunte({ objetivo: 'costavega' })]);
+    const boton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b) =>
+        (b as HTMLButtonElement).getAttribute('aria-label') === 'Ver solo el registro de costavega',
+    ) as HTMLButtonElement;
+    expect(boton).toBeTruthy();
+    boton.click();
+    await estabiliza();
+    expect(api.ultimoFiltro!.objetivo).toBe('costavega');
+  });
+
+  it('«ver más» continúa donde acabó, no vuelve a empezar', async () => {
+    const antiguo = apunte({ createdAt: Date.now() - 5 * 60_000 });
+    api = new ApiFalsa();
+    await montar([apunte(), antiguo]);
+    api.hayMas = true;
+    // Se fuerza el botón: el doble responde hayMas al pedir, no al montar.
+    await fixture.componentInstance['cargarRegistro']();
+    await estabiliza();
+
+    const ver = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
+      (b as HTMLButtonElement).textContent!.includes('VER MÁS'),
+    ) as HTMLButtonElement;
+    expect(ver).toBeTruthy();
+    ver.click();
+    await estabiliza();
+
+    // El cursor es el INSTANTE de la última línea que ya se tiene. Con un
+    // número de página, un apunte nuevo entre dos peticiones repetiría una
+    // línea o se saltaría otra.
+    expect(api.ultimoFiltro!.antes).toBe(antiguo.createdAt);
+  });
+
+  it('sin apuntes con esos filtros lo dice, y no finge que no hay nada', async () => {
+    await montar([apunte()]);
+    const s = select('Acción del registro');
+    s.value = 'cobrar_pago';
+    s.dispatchEvent(new Event('change'));
+    api.registros = [];
+    await fixture.componentInstance['cargarRegistro']();
+    await estabiliza();
+    expect(texto()).toContain('Nada anotado con esos filtros');
   });
 });

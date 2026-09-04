@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   Api,
+  type CatalogoPublico,
   type CuentaAdmin,
   type Pago,
   type RegistroAuditoria,
@@ -80,6 +81,30 @@ export class Admin {
   protected readonly cuentas = signal<CuentaAdmin[]>([]);
   protected readonly auditoria = signal<RegistroAuditoria[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
+
+  /** El catálogo público, solo por la retención de cada plan. */
+  protected readonly catalogo = signal<CatalogoPublico | null>(null);
+
+  // --- Registro de administración ----------------------------------------
+  //
+  // El registro dejó de ser una lista sin fin. Se navega por tres ejes —qué
+  // día, qué acción, qué cuenta— porque son las tres preguntas que se le hacen
+  // de verdad: «¿qué pasó el martes?», «¿quién ha tocado los planes?», «¿qué se
+  // le hizo a esta cuenta?». Sin ellos había que leerlo entero con los ojos.
+  protected readonly dia = signal<string | null>(null);
+  protected readonly accionFiltro = signal<string | null>(null);
+  protected cuentaFiltro = '';
+  protected readonly dias = signal<{ dia: string; total: number }[]>([]);
+  protected readonly acciones = signal<string[]>([]);
+  protected readonly hayMas = signal(false);
+  protected readonly cargandoRegistro = signal(false);
+
+  /** Cuántos apuntes hay en total, para decirlo sin obligar a contarlos. */
+  protected readonly totalRegistros = computed(() => this.dias().reduce((n, d) => n + d.total, 0));
+
+  protected readonly hayFiltro = computed(
+    () => this.dia() !== null || this.accionFiltro() !== null || this.cuentaFiltro.trim() !== '',
+  );
 
   /** Lo que hay que cotejar con el extracto. Es lo primero que se mira. */
   protected readonly pendientes = computed(() =>
@@ -165,21 +190,25 @@ export class Admin {
     this.usuario.set(null);
     this.cuentas.set([]);
     this.auditoria.set([]);
+    this.dias.set([]);
     if (token) await this.api.logout(token).catch(() => undefined);
   }
 
   private async cargar(): Promise<void> {
     const sesion = this.sesion();
     if (!sesion) return;
-    const [lista, registro, pagos] = await Promise.all([
+    const [lista, pagos, catalogo] = await Promise.all([
       this.api.adminCuentas(sesion),
-      this.api.adminAuditoria(sesion),
       this.api.adminPagos(sesion),
+      // Sin sesión y público: solo se usa para leer la retención de cada plan,
+      // que es lo que caduca en Prueba —el contenido— cuando no caduca el plan.
+      this.api.planes().catch(() => null),
     ]);
     this.cuentas.set(lista.cuentas);
     this.planes.set(lista.planes);
-    this.auditoria.set(registro.registros);
     this.pagos.set(pagos.pagos);
+    this.catalogo.set(catalogo);
+    await this.cargarRegistro();
   }
 
   /** Envuelve una acción: ocupa la pantalla, recarga y traduce el error. */
@@ -317,6 +346,174 @@ export class Admin {
 
   protected fecha(ms: number): string {
     return new Date(ms).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  // -------------------------------------------------------------------------
+  // Registro de administración
+  // -------------------------------------------------------------------------
+
+  /**
+   * El día empieza y acaba en el reloj de QUIEN MIRA.
+   *
+   * Se resuelve aquí, en el navegador, y al servidor le llegan dos instantes ya
+   * calculados. Con el corte hecho en UTC, todo lo que se hiciera de noche en
+   * España aparecería fechado al día siguiente: el registro contradiría al
+   * reloj de quien lo escribió, que es justo lo que un registro no puede hacer.
+   */
+  private franja(dia: string | null): { desde?: number; hasta?: number } {
+    if (!dia) return {};
+    const [a, m, d] = dia.split('-').map(Number);
+    const inicio = new Date(a, m - 1, d, 0, 0, 0, 0).getTime();
+    const fin = new Date(a, m - 1, d + 1, 0, 0, 0, 0).getTime();
+    return { desde: inicio, hasta: fin };
+  }
+
+  private get zona(): string {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  }
+
+  /**
+   * Trae una página del registro.
+   *
+   * `mas` distingue las dos formas de pedirlo: aplicar un filtro EMPIEZA de
+   * cero, y continuar AÑADE por debajo. El cursor es el instante de la última
+   * línea que ya se tiene, no un número de página: si mientras se lee alguien
+   * escribe un apunte nuevo, con OFFSET la página siguiente repetiría una línea
+   * o se saltaría otra.
+   */
+  protected async cargarRegistro(mas = false): Promise<void> {
+    const sesion = this.sesion();
+    if (!sesion) return;
+    this.cargandoRegistro.set(true);
+    try {
+      const previos = this.auditoria();
+      const pagina = await this.api.adminAuditoria(sesion, {
+        ...this.franja(this.dia()),
+        accion: this.accionFiltro(),
+        objetivo: this.cuentaFiltro.trim() || null,
+        antes: mas && previos.length ? previos[previos.length - 1].createdAt : null,
+        zona: this.zona,
+      });
+      this.auditoria.set(mas ? [...previos, ...pagina.registros] : pagina.registros);
+      this.hayMas.set(pagina.hayMas);
+      this.dias.set(pagina.dias);
+      this.acciones.set(pagina.acciones);
+    } catch {
+      this.error.set('No se pudo leer el registro.');
+    } finally {
+      this.cargandoRegistro.set(false);
+    }
+  }
+
+  protected async filtrarPorDia(dia: string): Promise<void> {
+    this.dia.set(dia || null);
+    await this.cargarRegistro();
+  }
+
+  protected async filtrarPorAccion(accion: string): Promise<void> {
+    this.accionFiltro.set(accion || null);
+    await this.cargarRegistro();
+  }
+
+  protected async limpiarFiltros(): Promise<void> {
+    this.dia.set(null);
+    this.accionFiltro.set(null);
+    this.cuentaFiltro = '';
+    await this.cargarRegistro();
+  }
+
+  /**
+   * Las líneas agrupadas por día, con su encabezado.
+   *
+   * Un registro se lee por jornadas: repetir la fecha entera en cada línea la
+   * convierte en ruido y obliga a comparar cadenas con la vista para saber
+   * dónde cambia el día.
+   */
+  protected readonly porDias = computed(() => {
+    const grupos: { dia: string; etiqueta: string; registros: RegistroAuditoria[] }[] = [];
+    for (const r of this.auditoria()) {
+      const dia = this.claveDeDia(r.createdAt);
+      const ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.dia === dia) ultimo.registros.push(r);
+      else grupos.push({ dia, etiqueta: this.etiquetaDeDia(dia), registros: [r] });
+    }
+    return grupos;
+  });
+
+  /** `YYYY-MM-DD` en hora local, que es como se agrupa y como se filtra. */
+  private claveDeDia(ms: number): string {
+    const f = new Date(ms);
+    const dos = (n: number) => String(n).padStart(2, '0');
+    return `${f.getFullYear()}-${dos(f.getMonth() + 1)}-${dos(f.getDate())}`;
+  }
+
+  /** «hoy», «ayer» o la fecha. Un registro se consulta en esos términos. */
+  protected etiquetaDeDia(dia: string): string {
+    const hoy = this.claveDeDia(Date.now());
+    const ayer = this.claveDeDia(Date.now() - 86_400_000);
+    if (dia === hoy) return 'hoy';
+    if (dia === ayer) return 'ayer';
+    const [a, m, d] = dia.split('-').map(Number);
+    return new Date(a, m - 1, d).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  protected hora(ms: number): string {
+    return new Date(ms).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /**
+   * Cómo se llama cada acción en castellano.
+   *
+   * El nombre técnico (`reiniciar_password`) es el que va en la base y el que
+   * no cambia; este es el que se lee. Una acción sin traducir cae en su propio
+   * nombre en vez de desaparecer de la pantalla: si mañana se añade una al
+   * servidor, aquí se verá fea pero se verá.
+   */
+  private static readonly NOMBRES: Record<string, string> = {
+    crear_cuenta: 'Alta de cuenta',
+    editar_cuenta: 'Cambio de nombre',
+    cambiar_plan: 'Cambio de plan',
+    reiniciar_password: 'Contraseña reiniciada',
+    suspender: 'Suspensión',
+    reactivar: 'Reactivación',
+    borrar_cuenta: 'Cuenta borrada',
+    cobrar_pago: 'Pago cobrado',
+    anular_pago: 'Código anulado',
+    descartar_solicitud: 'Solicitud descartada',
+  };
+
+  protected nombreAccion(accion: string): string {
+    return Admin.NOMBRES[accion] ?? accion;
+  }
+
+  /**
+   * El color dice de qué clase es cada apunte, de un vistazo.
+   *
+   * Solo tres, y a propósito: lo IRREVERSIBLE en rojo, el DINERO en verde y el
+   * resto en gris. Un registro donde cada línea tiene su color no destaca nada.
+   */
+  protected tonoAccion(accion: string): string {
+    if (accion === 'borrar_cuenta') return 'text-peligro';
+    if (accion === 'suspender') return 'text-aviso';
+    if (accion === 'cobrar_pago') return 'text-acento';
+    return 'text-texto';
+  }
+
+  /**
+   * Cuánto aguanta el contenido en un plan, en días.
+   *
+   * Es lo que se enseña en Prueba, donde el plan no vence: ahí lo que caduca es
+   * el trabajo del cliente, y esa es la fecha que hay que tener delante. La
+   * cifra sale del catálogo del servidor, nunca escrita en la plantilla.
+   */
+  protected retencionDias(plan: string): number | null {
+    const entrada = this.catalogo()?.planes.find((p) => p.nombre === plan);
+    const ms = entrada?.limites.retencionMs ?? null;
+    return ms === null ? null : Math.round(ms / 86_400_000);
   }
 
   protected detalle(registro: RegistroAuditoria): string {

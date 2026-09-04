@@ -2,7 +2,8 @@ import type { Db } from "../db";
 import type { Storage } from "../storage/port";
 import { hashPassword, COSTE_POR_DEFECTO, type CosteArgon2 } from "./password";
 import { cambiarPlan } from "./congelado";
-import type { Plan } from "./planes";
+import { vencimientoTras } from "./facturacion";
+import { esPlanDePago, type Periodo, type Plan } from "./planes";
 
 /**
  * Gestión de cuentas por un administrador.
@@ -21,17 +22,29 @@ import type { Plan } from "./planes";
  *   3. **Deja rastro de todo.** Cada operación escribe en `admin_audit`.
  */
 
-export type AccionAdmin =
-  | "crear_cuenta"
-  | "editar_cuenta"
-  | "cambiar_plan"
-  | "reiniciar_password"
-  | "suspender"
-  | "reactivar"
-  | "borrar_cuenta"
-  | "cobrar_pago"
-  | "anular_pago"
-  | "descartar_solicitud";
+/**
+ * Todo lo que un administrador puede hacer, en una lista y no en una unión de
+ * cadenas suelta.
+ *
+ * Es una lista porque hay que RECORRERLA: el filtro del registro la valida y el
+ * panel la ofrece como desplegable. Con la unión de tipos, esos dos sitios
+ * habrían acabado con su propia copia escrita a mano, y la copia se queda vieja
+ * en cuanto alguien añade una acción aquí.
+ */
+export const ACCIONES_ADMIN = [
+  "crear_cuenta",
+  "editar_cuenta",
+  "cambiar_plan",
+  "reiniciar_password",
+  "suspender",
+  "reactivar",
+  "borrar_cuenta",
+  "cobrar_pago",
+  "anular_pago",
+  "descartar_solicitud",
+] as const;
+
+export type AccionAdmin = (typeof ACCIONES_ADMIN)[number];
 
 /** Resumen de una cuenta para la tabla del panel. Sin una línea de contenido. */
 export interface CuentaAdmin {
@@ -66,6 +79,121 @@ export async function registrar(
      VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
     [crypto.randomUUID(), adminId, accion, objetivo, JSON.stringify(detalle), Date.now()]
   );
+}
+
+/** Una línea del registro, tal y como se sirve. */
+export interface RegistroAuditoria {
+  id: string;
+  adminId: string;
+  accion: string;
+  objetivo: string | null;
+  detalle: Record<string, unknown>;
+  createdAt: number;
+}
+
+export interface FiltroAuditoria {
+  /** Franja cerrada por abajo y abierta por arriba: `[desde, hasta)`. */
+  desde?: number | null;
+  hasta?: number | null;
+  accion?: string | null;
+  objetivo?: string | null;
+  /** Cursor: la página siguiente empieza ANTES de este instante. */
+  antes?: number | null;
+  limite?: number;
+}
+
+/** Cuántas líneas se sirven de una vez. Más que esto no se lee, se escanea. */
+export const AUDITORIA_POR_PAGINA = 50;
+
+/**
+ * El registro, filtrado.
+ *
+ * Nació devolviendo las últimas 200 líneas sin más, y con eso se puede
+ * responder a «¿qué acaba de pasar?» pero no a ninguna de las preguntas que
+ * de verdad se le hacen a un registro: qué se hizo el martes, quién ha tocado
+ * esta cuenta, cuándo se cobró aquello. Una lista sin fin tampoco es un
+ * registro: es un sitio donde no se encuentra nada.
+ *
+ * El corte va por INSTANTE y no por número de página. Con OFFSET, un apunte
+ * nuevo entre dos peticiones desplaza toda la lista y la página siguiente
+ * repite una línea o se salta otra; aquí cada página continúa exactamente donde
+ * acabó la anterior, aunque entretanto se haya escrito algo.
+ *
+ * `hayMas` se calcula pidiendo UNA fila de más y descartándola. Sin eso, la
+ * única forma de saber si quedan más es un `count(*)` de toda la tabla en cada
+ * página.
+ */
+export async function listarAuditoria(
+  db: Db,
+  filtro: FiltroAuditoria = {}
+): Promise<{ registros: RegistroAuditoria[]; hayMas: boolean }> {
+  const condiciones: string[] = [];
+  const valores: unknown[] = [];
+  const parametro = (valor: unknown): string => {
+    valores.push(valor);
+    return `$${valores.length}`;
+  };
+
+  // `?? null` primero: así un campo ausente y uno puesto a null se tratan
+  // igual, sin que la condición dependa de cuál de los dos llegó.
+  const desde = filtro.desde ?? null;
+  const hasta = filtro.hasta ?? null;
+  const antes = filtro.antes ?? null;
+
+  if (desde !== null) condiciones.push(`created_at >= ${parametro(desde)}`);
+  if (hasta !== null) condiciones.push(`created_at < ${parametro(hasta)}`);
+  if (filtro.accion) condiciones.push(`accion = ${parametro(filtro.accion)}`);
+  if (filtro.objetivo) condiciones.push(`objetivo = ${parametro(filtro.objetivo)}`);
+  if (antes !== null) condiciones.push(`created_at < ${parametro(antes)}`);
+
+  const limite = Math.min(Math.max(filtro.limite ?? AUDITORIA_POR_PAGINA, 1), 200);
+  const donde = condiciones.length ? `WHERE ${condiciones.join(" AND ")}` : "";
+
+  const { rows } = await db.query<RegistroAuditoria>(
+    `SELECT id, admin_id AS "adminId", accion, objetivo, detalle,
+            created_at AS "createdAt"
+       FROM vistta.admin_audit
+       ${donde}
+      ORDER BY created_at DESC, id DESC
+      LIMIT ${parametro(limite + 1)}`,
+    valores
+  );
+
+  return { registros: rows.slice(0, limite), hayMas: rows.length > limite };
+}
+
+/**
+ * Qué días tienen apuntes, y cuántos.
+ *
+ * Es lo que llena el selector de fechas del panel: se ofrecen SOLO los días en
+ * los que pasó algo. Un calendario donde la mayoría de los días están vacíos
+ * obliga a ir probando fechas a ciegas hasta dar con una que tenga algo.
+ *
+ * El día se corta en la zona horaria de quien mira, que llega desde el
+ * navegador. Con UTC fijo, todo lo hecho de noche en España aparecería fechado
+ * al día siguiente y el registro contradiría al reloj de quien lo escribió.
+ * La zona se valida contra el catálogo de PostgreSQL DENTRO de la consulta: un
+ * nombre inventado cae en UTC en vez de reventar la petición.
+ */
+export async function diasConAuditoria(
+  db: Db,
+  zona = "UTC",
+  limite = 120
+): Promise<{ dia: string; total: number }[]> {
+  const { rows } = await db.query<{ dia: string; total: number }>(
+    `SELECT to_char(
+              to_timestamp(created_at / 1000.0)
+                AT TIME ZONE COALESCE((SELECT name FROM pg_timezone_names WHERE name = $1), 'UTC'),
+              'YYYY-MM-DD'
+            )                AS dia,
+            count(*)::int    AS total
+       FROM vistta.admin_audit
+      GROUP BY 1
+      ORDER BY 1 DESC
+      LIMIT $2`,
+    [zona, limite]
+  );
+  return rows;
 }
 
 /**
@@ -235,13 +363,52 @@ export async function reactivar(db: Db, userId: string): Promise<boolean> {
   return res.rowCount === 1;
 }
 
-/** Cambiar de plan pasa por el bloque E: congela o descongela lo que toque. */
-export async function asignarPlan(db: Db, userId: string, plan: Plan): Promise<boolean> {
-  const existe = await db.one<{ id: string }>(`SELECT id FROM vistta.users WHERE id = $1`, [
-    userId,
-  ]);
-  if (!existe) return false;
+/**
+ * Cambia el plan de una cuenta Y le pone su fecha de vencimiento.
+ *
+ * Las dos cosas juntas, y esa es la corrección: antes esto solo tocaba el plan,
+ * así que un plan concedido a mano nacía SIN plazo. En la tabla salía «sin
+ * plazo» y en la práctica era un Pro o un Bóveda de por vida, regalado por
+ * accidente: nadie lo veía vencer, nadie lo perseguía y `aplicarVencimientos`
+ * ni lo miraba, porque solo mira las filas que tienen fecha.
+ *
+ * Ahora conceder un plan de pago es conceder UN PERIODO, exactamente igual que
+ * cobrarlo. La cuenta atrás empieza al cambiar y el vencimiento lo calcula
+ * `vencimientoTras`, la misma función que usa la confirmación de un pago: si el
+ * plan no cambia, encadena en vez de recortar.
+ *
+ * `prueba` es el otro lado de la misma moneda: **no tiene plazo de plan, y por
+ * eso se le BORRA la fecha**. No es que no caduque; es que lo que caduca ahí es
+ * el contenido, a los 7 días, por retención (`lib/purga.ts`). Dejarle una fecha
+ * heredada del plan anterior la haría vencer otra vez en cada pasada.
+ *
+ * El orden importa: primero el plan —`cambiarPlan` abre su propia transacción
+ * para congelar y descongelar perfiles, y anidarlas no está soportado (ver
+ * db.ts)—, y después la fecha. Si fallara lo segundo, la cuenta se queda con el
+ * plan puesto y sin plazo, que es exactamente el estado de antes de este
+ * cambio y se arregla volviendo a asignar el plan. Al revés —fecha sin plan—
+ * sería una cuenta a la que se le cobra un tiempo que no tiene.
+ */
+export async function asignarPlan(
+  db: Db,
+  userId: string,
+  plan: Plan,
+  opciones: { periodo?: Periodo; ahora?: number } = {}
+): Promise<boolean> {
+  const cuenta = await db.one<{ plan: Plan; plan_until: string | number | null }>(
+    `SELECT plan, plan_until FROM vistta.users WHERE id = $1`,
+    [userId]
+  );
+  if (!cuenta) return false;
+
+  const ahora = opciones.ahora ?? Date.now();
+  const vencimiento = cuenta.plan_until === null ? null : Number(cuenta.plan_until);
+  const hasta = esPlanDePago(plan)
+    ? vencimientoTras(cuenta.plan, plan, vencimiento, opciones.periodo ?? "mensual", ahora)
+    : null;
+
   await cambiarPlan(db, userId, plan);
+  await db.query(`UPDATE vistta.users SET plan_until = $1 WHERE id = $2`, [hasta, userId]);
   return true;
 }
 

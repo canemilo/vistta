@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 export interface MediaItem {
@@ -114,6 +114,26 @@ export interface RegistroAuditoria {
   objetivo: string | null;
   detalle: Record<string, unknown>;
   createdAt: number;
+}
+
+export interface FiltroAuditoria {
+  desde?: number | null;
+  hasta?: number | null;
+  antes?: number | null;
+  accion?: string | null;
+  objetivo?: string | null;
+  zona?: string;
+  limite?: number;
+}
+
+export interface PaginaAuditoria {
+  registros: RegistroAuditoria[];
+  /** Quedan más líneas por debajo de la última. */
+  hayMas: boolean;
+  /** Solo los días en los que pasó algo, del más reciente al más antiguo. */
+  dias: { dia: string; total: number }[];
+  /** Las acciones que existen. Llegan del servidor: el panel no las escribe. */
+  acciones: string[];
 }
 
 export interface Sesion {
@@ -581,10 +601,25 @@ export class Api {
     );
   }
 
-  adminAuditoria(session: string): Promise<{ registros: RegistroAuditoria[] }> {
+  /**
+   * El registro, filtrado.
+   *
+   * La franja va en milisegundos y la calcula quien llama, a partir del día
+   * elegido y del reloj de ESTE navegador. El servidor no adivina husos: solo
+   * recibe la zona para agrupar el índice de días, y la contrasta con el
+   * catálogo de PostgreSQL antes de usarla.
+   */
+  adminAuditoria(session: string, filtro: FiltroAuditoria = {}): Promise<PaginaAuditoria> {
+    let params = new HttpParams();
+    for (const [clave, valor] of Object.entries(filtro)) {
+      if (valor !== null && valor !== undefined && valor !== '') {
+        params = params.set(clave, String(valor));
+      }
+    }
     return firstValueFrom(
-      this.http.get<{ registros: RegistroAuditoria[] }>('/api/admin/auditoria', {
+      this.http.get<PaginaAuditoria>('/api/admin/auditoria', {
         headers: { authorization: `Bearer ${session}` },
+        params,
       }),
     );
   }

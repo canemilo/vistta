@@ -424,8 +424,32 @@
                       {{ fecha(hasta) }}
                     }
                   </span>
-                } @else if (c.plan !== 'prueba') {
-                  <span class="mt-1.5 block text-[10px] text-texto-3">sin plazo</span>
+                } @else if (c.plan === 'prueba') {
+                  <!--
+                    En Prueba no vence el plan: vence el CONTENIDO. Poner aquí
+                    «sin plazo» era engañoso justo en la cuenta que más plazo
+                    tiene encima —la que borra el trabajo del cliente a los
+                    pocos días—. La cifra sale del catálogo del servidor.
+                  -->
+                  <!--
+                    Salvo a un administrador, que NO TIENE contenido: no tiene
+                    perfiles, y el panel entero se apoya en ello. Decirle que se
+                    le borra el trabajo a los siete días es avisar de algo que
+                    no existe, y un aviso así enseña a no leer los avisos.
+                  -->
+                  @if (c.role === 'cliente' && retencionDias('prueba'); as dias) {
+                    <span class="mt-1.5 block text-[10px] text-texto-3">
+                      el contenido se borra a los {{ dias }} días
+                    </span>
+                  }
+                } @else {
+                  <!--
+                    Un plan de pago sin fecha ya no se crea: `asignarPlan` da
+                    periodo y la migración 0012 puso uno a los que quedaron de
+                    antes. Si vuelve a aparecer, es que algo lo dejó a medias, y
+                    entonces hay que verlo, no disimularlo con un «sin plazo».
+                  -->
+                  <span class="mt-1.5 block text-[10px] text-aviso">sin plazo asignado</span>
                 }
               </td>
               <td class="border-b border-borde-3 py-3 pr-4">
@@ -535,22 +559,148 @@
         Todo lo que se hace desde aquí queda anotado. Cuando alguien puede tocar las cuentas de
         todos, el registro no es una comodidad: es parte del control.
       </p>
-      <ul class="mt-4 flex flex-col gap-1">
-        @for (r of auditoria(); track r.id) {
-          <li class="font-mono text-[11px] text-texto-2">
-            <span class="text-texto-3">{{ fecha(r.createdAt) }}</span>
-            · {{ r.adminId }} → <span class="text-texto">{{ r.accion }}</span>
-            @if (r.objetivo) {
-              · {{ r.objetivo }}
+      <!--
+        La barra de filtros. Tres ejes, que son las tres preguntas que se le
+        hacen a un registro: qué día, qué se hizo, a quién. Antes esto era una
+        lista sin fin y había que leerla con los ojos.
+      -->
+      <div class="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-borde bg-sup p-3">
+        <label class="flex flex-col gap-1">
+          <span class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">Día</span>
+          <!--
+            Solo los días QUE TIENEN algo, con su cuenta. Un calendario abierto
+            obliga a ir probando fechas a ciegas: aquí la mayoría estarían
+            vacías, porque en este panel no se trabaja todos los días.
+          -->
+          <select
+            [ngModel]="dia() ?? ''"
+            (ngModelChange)="filtrarPorDia($event)"
+            name="filtro-dia"
+            aria-label="Día del registro"
+            [disabled]="cargandoRegistro()"
+            class="w-48 rounded border border-borde bg-sup-2 px-2 py-1.5 text-[12px] text-texto outline-none focus:border-acento/60"
+          >
+            <option value="">Todos los días · {{ totalRegistros() }}</option>
+            @for (d of dias(); track d.dia) {
+              <option [value]="d.dia">{{ etiquetaDeDia(d.dia) }} · {{ d.total }}</option>
             }
-            @if (detalle(r)) {
-              <span class="text-texto-3">({{ detalle(r) }})</span>
+          </select>
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">Acción</span>
+          <select
+            [ngModel]="accionFiltro() ?? ''"
+            (ngModelChange)="filtrarPorAccion($event)"
+            name="filtro-accion"
+            aria-label="Acción del registro"
+            [disabled]="cargandoRegistro()"
+            class="w-52 rounded border border-borde bg-sup-2 px-2 py-1.5 text-[12px] text-texto outline-none focus:border-acento/60"
+          >
+            <option value="">Todas las acciones</option>
+            @for (a of acciones(); track a) {
+              <option [value]="a">{{ nombreAccion(a) }}</option>
             }
-          </li>
-        } @empty {
-          <li class="font-mono text-[11px] text-texto-3">Todavía no hay nada anotado.</li>
+          </select>
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">Cuenta</span>
+          <!--
+            Texto libre con sugerencias, y no un desplegable de cuentas: cuando
+            más falta hace mirar el registro de una cuenta es JUSTO DESPUÉS DE
+            BORRARLA, y una borrada ya no sale en ninguna lista.
+          -->
+          <input
+            [(ngModel)]="cuentaFiltro"
+            (keyup.enter)="cargarRegistro()"
+            (change)="cargarRegistro()"
+            name="filtro-cuenta"
+            list="cuentas-conocidas"
+            placeholder="cualquiera"
+            aria-label="Cuenta del registro"
+            [disabled]="cargandoRegistro()"
+            class="w-44 rounded border border-borde bg-sup-2 px-2 py-1.5 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
+          />
+          <datalist id="cuentas-conocidas">
+            @for (c of cuentas(); track c.id) {
+              <option [value]="c.id"></option>
+            }
+          </datalist>
+        </label>
+
+        @if (hayFiltro()) {
+          <button
+            type="button"
+            (click)="limpiarFiltros()"
+            [disabled]="cargandoRegistro()"
+            class="rounded border border-borde px-3 py-1.5 font-mono text-[10px] tracking-[0.1em] text-texto-2 hover:border-acento/60 disabled:opacity-40"
+          >
+            QUITAR FILTROS
+          </button>
         }
-      </ul>
+      </div>
+
+      <!-- Agrupado por jornadas: repetir la fecha en cada línea es ruido, y
+           obliga a comparar cadenas con la vista para ver dónde cambia el día. -->
+      <div class="mt-5 flex flex-col gap-5">
+        @for (grupo of porDias(); track grupo.dia) {
+          <section>
+            <p
+              class="border-b border-borde-2 pb-1 font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase"
+            >
+              {{ grupo.etiqueta }}
+            </p>
+            <ul class="mt-2 flex flex-col">
+              @for (r of grupo.registros; track r.id) {
+                <li
+                  class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-borde-3 py-1.5 font-mono text-[11px] text-texto-2 last:border-0"
+                >
+                  <span class="w-10 shrink-0 text-texto-3 tabular-nums">{{
+                    hora(r.createdAt)
+                  }}</span>
+                  <span [class]="tonoAccion(r.accion)">{{ nombreAccion(r.accion) }}</span>
+                  @if (r.objetivo) {
+                    <!-- El objetivo filtra con un clic: es como se sigue el
+                         rastro de una cuenta sin teclear su nombre. -->
+                    <button
+                      type="button"
+                      (click)="cuentaFiltro = r.objetivo; cargarRegistro()"
+                      class="rounded px-1 text-texto underline decoration-borde underline-offset-2 hover:decoration-acento"
+                      [attr.aria-label]="'Ver solo el registro de ' + r.objetivo"
+                    >
+                      {{ r.objetivo }}
+                    </button>
+                  }
+                  @if (detalle(r)) {
+                    <span class="text-texto-3">{{ detalle(r) }}</span>
+                  }
+                  <span class="ml-auto text-texto-3">por {{ r.adminId }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        } @empty {
+          <p class="font-mono text-[11px] text-texto-3">
+            @if (hayFiltro()) {
+              Nada anotado con esos filtros.
+            } @else {
+              Todavía no hay nada anotado.
+            }
+          </p>
+        }
+      </div>
+
+      @if (hayMas()) {
+        <button
+          type="button"
+          (click)="cargarRegistro(true)"
+          [disabled]="cargandoRegistro()"
+          class="mt-4 rounded border border-borde px-4 py-2 font-mono text-[10px] tracking-[0.14em] text-texto-2 hover:border-acento/60 disabled:opacity-40"
+        >
+          {{ cargandoRegistro() ? 'CARGANDO…' : 'VER MÁS' }}
+        </button>
+      }
     </div>
   </main>
 }

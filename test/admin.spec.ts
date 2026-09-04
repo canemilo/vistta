@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createPass } from "../src/lib/pass";
 import { purgar } from "../src/lib/purga";
+import { asignarPlan } from "../src/lib/admin";
+import { aplicarVencimientos } from "../src/lib/facturacion";
 import { GRACIA_CONGELADO_MS, PLANES } from "../src/lib/planes";
 import {
   call,
@@ -356,6 +358,107 @@ describe("borrado inmediato (supresión del RGPD)", () => {
   });
 });
 
+describe("el plazo del plan", () => {
+  const MES = 30 * 24 * 60 * 60 * 1000;
+
+  async function plazoDe(id: string): Promise<number | null> {
+    const fila = await db.one<{ plan_until: string | null }>(
+      `SELECT plan_until FROM vistta.users WHERE id = $1`,
+      [id]
+    );
+    const valor = fila?.plan_until ?? null;
+    return valor === null ? null : Number(valor);
+  }
+
+  it("dar un plan de pago arranca la cuenta atrás", async () => {
+    const sesion = await sesionAdmin();
+    await crearCuenta("marina", "Marina");
+    expect(await plazoDe("marina")).toBeNull();
+
+    await callAs("198.51.100.270", "/api/admin/cuentas/marina/plan", {
+      method: "PUT",
+      headers: auth(sesion),
+      body: JSON.stringify({ plan: "pro" }),
+    });
+
+    // Antes de esto, un plan dado a mano nacía sin fecha: en la tabla salía
+    // «sin plazo» y era un Pro de por vida regalado sin querer, porque el
+    // trabajo de vencimientos solo mira las filas que TIENEN fecha.
+    const hasta = await plazoDe("marina");
+    expect(hasta).not.toBeNull();
+    expect(hasta! - Date.now()).toBeGreaterThan(MES - 60_000);
+    expect(hasta! - Date.now()).toBeLessThan(MES + 60_000);
+  });
+
+  it("bajar a prueba borra la fecha: ahí no caduca el plan, caduca el contenido", async () => {
+    const sesion = await sesionAdmin();
+    await crearCuenta("marina", "Marina");
+    const con = (plan: string) =>
+      callAs("198.51.100.271", "/api/admin/cuentas/marina/plan", {
+        method: "PUT",
+        headers: auth(sesion),
+        body: JSON.stringify({ plan }),
+      });
+
+    await con("boveda");
+    expect(await plazoDe("marina")).not.toBeNull();
+    await con("prueba");
+    // Si se quedara la heredada, la cuenta vencería otra vez en cada pasada
+    // sobre un plan del que ya no se puede bajar más.
+    expect(await plazoDe("marina")).toBeNull();
+  });
+
+  it("volver a dar el MISMO plan encadena, nunca recorta lo ya pagado", async () => {
+    await crearCuenta("marina", "Marina");
+    // Un año comprado por delante.
+    const anual = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    await db.query(`UPDATE vistta.users SET plan = 'pro', plan_until = $1 WHERE id = 'marina'`, [
+      anual,
+    ]);
+
+    await asignarPlan(db, "marina", "pro");
+
+    // Empezar de cero aquí sería quitarle once meses ya pagados sin decírselo.
+    const hasta = await plazoDe("marina");
+    expect(hasta).toBeGreaterThan(anual);
+    expect(hasta! - anual).toBe(MES);
+  });
+
+  it("cambiar de plan sí empieza de cero: son productos distintos", async () => {
+    await crearCuenta("marina", "Marina");
+    const anual = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    await db.query(`UPDATE vistta.users SET plan = 'pro', plan_until = $1 WHERE id = 'marina'`, [
+      anual,
+    ]);
+
+    await asignarPlan(db, "marina", "boveda");
+
+    const hasta = await plazoDe("marina");
+    expect(hasta! - Date.now()).toBeLessThan(MES + 60_000);
+  });
+
+  it("el plan dado a mano vence de verdad, y vencer no borra nada", async () => {
+    await crearCuenta("marina", "Marina");
+    await asignarPlan(db, "marina", "pro");
+
+    // Se adelanta el reloj de la cuenta hasta pasado su periodo.
+    await db.query(`UPDATE vistta.users SET plan_until = $1 WHERE id = 'marina'`, [
+      Date.now() - 1000,
+    ]);
+    const bajadas = await aplicarVencimientos(db);
+
+    expect(bajadas).toContain("marina");
+    const fila = await db.one<{ plan: string; plan_until: string | null }>(
+      `SELECT plan, plan_until FROM vistta.users WHERE id = 'marina'`
+    );
+    expect(fila?.plan).toBe("prueba");
+    expect(fila?.plan_until).toBeNull();
+    // La cuenta sigue existiendo, con su perfil: bajar de plan no destruye.
+    const perfiles = await db.query(`SELECT id FROM vistta.profiles WHERE owner_id = 'marina'`);
+    expect(perfiles.rows.length).toBe(1);
+  });
+});
+
 describe("auditoría", () => {
   it("cada acción deja rastro, y el borrado sobrevive a la cuenta borrada", async () => {
     const sesion = await sesionAdmin();
@@ -386,6 +489,84 @@ describe("auditoría", () => {
     // El registro dice QUE se reinició la contraseña, nunca cuál: su detalle
     // va vacío a propósito.
     expect(registros.find((r) => r.accion === "reiniciar_password")!.detalle).toEqual({});
+  });
+
+  it("se filtra por día, por acción y por cuenta, y pagina sin repetir", async () => {
+    const sesion = await sesionAdmin();
+    await crearCuenta("marina", "Marina");
+    await crearCuenta("nordeste", "Nordeste");
+    const con = (ruta: string, method: string, body?: string) =>
+      callAs("198.51.100.263", ruta, { method, headers: auth(sesion), body });
+
+    await con("/api/admin/cuentas/marina/plan", "PUT", JSON.stringify({ plan: "pro" }));
+    await con("/api/admin/cuentas/nordeste/plan", "PUT", JSON.stringify({ plan: "boveda" }));
+    await con("/api/admin/cuentas/marina/password", "POST");
+
+    // Un apunte antiguo, movido a mano al pasado: es la única forma de tener
+    // dos días distintos sin esperar a mañana.
+    const ayer = Date.now() - 26 * 60 * 60 * 1000;
+    await db.query(
+      `UPDATE vistta.admin_audit SET created_at = $1 WHERE accion = 'reiniciar_password'`,
+      [ayer]
+    );
+
+    const leer = async (query: string) => {
+      const res = await con(`/api/admin/auditoria${query}`, "GET");
+      expect(res.status).toBe(200);
+      return (await res.json()) as {
+        registros: { accion: string; objetivo: string | null; createdAt: number }[];
+        hayMas: boolean;
+        dias: { dia: string; total: number }[];
+        acciones: string[];
+      };
+    };
+
+    // Por acción.
+    const porAccion = await leer("?accion=cambiar_plan");
+    expect(porAccion.registros.map((r) => r.accion)).toEqual(["cambiar_plan", "cambiar_plan"]);
+
+    // Por cuenta. Y el registro de la otra NO se cuela.
+    const porCuenta = await leer("?objetivo=nordeste");
+    expect(porCuenta.registros.every((r) => r.objetivo === "nordeste")).toBe(true);
+    expect(porCuenta.registros.length).toBeGreaterThan(0);
+
+    // Por franja: solo lo de hoy deja fuera el apunte de ayer.
+    const hoy = await leer(`?desde=${Date.now() - 12 * 60 * 60 * 1000}`);
+    expect(hoy.registros.some((r) => r.accion === "reiniciar_password")).toBe(false);
+    const anteayer = await leer(`?hasta=${Date.now() - 12 * 60 * 60 * 1000}`);
+    expect(anteayer.registros.map((r) => r.accion)).toEqual(["reiniciar_password"]);
+
+    // El índice de días NO se estrecha con el filtro: es el mapa desde el que
+    // se navega, y si solo enseñara el día elegido no se podría salir de él.
+    expect(hoy.dias.length).toBe(2);
+    expect(hoy.dias.reduce((n, d) => n + d.total, 0)).toBe(
+      anteayer.dias.reduce((n, d) => n + d.total, 0)
+    );
+
+    // Paginación por instante: la segunda página continúa donde acabó la
+    // primera, sin repetir la última línea ni saltarse ninguna.
+    const primera = await leer("?limite=2");
+    expect(primera.registros.length).toBe(2);
+    expect(primera.hayMas).toBe(true);
+    const ultima = primera.registros[1].createdAt;
+    const segunda = await leer(`?limite=2&antes=${ultima}`);
+    for (const r of segunda.registros) expect(r.createdAt).toBeLessThan(ultima);
+
+    // La lista de acciones viaja con la respuesta: el panel no la escribe.
+    expect(primera.acciones).toContain("cobrar_pago");
+  });
+
+  it("una zona horaria inventada no rompe la petición: cae en UTC", async () => {
+    const sesion = await sesionAdmin();
+    await crearCuenta("marina", "Marina");
+    const res = await callAs("198.51.100.264", "/api/admin/auditoria?zona=Marte/Olympus", {
+      headers: auth(sesion),
+    });
+    // El formato es válido, así que llega a la consulta; ahí no existe y se
+    // agrupa en UTC en vez de reventar.
+    expect(res.status).toBe(200);
+    const { dias } = (await res.json()) as { dias: { dia: string }[] };
+    expect(dias.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.dia))).toBe(true);
   });
 
   it("el registro no lo ve un cliente", async () => {
