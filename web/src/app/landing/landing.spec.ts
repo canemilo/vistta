@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { Landing } from './landing';
 import { Api, type CatalogoPublico } from '../core/api';
 
@@ -73,7 +73,36 @@ describe('Portada pública', () => {
     return (fixture.nativeElement.textContent ?? '') as string;
   }
 
-  beforeEach(() => (api = new ApiFalsa()));
+  beforeEach(() => {
+    api = new ApiFalsa();
+    sessionStorage.clear();
+  });
+
+  afterEach(() => sessionStorage.clear());
+
+  /*
+   * La portada es la puerta de la calle. A quien ya está dentro no se le enseña:
+   * verla con un botón de «Entrar» parece que te has salido sin querer.
+   */
+  it('a quien tiene sesión se le manda a su cuenta', async () => {
+    sessionStorage.setItem('vistta.sesion', 'un-testigo');
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Landing],
+      providers: [{ provide: Api, useValue: api }, provideRouter([])],
+    }).compileComponents();
+    // El espía va ANTES de crear el componente: la redirección ocurre en el
+    // constructor, así que instalarlo después no la ve pasar.
+    const navegado: string[][] = [];
+    spyOn(TestBed.inject(Router), 'navigate').and.callFake((r: unknown[]) => {
+      navegado.push(r as string[]);
+      return Promise.resolve(true);
+    });
+    fixture = TestBed.createComponent(Landing);
+    await estabiliza();
+
+    expect(navegado).toEqual([['/panel']]);
+  });
 
   /*
    * LA PRUEBA QUE IMPORTA. Una portada es donde más fácil se cuela una promesa

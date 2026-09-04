@@ -71,6 +71,30 @@ describe('Legal', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
+  afterEach(() => sessionStorage.clear());
+
+  /*
+   * A estos textos se llega desde dos sitios muy distintos, y el enlace de
+   * volver tiene que saber de cuál. Quien viene de su cuenta quiere volver a su
+   * cuenta: mandarlo a la portada lo saca de la aplicación y le enseña un botón
+   * de «Entrar», como si se hubiera salido sin querer. Y quien llega desde un
+   * pase —o porque necesita avisar de un contenido— no tiene cuenta ninguna.
+   */
+  it('sin sesión, el enlace de arriba vuelve a la portada', async () => {
+    sessionStorage.clear();
+    await arranca(AVISO);
+    const volver = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(volver.getAttribute('href')).toBe('/');
+  });
+
+  it('con sesión, vuelve a la cuenta y lo dice con palabras', async () => {
+    sessionStorage.setItem('vistta.sesion', 'un-testigo');
+    await arranca(AVISO);
+    const volver = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(volver.getAttribute('href')).toBe('/panel');
+    expect(volver.textContent).toContain('volver a mi cuenta');
+  });
+
   it('ofrece los cuatro documentos públicos', async () => {
     await arranca(AVISO);
     for (const titulo of [

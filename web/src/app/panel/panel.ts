@@ -19,6 +19,7 @@ import {
 import { PassDocument, type DocSection } from '../document/pass-document';
 import { BotonTema } from '../core/boton-tema';
 import { Marca } from '../core/marca';
+import { CLAVE_SESION } from '../core/sesion';
 
 /** Panel: entrar con PIN, montar el contenido y generar el enlace. */
 @Component({
@@ -37,7 +38,6 @@ export class Panel {
   private readonly router = inject(Router);
 
   /** La sesión sobrevive a un F5 dentro de la misma pestaña, no más allá. */
-  private static readonly CLAVE_SESION = 'vistta.sesion';
 
   protected usuarioId = '';
   protected contrasena = '';
@@ -199,7 +199,7 @@ export class Panel {
   // --- sesión ---------------------------------------------------------------
 
   constructor() {
-    const guardada = sessionStorage.getItem(Panel.CLAVE_SESION);
+    const guardada = sessionStorage.getItem(CLAVE_SESION);
     if (guardada) void this.retomar(guardada);
   }
 
@@ -208,7 +208,7 @@ export class Panel {
       const { user } = await this.api.me(token);
       await this.abrirPanel(token, user);
     } catch {
-      sessionStorage.removeItem(Panel.CLAVE_SESION);
+      sessionStorage.removeItem(CLAVE_SESION);
     }
   }
 
@@ -219,7 +219,7 @@ export class Panel {
     try {
       const { token, user } = await this.api.login(this.usuarioId.trim(), this.contrasena);
       this.contrasena = '';
-      sessionStorage.setItem(Panel.CLAVE_SESION, token);
+      sessionStorage.setItem(CLAVE_SESION, token);
       // El giro de la tarjeta, ya con la sesión guardada: si algo fallara a
       // partir de aquí, la sesión está a salvo y basta con recargar.
       await this.girarYEntrar();
@@ -484,7 +484,7 @@ export class Panel {
 
   protected async salir(): Promise<void> {
     const token = this.sesion();
-    sessionStorage.removeItem(Panel.CLAVE_SESION);
+    sessionStorage.removeItem(CLAVE_SESION);
     /*
      * Deshacer el giro es lo PRIMERO, y no un detalle: la animación de salida
      * lleva `forwards`, así que deja la tarjeta girada y a opacidad cero. Si al

@@ -12,6 +12,7 @@ import {
 import { BotonTema } from '../core/boton-tema';
 import { Marca } from '../core/marca';
 import { TemaApp } from '../core/tema';
+import { CLAVE_SESION } from '../core/sesion';
 
 /**
  * Panel de administración.
@@ -43,7 +44,6 @@ import { TemaApp } from '../core/tema';
 })
 export class Admin {
   protected readonly tema = inject(TemaApp);
-  private static readonly CLAVE_SESION = 'vistta.sesion';
 
   private readonly api = inject(Api);
   private readonly router = inject(Router);
@@ -86,7 +86,7 @@ export class Admin {
   );
 
   constructor() {
-    const guardada = sessionStorage.getItem(Admin.CLAVE_SESION);
+    const guardada = sessionStorage.getItem(CLAVE_SESION);
     if (guardada) void this.recuperar(guardada);
   }
 
@@ -104,7 +104,7 @@ export class Admin {
       this.usuario.set(user);
       await this.cargar();
     } catch {
-      sessionStorage.removeItem(Admin.CLAVE_SESION);
+      sessionStorage.removeItem(CLAVE_SESION);
     }
   }
 
@@ -120,7 +120,7 @@ export class Admin {
         this.error.set('No se pudo entrar con esos datos.');
         return;
       }
-      sessionStorage.setItem(Admin.CLAVE_SESION, sesion.token);
+      sessionStorage.setItem(CLAVE_SESION, sesion.token);
       this.sesion.set(sesion.token);
       this.usuario.set(sesion.user);
       await this.cargar();
@@ -133,7 +133,7 @@ export class Admin {
 
   protected async salir(): Promise<void> {
     const token = this.sesion();
-    sessionStorage.removeItem(Admin.CLAVE_SESION);
+    sessionStorage.removeItem(CLAVE_SESION);
     this.sesion.set(null);
     this.usuario.set(null);
     this.cuentas.set([]);

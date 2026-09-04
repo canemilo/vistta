@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Api, type CatalogoPublico } from '../core/api';
 import { Marca } from '../core/marca';
+import { haySesion } from '../core/sesion';
 
 /**
  * La página pública.
@@ -32,11 +33,25 @@ import { Marca } from '../core/marca';
 })
 export class Landing {
   private readonly api = inject(Api);
+  private readonly router = inject(Router);
 
   protected readonly catalogo = signal<CatalogoPublico | null>(null);
   protected readonly contacto = signal<string | null>(null);
 
   constructor() {
+    /*
+     * Con sesión abierta, esta página no pinta nada: es la puerta de la calle y
+     * quien la ve ya está dentro. Se le manda a lo suyo en el acto —antes
+     * incluso de pedir el catálogo—, porque enseñarle un «Entrar» a alguien que
+     * ya entró es enseñarle que se ha salido sin querer.
+     *
+     * Se mira solo la PRESENCIA del testigo: si estuviera caducado, en /panel
+     * se encontrará la pantalla de entrada, que es lo correcto.
+     */
+    if (haySesion()) {
+      void this.router.navigate(['/panel']);
+      return;
+    }
     void this.cargar();
   }
 

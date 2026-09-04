@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { marked } from 'marked';
 import { TemaApp } from '../core/tema';
+import { haySesion } from '../core/sesion';
 
 interface AvisoLegal {
   titular: { nombre: string | null; identificacion: string | null; direccion: string | null };
@@ -48,6 +49,18 @@ interface Documento {
 })
 export class Legal {
   protected readonly tema = inject(TemaApp);
+
+  /**
+   * A dónde vuelve el enlace de arriba.
+   *
+   * Depende de quién esté leyendo, y por eso no es fijo: a estos textos se llega
+   * desde dos sitios muy distintos. Quien viene de su cuenta quiere volver a su
+   * cuenta —mandarlo a la portada lo saca de la aplicación y le enseña un botón
+   * de «Entrar» como si se hubiera salido—. Y quien llega desde un pase, o
+   * porque necesita avisar de un contenido, no tiene cuenta ninguna: a ese lo
+   * que le sirve es la portada.
+   */
+  protected readonly volverA = haySesion() ? '/panel' : '/';
   private readonly http = inject(HttpClient);
 
   protected readonly DOCUMENTOS: Documento[] = [
