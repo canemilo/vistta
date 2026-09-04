@@ -16,13 +16,18 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'app-marca',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!--
+      El alto manda y el ancho sale del viewBox. Antes había un height:1em en
+      línea que pisaba el atributo, así que la marca se pintaba a 16 px de alto
+      dijera lo que dijera quien la usaba. Con un enlace de estilo no hay dos
+      fuentes de verdad.
+    -->
     <svg
-      [attr.viewBox]="'0 0 430 170'"
-      [attr.height]="alto()"
+      viewBox="0 0 430 170"
+      [style.height.px]="alto()"
+      style="width: auto"
       role="img"
       aria-label="Vistta"
-      class="w-auto"
-      style="height: 1em"
     >
       <title>Vistta</title>
       <defs>
@@ -59,6 +64,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
 })
 export class Marca {
-  /** Alto en píxeles. El ancho sale solo del viewBox. */
-  readonly alto = input(40);
+  /** Alto en píxeles. El ancho sale solo del viewBox (relación 430:170). */
+  readonly alto = input(32);
 }
