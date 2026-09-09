@@ -121,7 +121,7 @@
         </div>
       </dl>
 
-      <p class="mt-4 font-mono text-[12px] leading-relaxed text-texto-2">
+      <p class="mt-5 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
         @if (inf.mideLectura) {
           Tiempo medio de lectura: <strong>{{ enTiempo(inf.cifras.msMedio) }}</strong> por dosier
           abierto.
@@ -140,7 +140,7 @@
       </p>
 
       @if (evolucion() !== null) {
-        <p class="mt-2 font-mono text-[12px] text-texto-2">
+        <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto-2">
           Respecto al periodo anterior, la apertura
           @if (evolucion()! > 0) {
             ha subido {{ evolucion() }} puntos.
@@ -154,7 +154,7 @@
 
       @if (!inf.datosSuficientes) {
         <p
-          class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3 font-mono text-[11px] leading-relaxed text-aviso"
+          class="mt-5 max-w-[62ch] rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3 font-serif text-[14px] leading-[1.65] text-aviso"
         >
           Todavía hay pocas lecturas para hablar en porcentajes, así que este informe da los números
           tal cual. Con dos o tres datos, un porcentaje dice más de lo que sabe.
@@ -170,7 +170,7 @@
         </h2>
 
         @if (inf.apartados.length === 0) {
-          <p class="mt-3 font-mono text-[12px] text-texto-3">
+          <p class="mt-3 font-serif text-[15px] text-texto-3">
             Todavía no hay lecturas medidas en este periodo.
           </p>
         } @else {
@@ -179,7 +179,7 @@
               <li
                 class="flex flex-wrap items-baseline justify-between gap-3 border-b border-borde-3 pb-2"
               >
-                <span class="font-mono text-[13px] text-texto">
+                <span class="font-serif text-[16px] text-texto">
                   {{ nombreDeApartado(a.titulo, a.seccionIdx) }}
                 </span>
                 <span class="font-mono text-[12px] text-texto-2">
@@ -196,7 +196,7 @@
         }
 
         @if (inf.saltados.length) {
-          <p class="mt-4 font-mono text-[12px] leading-relaxed text-texto-2">
+          <p class="mt-5 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
             <strong>Nadie llegó a</strong> {{ listaDeSaltados(inf) }}.
           </p>
         }
@@ -205,14 +205,14 @@
 
     <!-- ================= EL PIE ================= -->
     <footer class="bloque mt-8 border-t border-borde-2 pt-4">
-      <p class="font-mono text-[10px] leading-relaxed text-texto-3">
+      <p class="max-w-[68ch] font-serif text-[13px] leading-[1.7] text-texto-3">
         Datos agregados de {{ inf.cifras.enviados }} envíos del periodo. Este informe
         <strong>no identifica a ningún comprador</strong>: no recoge quién abrió cada dosier ni
         desde dónde. Los tiempos de lectura son <strong>aproximados</strong> —los mide el navegador
         de quien lee, solo con la pestaña delante— y sirven para comparar entre apartados, no como
         medida exacta.
       </p>
-      <p class="mt-2 font-mono text-[10px] text-texto-3">
+      <p class="mt-3 font-mono text-[10px] tracking-[0.16em] text-texto-4">
         Generado el {{ enFecha(inf.generadoEn) }} con Vistta.
       </p>
     </footer>
@@ -224,7 +224,7 @@
       <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
         Ficha del inmueble
       </h2>
-      <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.65] text-texto-3">
         Para ti. De la persona propietaria no se guarda nada —ni nombre, ni correo, ni teléfono—: el
         informe se lo entregas tú, así que Vistta no necesita saber quién es.
       </p>

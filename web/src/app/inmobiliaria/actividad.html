@@ -16,7 +16,7 @@
     } @else {
       @if (conexionApagada()) {
         <p
-          class="mb-6 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] leading-relaxed text-peligro"
+          class="mb-6 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-serif text-[14px] leading-[1.65] text-peligro max-w-[64ch]"
           role="alert"
         >
           <strong>Tu CRM ha dejado de recibir avisos.</strong> Los últimos envíos fallaron y los
@@ -65,7 +65,7 @@
 
         <div class="p-5">
           @if (avisos().length === 0) {
-            <p class="font-mono text-[12px] leading-relaxed text-texto-3">
+            <p class="font-serif text-[14px] leading-[1.65] text-texto-3 max-w-[64ch]">
               Nada nuevo. Aquí aparece cuando alguien vuelve a abrir un dosier que ya había visto,
               que suele ser el mejor momento para llamar.
             </p>
@@ -113,7 +113,7 @@
         </div>
 
         <div class="p-5">
-          <p class="font-mono text-[11px] leading-relaxed text-texto-3">
+          <p class="font-serif text-[14px] leading-[1.65] text-texto-3 max-w-[64ch]">
             Ordenado por la fuerza de la señal, y cada uno dice por qué está donde está. El tiempo
             de lectura es <strong class="text-texto-2">aproximado</strong>: lo mide un navegador.
           </p>
@@ -146,7 +146,9 @@
                           {{ etiqueta(p.temperatura) }}
                         </span>
                       </div>
-                      <p class="mt-1.5 font-mono text-[11px] leading-relaxed text-texto-2">
+                      <p
+                        class="mt-1.5 font-serif text-[14px] leading-[1.65] text-texto-2 max-w-[64ch]"
+                      >
                         {{ razon(p) }}
                         @if (p.msLeidos > 0) {
                           · leyó {{ enTiempo(p.msLeidos) }}
@@ -173,7 +175,7 @@
         </div>
 
         <div class="p-5">
-          <p class="font-mono text-[11px] leading-relaxed text-texto-3">
+          <p class="font-serif text-[14px] leading-[1.65] text-texto-3 max-w-[64ch]">
             Últimos 30 días. Solo tus dosieres: aquí no entran datos de nadie más. Una apertura muy
             baja no dice que el inmueble sea peor, dice que el problema puede estar en cómo se está
             enviando.
@@ -278,7 +280,7 @@
             </div>
 
             @if (filasOrdenadas().length && !filasOrdenadas()[0].datosSuficientes) {
-              <p class="mt-4 font-mono text-[11px] leading-relaxed text-texto-3">
+              <p class="mt-4 font-serif text-[14px] leading-[1.65] text-texto-3 max-w-[64ch]">
                 Con menos de cuatro lecturas no se enseñan porcentajes: salen los números tal cual.
                 Con dos datos, «el 50%» es ruido con aspecto de hecho.
               </p>

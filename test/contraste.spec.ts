@@ -289,6 +289,47 @@ describe("ninguna pantalla del panel se salta el tema del usuario", () => {
   });
 });
 
+/*
+ * LAS DOS VOCES, Y QUE NINGUNA SE DESCARGUE.
+ *
+ * La tipografía de este producto distingue lo que se LEE —serif: la entradilla,
+ * el cuerpo de un apartado, el pie de una foto, la prosa de un informe— de la
+ * MAQUINARIA —mono: el enlace, el estado del pase, los números—. Las dos pilas
+ * son de sistema y no se baja ni un byte de fuente.
+ *
+ * No es una preferencia estética: la CSP es estricta, y sobre todo el viewer lo
+ * abre desde el móvil alguien que no es cliente nuestro, una sola vez. Ese
+ * bundle no descarga un archivo de fuente para enseñar seis fotos. Quien meta
+ * una tipografía web tendrá que aflojar la CSP o verla fallar en silencio, y lo
+ * segundo no se nota hasta que alguien mira el documento y lo ve en Times.
+ */
+describe("la tipografía no sale a internet", () => {
+  const FUENTES = [
+    "web/src/styles.css",
+    "web/src/app/document/pass-document.ts",
+    "web/src/app/inmobiliaria/informe.ts",
+    "web/src/app/core/cabecera-panel.ts",
+  ];
+
+  it.each(FUENTES)("%s no declara ni pide una fuente externa", (archivo) => {
+    const fuente = readFileSync(join(process.cwd(), archivo), "utf8");
+    for (const prohibido of ["@font-face", "fonts.googleapis", "fonts.gstatic", ".woff", ".ttf"]) {
+      expect(fuente, `${archivo} trae ${prohibido}`).not.toContain(prohibido);
+    }
+  });
+
+  it("las dos pilas están definidas, y la serif no es la de manual", () => {
+    const bloque = CSS.slice(CSS.indexOf("@theme {"), CSS.indexOf("/*\n * Los valores del tema"));
+    expect(bloque).toContain("--font-mono:");
+    expect(bloque).toContain("--font-serif:");
+    // Georgia vale de red, no de primera opción: es la que hace que todos los
+    // productos del mundo parezcan el mismo producto.
+    const serif = /--font-serif:\s*([^;]+);/.exec(bloque)?.[1] ?? "";
+    expect(serif.trim().startsWith("Georgia")).toBe(false);
+    expect(serif).toContain("Georgia");
+  });
+});
+
 describe("las plantillas ya no llevan color escrito a mano", () => {
   it.each([
     "panel/panel.html",

@@ -22,11 +22,11 @@
         <h1 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
           Recibir avisos de lectura en tu CRM
         </h1>
-        <p class="mt-2 font-mono text-[12px] leading-relaxed text-texto-2">
+        <p class="mt-2 font-serif text-[14px] leading-[1.65] text-texto-2 max-w-[64ch]">
           Cuando alguien abre —o vuelve a abrir— uno de tus dosieres, Vistta se lo cuenta al sistema
           que tú digas. Es el momento de llamar, y te llega donde ya trabajas.
         </p>
-        <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+        <p class="mt-2 font-serif text-[14px] leading-[1.65] text-texto-3 max-w-[64ch]">
           Se envía qué dosier, a quién se lo mandaste y cuándo lo abrió.
           <strong class="text-texto-2">El detalle de la lectura no sale de Vistta</strong>: qué
           apartados miró y cuánto se consulta aquí, en Actividad.
@@ -69,7 +69,7 @@
                   que su CRM le avisa y no le avisa nadie. Por eso se dice aquí y
                   también en la pantalla de Actividad, que es la que abre a diario.
                 -->
-                <p class="mt-2 font-mono text-[12px] leading-relaxed text-peligro">
+                <p class="mt-2 font-serif text-[14px] leading-[1.65] text-peligro max-w-[64ch]">
                   <strong>Desconectada.</strong> Los últimos intentos fallaron ({{
                     enCastellano(d.ultimoError)
                   }}), así que hemos dejado de enviar para no perder avisos en silencio. Arregla la
@@ -125,7 +125,7 @@
 
         @if (secretoNuevo(); as secreto) {
           <div class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3">
-            <p class="font-mono text-[11px] leading-relaxed text-aviso">
+            <p class="font-serif text-[14px] leading-[1.65] text-aviso max-w-[64ch]">
               <strong>Copia esta clave ahora.</strong> Sirve para que tu CRM compruebe que un aviso
               viene de verdad de Vistta. No se puede volver a ver: si la pierdes, hay que crear la
               conexión otra vez.
@@ -147,7 +147,7 @@
         <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
           Crear enlaces automáticamente desde tu CRM
         </h2>
-        <p class="mt-2 font-mono text-[12px] leading-relaxed text-texto-2">
+        <p class="mt-2 font-serif text-[14px] leading-[1.65] text-texto-2 max-w-[64ch]">
           Genera una conexión y pégala en tu CRM. Cuando allí pase lo que tú decidas —mover un
           contacto de etapa, por ejemplo—, Vistta creará el enlace del dosier y se lo devolverá para
           que quede en la ficha.
@@ -191,7 +191,7 @@
 
         @if (urlNueva(); as url) {
           <div class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3">
-            <p class="font-mono text-[11px] leading-relaxed text-aviso">
+            <p class="font-serif text-[14px] leading-[1.65] text-aviso max-w-[64ch]">
               <strong>Cópiala ahora: solo se enseña esta vez.</strong> Trátala como una contraseña
               —quien la tenga puede crear enlaces de tus dosieres—, y si se te pierde, anúlala y
               genera otra.
@@ -251,9 +251,11 @@
         </button>
 
         @if (ayudaAbierta()) {
-          <div class="mt-4 space-y-5 font-mono text-[12px] leading-relaxed text-texto-2">
+          <div
+            class="mt-4 max-w-[68ch] space-y-6 font-serif text-[15px] leading-[1.7] text-texto-2"
+          >
             <div>
-              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">
+              <h3 class="font-serif text-[16px] text-texto">
                 Make (antes Integromat) · lo más sencillo
               </h3>
               <ol class="mt-2 list-decimal space-y-1 pl-5 text-texto-3">
@@ -272,7 +274,7 @@
             </div>
 
             <div>
-              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">HubSpot</h3>
+              <h3 class="font-serif text-[16px] text-texto">HubSpot</h3>
               <ol class="mt-2 list-decimal space-y-1 pl-5 text-texto-3">
                 <li>Necesitas un plan con <em>Operations Hub</em> o pasar por Make/Zapier.</li>
                 <li>En Automatizaciones, crea un flujo con desencadenante <em>Webhook</em>.</li>
@@ -283,9 +285,7 @@
             </div>
 
             <div>
-              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">
-                Witei, Inmovilla y similares
-              </h3>
+              <h3 class="font-serif text-[16px] text-texto">Witei, Inmovilla y similares</h3>
               <p class="mt-2 text-texto-3">
                 Si tu CRM no admite conexiones automáticas —muchos del sector no—, la vía es Make o
                 Zapier en medio: reciben el aviso de Vistta y hacen en tu CRM lo que configures.

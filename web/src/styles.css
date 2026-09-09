@@ -75,8 +75,44 @@
   --color-aviso-borde: #dfc79a;
   --color-aviso-fondo: #fcf5e9;
 
+  /*
+   * ============================ LAS DOS VOCES ==============================
+   *
+   * Este producto hace dos cosas a la vez, y la tipografía las distingue:
+   * enseña el TRABAJO de alguien, y enseña la MÁQUINA que lo entrega —un
+   * enlace que caduca, un pase que se gasta, un tiempo que se mide—.
+   *
+   *   serif  → lo que se LEE. La entradilla, el cuerpo de un apartado, el pie
+   *            de una foto, la prosa de un informe. Son las palabras sobre el
+   *            trabajo, y merecen leerse como un catálogo, no como una consola.
+   *
+   *   mono   → la MAQUINARIA. El enlace, el estado del pase, la marca de agua,
+   *            los números, las etiquetas de dato. Aquí el mono no es un
+   *            adorno técnico: dice «esto se cuenta, esto caduca, esto es una
+   *            credencial», que es exactamente lo que este producto promete.
+   *
+   * La regla ya estaba —la portada y los textos legales la siguen desde el
+   * principio—, pero no estaba escrita, así que el panel y el informe nacieron
+   * en mono de arriba abajo. Escrita, se aplica.
+   *
+   * NINGUNA DE LAS DOS SE DESCARGA. Sin tipografías web, y no por ahorrar: la
+   * CSP es estricta y, sobre todo, el viewer lo abre desde el móvil alguien que
+   * no es cliente nuestro, una sola vez. Ese bundle no baja un archivo de
+   * fuente para enseñar seis fotos. Las dos pilas son de sistema.
+   */
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /*
+   * Iowan Old Style primero, y es una elección, no el serif de manual: es una
+   * old style de trazo sólido que aguanta bien en pantalla y viene puesta en
+   * los Apple, que es la mitad de quien abrirá un dosier desde el móvil.
+   * Palatino cubre Windows con la misma familia de formas. Georgia queda de
+   * red, no de primera opción: es la que hace que todo parezca lo mismo.
+   */
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', 'Hoefler Text', Georgia,
+    ui-serif, serif;
 }
 
 /*
