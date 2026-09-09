@@ -1,13 +1,13 @@
-<!-- La barra del panel. No sale en el papel: lo que se entrega es el informe. -->
-<header class="no-imprimir border-b border-borde-2 bg-sup">
-  <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-    <a
-      routerLink="/panel/actividad"
-      class="font-mono text-[11px] tracking-[0.16em] text-texto-3 uppercase hover:text-acento"
-    >
-      ← Volver a la actividad
-    </a>
-    <div class="flex flex-wrap items-center gap-3">
+<app-cabecera-panel titulo="Informe" />
+
+<!--
+  La barra de herramientas del informe, aparte de la navegación: el periodo y
+  la impresión son de ESTE documento, no del panel. Ninguna de las dos sale en
+  el papel, que es lo que se entrega.
+-->
+<div class="no-imprimir border-b border-borde-2 bg-sup">
+  <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+    <div class="flex flex-wrap gap-2">
       @for (p of periodos; track p.dias) {
         <button
           type="button"
@@ -23,16 +23,16 @@
           {{ p.texto }}
         </button>
       }
-      <button
-        type="button"
-        (click)="imprimir()"
-        class="rounded-lg border border-acento/60 px-4 py-1.5 font-mono text-[10px] tracking-[0.16em] text-acento uppercase hover:bg-acento/10"
-      >
-        Imprimir o guardar en PDF
-      </button>
     </div>
+    <button
+      type="button"
+      (click)="imprimir()"
+      class="rounded-lg border border-acento/60 px-4 py-1.5 font-mono text-[10px] tracking-[0.16em] text-acento uppercase hover:bg-acento/10"
+    >
+      Imprimir o guardar en PDF
+    </button>
   </div>
-</header>
+</div>
 
 @if (error()) {
   <p
@@ -49,7 +49,10 @@
   </p>
 } @else if (informe(); as inf) {
   <!-- ===================== EL DOCUMENTO ===================== -->
-  <main id="contenido" class="hoja mx-auto my-8 max-w-3xl border border-borde bg-sup px-8 py-8">
+  <main
+    id="contenido"
+    class="hoja mx-auto my-8 max-w-3xl scroll-mt-24 border border-borde bg-sup px-8 py-8"
+  >
     <!--
       La marca es la del AGENTE, no la de Vistta: este papel lo entrega él y es
       lo que hace que te recomiende. El color de acento sale de su perfil.

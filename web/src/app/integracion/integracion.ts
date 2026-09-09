@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Api, type ConexionDeEntrada, type DestinoDeSalida, type ProfileRow } from '../core/api';
-import { BotonTema } from '../core/boton-tema';
-import { Marca } from '../core/marca';
+import { CabeceraPanel } from '../core/cabecera-panel';
 import { CLAVE_SESION } from '../core/sesion';
 
 /**
@@ -21,7 +20,7 @@ import { CLAVE_SESION } from '../core/sesion';
  */
 @Component({
   selector: 'app-integracion',
-  imports: [FormsModule, BotonTema, Marca, RouterLink],
+  imports: [FormsModule, CabeceraPanel],
   templateUrl: './integracion.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Api, type FichaDePropiedad, type Informe as InformeDto } from '../core/api';
+import { CabeceraPanel } from '../core/cabecera-panel';
 import { CLAVE_SESION } from '../core/sesion';
 
 /** Los periodos que se ofrecen. Un mes por defecto: es el ritmo de la relación. */
@@ -31,7 +32,7 @@ const PERIODOS = [
  */
 @Component({
   selector: 'app-informe',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, CabeceraPanel],
   templateUrl: './informe.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `

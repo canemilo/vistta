@@ -1,25 +1,7 @@
 <div class="min-h-screen bg-fondo">
-  <header class="border-b border-borde-2 bg-sup">
-    <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-      <div class="flex items-center gap-4 text-titulo">
-        <app-marca [alto]="32" />
-        <span class="font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase">
-          Conectar con tu CRM
-        </span>
-      </div>
-      <div class="flex items-center gap-4">
-        <a
-          routerLink="/panel"
-          class="font-mono text-[11px] tracking-[0.16em] text-texto-3 uppercase hover:text-acento"
-        >
-          ← Volver al panel
-        </a>
-        <app-boton-tema />
-      </div>
-    </div>
-  </header>
+  <app-cabecera-panel titulo="Conectar con tu CRM" />
 
-  <main id="contenido" class="mx-auto max-w-4xl px-6 py-8">
+  <main id="contenido" class="mx-auto max-w-4xl scroll-mt-24 px-6 py-8">
     @if (error()) {
       <p
         class="mb-6 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] text-peligro"

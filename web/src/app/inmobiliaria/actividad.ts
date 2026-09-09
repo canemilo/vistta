@@ -8,8 +8,7 @@ import {
   type PaseEnElTermometro,
   type Temperatura,
 } from '../core/api';
-import { BotonTema } from '../core/boton-tema';
-import { Marca } from '../core/marca';
+import { CabeceraPanel } from '../core/cabecera-panel';
 import { CLAVE_SESION } from '../core/sesion';
 
 /** Por qué columna se ordena la comparativa. */
@@ -26,7 +25,7 @@ type Columna = 'nombre' | 'enviados' | 'apertura' | 'tiempo' | 'final';
  */
 @Component({
   selector: 'app-actividad',
-  imports: [BotonTema, Marca, RouterLink],
+  imports: [CabeceraPanel, RouterLink],
   templateUrl: './actividad.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
