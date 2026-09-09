@@ -150,6 +150,45 @@ describe("la mecánica del tema oscuro", () => {
   });
 });
 
+/*
+ * PASÓ, Y POR ESO ESTO EXISTE.
+ *
+ * El informe forzaba la paleta clara en `:host`, copiando la regla del
+ * documento del pase. Estaba mal copiada: el pase lo abre un TERCERO y su
+ * aspecto lo elige quien lo manda; el informe lo mira SU DUEÑO, en su panel.
+ * Con el panel en oscuro, entrar a un informe desde Actividad ponía la pantalla
+ * en blanco de golpe.
+ *
+ * Una pantalla del panel no decide el tema de nadie. Lo que sí tiene aspecto
+ * propio es el papel, y para eso está `@media print`.
+ */
+describe("ninguna pantalla del panel se salta el tema del usuario", () => {
+  it.each([
+    "inmobiliaria/informe.ts",
+    "inmobiliaria/actividad.ts",
+    "integracion/integracion.ts",
+    "core/cabecera-panel.ts",
+  ])("%s solo redefine colores para imprimir", (archivo) => {
+    const fuente = readFileSync(join(process.cwd(), "web/src/app", archivo), "utf8");
+    // Todo lo que va ANTES del bloque de impresión es lo que se ve en pantalla.
+    const enPantalla = fuente.split("@media print")[0];
+    const forzados = [...enPantalla.matchAll(/--color-[a-z0-9-]+:/g)].map((m) => m[0]);
+    expect(forzados, `redefine la paleta en pantalla: ${forzados.join(", ")}`).toEqual([]);
+  });
+
+  /*
+   * Y el reverso: al imprimir sí hay que forzarla. Sin esto, quien tenga el
+   * panel en oscuro se lleva a la reunión una hoja con texto claro sobre papel
+   * blanco —los navegadores no pintan los fondos por defecto—, o sea, en blanco.
+   */
+  it("el informe sí lleva la paleta clara en el bloque de impresión", () => {
+    const fuente = readFileSync(join(process.cwd(), "web/src/app/inmobiliaria/informe.ts"), "utf8");
+    const alImprimir = fuente.split("@media print")[1] ?? "";
+    expect(alImprimir).toContain("color-scheme: light");
+    expect(alImprimir).toMatch(/--color-texto:\s*#0d2a35/);
+  });
+});
+
 describe("las plantillas ya no llevan color escrito a mano", () => {
   it.each([
     "panel/panel.html",

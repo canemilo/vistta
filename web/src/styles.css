@@ -19,36 +19,61 @@
  */
 @theme {
   /* --- CLARO: el tema por defecto ------------------------------------------ */
-  --color-fondo: #f7f9fa;
+  /*
+   * El fondo NO es casi blanco, y ese es el cambio.
+   *
+   * Estaba en #f7f9fa con las tarjetas en #ffffff: dos por ciento de diferencia
+   * entre el papel y lo que se apoya en él. El resultado era una pantalla plana
+   * —todo el mismo campo grisáceo— que se leía como apagada aunque cada color
+   * por separado pasara el contraste. Lo que faltaba no era saturación, era
+   * ESCALÓN: con un suelo de verdad, una tarjeta blanca vuelve a ser una
+   * tarjeta.
+   *
+   * El orden, de atrás hacia delante: sup-3 (lo más hundido) < fondo (el
+   * suelo) < sup-2 (superficie alterna) < sup (la tarjeta, blanca). Los cuatro
+   * con escalón suficiente para verse: es lo que la primera versión de este
+   * cambio se dejó, y las bandas de cabecera desaparecían dentro de su tarjeta.
+   *
+   * La tinta baja con ellos. `texto-4` es el texto más tenue del sistema y es
+   * quien pone el techo: contra la superficie más hundida tiene que seguir
+   * pasando el 4,5 de la AA, así que hundir una superficie obliga a oscurecer
+   * la tinta o no se puede hundir. La prueba de contraste lo dice al momento.
+   */
+  --color-fondo: #e3ebee;
   --color-sup: #ffffff;
-  --color-sup-2: #eef3f4;
-  --color-sup-3: #e4ebed;
+  --color-sup-2: #eaf1f3;
+  --color-sup-3: #d7e2e6;
 
-  --color-borde: #d3dfe2;
-  --color-borde-2: #e2eaec;
-  --color-borde-3: #edf2f3;
+  /* Los bordes DIBUJAN. #d3dfe2 sobre un fondo casi blanco era una insinuación:
+     la estructura estaba puesta y no se veía. */
+  --color-borde: #c2d2d7;
+  --color-borde-2: #d5e0e3;
+  --color-borde-3: #e6edef;
 
-  --color-titulo: #07242f;
-  --color-texto: #0f2c37;
-  --color-texto-2: #33545e;
-  /* El que fallaba. Aquí 5,81 sobre blanco; antes, 4,38. */
-  --color-texto-3: #4c6a73;
-  --color-texto-4: #556d75;
+  /* La tinta, un punto más profunda y con algo de croma: un gris neutro sobre
+     un fondo frío es lo que acaba pareciendo desvaído. */
+  --color-titulo: #062330;
+  --color-texto: #0d2a35;
+  --color-texto-2: #294b56;
+  /* El que falló una vez. Aquí 6,55 sobre blanco; antes de existir la prueba,
+     4,38. */
+  --color-texto-3: #3d5c66;
+  --color-texto-4: #46646d;
 
   /* #0a7a57 se quedaba en 4,42 sobre la superficie más profunda: lo cazó la
      prueba de contraste, no el ojo. */
-  --color-acento: #09714f;
-  --color-acento-2: #125a70;
-  --color-acento-tenue: #0f8f66;
+  --color-acento: #05704c;
+  --color-acento-2: #0f5468;
+  --color-acento-tenue: #0c855e;
   --color-sobre-acento: #ffffff;
   --color-peligro: #a3243a;
-  --color-peligro-borde: #e8c4cb;
-  --color-peligro-fondo: #fdf2f4;
+  --color-peligro-borde: #e0b3bc;
+  --color-peligro-fondo: #fbeef0;
   /* Avisos. En claro, ámbar oscuro: el ámbar de manual (#fcd34d) da 1,29
      sobre blanco, o sea, ilegible. */
   --color-aviso: #8a5300;
-  --color-aviso-borde: #e8d3ac;
-  --color-aviso-fondo: #fdf8ef;
+  --color-aviso-borde: #dfc79a;
+  --color-aviso-fondo: #fcf5e9;
 
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -240,8 +265,10 @@ body {
 }
 
 :root {
-  --halo-1: rgba(18, 90, 112, 0.07);
-  --halo-2: rgba(10, 122, 87, 0.05);
+  /* Con el fondo casi blanco de antes esto no se veía. Sobre el suelo nuevo sí,
+     y es lo que evita que una pantalla grande quede como una plancha lisa. */
+  --halo-1: rgba(15, 84, 104, 0.1);
+  --halo-2: rgba(5, 112, 76, 0.07);
 }
 
 ::selection {

@@ -37,56 +37,71 @@ const PERIODOS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /*
-     * El informe va SIEMPRE en claro, y es la misma decisión que la del pase:
-     * esto es un documento que se entrega a un tercero y que se imprime, así
-     * que su aspecto no lo elige quien lo mira. Los tokens se redefinen
-     * acotados a este componente, como hace el documento del pase, para que el
-     * resto del panel siga con el tema que cada uno tenga puesto.
+     * EN PANTALLA, EL INFORME RESPETA TU TEMA.
+     *
+     * Antes forzaba el claro siempre, copiando la regla del documento del pase
+     * —«quien lo abre no decide cómo se ve»—, y estaba mal copiada: el pase lo
+     * abre un TERCERO al que se le enseña un trabajo, y el informe lo miras TÚ,
+     * en tu panel, con el tema que tú elegiste. Entrar aquí desde Actividad con
+     * el panel en oscuro y que la pantalla se pusiera blanca no era una
+     * decisión de diseño, era pisarle la preferencia a su dueño.
+     *
+     * Lo que sí tiene aspecto propio es el PAPEL, y para eso está el bloque de
+     * impresión: tinta oscura sobre blanco, venga uno del tema que venga.
      */
     :host {
       display: block;
       min-height: 100vh;
-      color-scheme: light;
-      --color-fondo: #f7f9fa;
-      --color-sup: #ffffff;
-      --color-sup-2: #eef3f4;
-      --color-sup-3: #e4ebed;
-      --color-borde: #d3dfe2;
-      --color-borde-2: #e2eaec;
-      --color-borde-3: #edf2f3;
-      --color-titulo: #07242f;
-      --color-texto: #0f2c37;
-      --color-texto-2: #33545e;
-      --color-texto-3: #4c6a73;
-      --color-texto-4: #556d75;
-      --color-acento: #09714f;
-      --color-acento-tenue: #0f8f66;
-      --color-sobre-acento: #ffffff;
-      --color-aviso: #8a5300;
-      --color-aviso-borde: #e8d3ac;
-      --color-aviso-fondo: #fdf8ef;
-      --color-peligro: #a3243a;
-      --color-peligro-borde: #e8c4cb;
-      --color-peligro-fondo: #fdf2f4;
-      background-color: var(--color-fondo);
-      color: var(--color-texto);
     }
 
     /*
      * El PDF se hace con el «Guardar como PDF» del navegador, y no con una
      * librería. Es el mismo motor que ya imprime docs/: sale igual que en
      * pantalla, no añade una dependencia pesada, y el agente puede reenviarlo
-     * tal cual. Lo único que hace falta es que lo del panel no salga en el
-     * papel.
+     * tal cual.
      */
     @media print {
-      .no-imprimir {
-        display: none !important;
-      }
-
+      /*
+       * Los tokens claros, aquí y solo aquí. Imprimir el tema oscuro gasta un
+       * cartucho y llega gris; y si el navegador decide no pintar los fondos
+       * —que es lo que hacen por defecto—, sale texto claro sobre papel blanco,
+       * o sea, una hoja en blanco.
+       *
+       * Los valores son los del tema claro de web/src/styles.css. Si allí
+       * cambia la paleta, esto se queda viejo: es la única copia que hay y no
+       * se puede evitar, porque en oscuro los tokens ya están reasignados y
+       * heredarlos traería justo lo que hay que deshacer.
+       */
       :host {
+        color-scheme: light;
+        --color-fondo: #ffffff;
+        --color-sup: #ffffff;
+        --color-sup-2: #eaf1f3;
+        --color-sup-3: #d7e2e6;
+        --color-borde: #c2d2d7;
+        --color-borde-2: #d5e0e3;
+        --color-borde-3: #e6edef;
+        --color-titulo: #062330;
+        --color-texto: #0d2a35;
+        --color-texto-2: #294b56;
+        --color-texto-3: #3d5c66;
+        --color-texto-4: #46646d;
+        --color-acento: #05704c;
+        --color-acento-tenue: #0c855e;
+        --color-sobre-acento: #ffffff;
+        --color-aviso: #8a5300;
+        --color-aviso-borde: #dfc79a;
+        --color-aviso-fondo: #fcf5e9;
+        --color-peligro: #a3243a;
+        --color-peligro-borde: #e0b3bc;
+        --color-peligro-fondo: #fbeef0;
         min-height: 0;
         background: none;
+        color: var(--color-texto);
+      }
+
+      .no-imprimir {
+        display: none !important;
       }
 
       .hoja {
