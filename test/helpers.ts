@@ -54,6 +54,12 @@ afterAll(async () => {
   await pool.end();
 });
 
+/**
+ * Lo que necesita el trabajador de la cola. Con `baseUrl` desde que un trabajo
+ * manda al CRM del agente un enlace de vuelta al panel.
+ */
+export const DEPS_DEL_TRABAJADOR = { db, storage, baseUrl: ORIGIN };
+
 export async function call(path: string, init?: RequestInit): Promise<Response> {
   return app.fetch(new Request(ORIGIN + path, init));
 }

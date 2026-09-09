@@ -177,9 +177,47 @@ la midan.
 - _Riesgo residual:_ **bajo-medio**. Queda que el destinatario no puede oponerse
   desde el propio enlace; se entera, pero no lo desactiva. Se asume a conciencia,
   y la vía es el contacto del aviso legal, como para el resto de derechos.
-- **Limitación honesta:** el tiempo lo mide un navegador. Una pestaña abierta y
-  desatendida cuenta como lectura, y una manipulada puede mentir dentro de los
-  topes. No es una medida fiable de atención y el panel no la presenta como tal.
+- **Saneado en origen, que es lo que hace que el dato no mienta más de la cuenta:**
+  el reloj **para** con la pestaña al fondo, se **corta al minuto** sin
+  interacción y hay un **tope por apartado**. Sin esas tres, una pestaña
+  olvidada toda la tarde entraba en el informe como atención.
+- **Limitación honesta, que sigue en pie:** el tiempo lo mide un navegador. Una
+  lectura desatendida pero con el ratón encima cuenta, y una manipulada puede
+  mentir dentro de los topes. No es una medida fiable de atención, el panel no la
+  presenta como tal y el informe lo dice por escrito.
+
+### Riesgo: el informe se entrega a un tercero (la persona propietaria)
+
+- _Qué pasa:_ el agente descarga un documento con la actividad de un dosier y se
+  lo entrega a quien le encargó vender el inmueble, que no es usuario de Vistta.
+- _Por qué NO es una comunicación de datos personales:_ el informe es
+  **agregado y anónimo por construcción**. Ninguna consulta que lo alimenta
+  selecciona el destinatario de un pase, y hay una prueba que serializa el
+  informe entero buscándolo.
+- _Mitigación contra la singularización,_ que es el riesgo real de un agregado
+  pequeño: por debajo de **cuatro lecturas** no se emiten porcentajes. Con dos
+  envíos, «el 50%» identifica a uno de los dos para quien sepa a quién se lo
+  mandó. El servidor manda esos campos a `null` para que no haya forma de
+  pintarlos por descuido.
+- _Riesgo residual:_ **bajo**.
+
+### Riesgo: el termómetro parece un perfilado de personas
+
+- _Qué pasa:_ el panel ordena los enlaces por «temperatura» para decidir a quién
+  llamar.
+- _Por qué no cae en el art. 22:_ no hay decisión automatizada con efectos
+  jurídicos ni similares. Es una **ordenación de una lista** que una persona mira
+  antes de coger el teléfono, y no deniega ni concede nada a nadie.
+- _Mitigaciones de diseño:_
+  - Los estados describen **el comportamiento sobre ese dosier** —«volvió a
+    abrirlo», «no llegó al final»—, nunca a la persona. «Este comprador es
+    indeciso» no es una conclusión que este sistema pueda sacar ni escribir.
+  - **No hay puntuación.** Cada estado va con el motivo por el que lo es, en
+    texto: un número del 1 al 100 sin explicación invita a tratarlo como un
+    juicio sobre alguien.
+  - Nada se guarda de la persona: el estado se **calcula al pedirlo** a partir del
+    pase y sus sumas, y no se persiste en ninguna columna.
+- _Riesgo residual:_ **bajo**.
 
 ## 4. Consulta previa a la AEPD (art. 36)
 
@@ -195,9 +233,15 @@ implementarla:
    al que mira, y no toca nada del dispositivo.
 2. Medir la lectura con más finura que las sumas por apartado: instantes, orden,
    número de vueltas, o cualquier cosa que reconstruya el recorrido.
-3. Cualquier análisis del contenido de las imágenes: reconocimiento facial,
+3. Que el informe al propietario deje de ser agregado: un solo campo que permita
+   distinguir a un destinatario de otro —aunque sea sin nombre— cambia lo que ese
+   documento es, y con ello el punto B.4 del RAT y el contrato del art. 28.
+4. Guardar datos personales de la persona propietaria del inmueble (nombre,
+   correo, teléfono). Hoy no hay columnas, y esa ausencia es lo que mantiene a
+   Vistta fuera de esa relación.
+5. Cualquier análisis del contenido de las imágenes: reconocimiento facial,
    etiquetado automático, moderación por modelo.
-4. Admitir categorías especiales del art. 9.
-5. Retención indefinida por defecto, o quitar la caducidad del contenido.
-6. Un aumento de escala que convierta «pocos clientes» en «gran escala».
-7. Ceder datos a un tercero con fines propios.
+6. Admitir categorías especiales del art. 9.
+7. Retención indefinida por defecto, o quitar la caducidad del contenido.
+8. Un aumento de escala que convierta «pocos clientes» en «gran escala».
+9. Ceder datos a un tercero con fines propios.

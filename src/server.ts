@@ -85,7 +85,7 @@ try {
   );
   process.exit(1);
 }
-const pararTrabajador = arrancarTrabajador({ db, storage });
+const pararTrabajador = arrancarTrabajador({ db, storage, baseUrl: config.BASE_URL });
 
 for (const senal of ["SIGINT", "SIGTERM"] as const) {
   process.on(senal, () => {

@@ -175,18 +175,19 @@ matiz del B.1: mide cuánto mira una persona identificada —el pase lleva
 destinatario desde el bloque anterior— y eso pesa más que saber que el enlace se
 abrió.
 
-|                         |                                                                                                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Responsable**         | El cliente de Vistta que genera el pase. Vistta es encargado.                                                                                                                            |
-| **Fin**                 | Que quien envía el enlace sepa si su destinatario lo miró y qué le interesó.                                                                                                             |
-| **Interesado**          | El destinatario del enlace.                                                                                                                                                              |
-| **Categorías de datos** | Tiempo visible **agregado** por apartado y por medio, y marcas de apertura y cierre. Nada más.                                                                                           |
-| **NO se trata**         | IP, user-agent, dispositivo, resolución, ubicación ni identificador de navegador. **No hay columnas para eso en `vistta.pass_events`**, y hay una prueba que falla si alguien las añade. |
-| **Granularidad**        | Sumas por apartado, no una traza de instantes. El navegador agrega antes de enviar y el servidor solo guarda esas sumas.                                                                 |
-| **Transparencia**       | El propio documento se lo dice a quien lo lee, en el pie: que quien se lo envió verá cuánto miró cada apartado, y que no se registra su nombre, su IP ni su dispositivo.                 |
-| **Conservación**        | **30 días** (`RETENCION_EVENTOS_MS`), y además se borran con el pase (clave ajena en cascada). Manda el plazo que se cumpla antes.                                                       |
-| **Ámbito**              | Solo en los planes de pago. En Prueba no se emite el testigo que permite enviar eventos, así que no se mide.                                                                             |
-| **Acceso**              | Solo el dueño del pase, y ya agregado: el panel no recibe eventos en crudo.                                                                                                              |
+|                         |                                                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Responsable**         | El cliente de Vistta que genera el pase. Vistta es encargado.                                                                                                                                                                                                      |
+| **Fin**                 | Que quien envía el enlace sepa si su destinatario lo miró y qué le interesó.                                                                                                                                                                                       |
+| **Interesado**          | El destinatario del enlace.                                                                                                                                                                                                                                        |
+| **Categorías de datos** | Tiempo visible **agregado** por apartado y por medio; marcas de apertura, cierre y **de haber llegado al final** del documento; y el **título del apartado** al que se refiere cada suma. Nada más.                                                                |
+| **NO se trata**         | IP, user-agent, dispositivo, resolución, ubicación ni identificador de navegador. **No hay columnas para eso en `vistta.pass_events`**, y hay una prueba que falla si alguien las añade.                                                                           |
+| **Granularidad**        | Sumas por apartado, no una traza de instantes. El navegador agrega antes de enviar y el servidor solo guarda esas sumas. El tiempo va **saneado en origen**: el reloj para con la pestaña al fondo, se corta al minuto sin interacción y hay un tope por apartado. |
+| **Origen del título**   | Lo pone el **servidor**, leyéndolo del propio dosier al guardar el evento. El navegador manda un número de apartado y nada más: si el texto llegara de fuera, un cliente manipulado escribiría lo que acaba impreso en el informe del punto B.4.                   |
+| **Transparencia**       | El propio documento se lo dice a quien lo lee, en el pie: que quien se lo envió verá cuánto miró cada apartado, y que no se registra su nombre, su IP ni su dispositivo.                                                                                           |
+| **Conservación**        | **30 días** (`RETENCION_EVENTOS_MS`), y además se borran con el pase (clave ajena en cascada). Manda el plazo que se cumpla antes.                                                                                                                                 |
+| **Ámbito**              | Solo en los planes de pago. En Prueba no se emite el testigo que permite enviar eventos, así que no se mide.                                                                                                                                                       |
+| **Acceso**              | Solo el dueño del pase, y ya agregado: el panel no recibe eventos en crudo.                                                                                                                                                                                        |
 
 > **Lo que sigue vetado, y no ha cambiado:** registrar QUIÉN abre. Del navegador
 > que abre no llega identidad, ni IP, ni huella. Lo que se mide es cuánto se ha
@@ -196,6 +197,82 @@ abrió.
 > Si algún día se quisiera medir con más finura —instantes, orden de lectura,
 > repeticiones—, deja de ser esto: habría que rehacer este punto, la EIPD y el
 > aviso del documento antes de escribir una línea.
+
+### B.3 Ficha de la propiedad (vertical inmobiliaria)
+
+|                         |                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Responsable**         | El cliente de Vistta. Vistta es encargado.                                                                                                                                                                                                                                                          |
+| **Fin**                 | Que el agente pueda identificar el inmueble al que corresponde un dosier y desde cuándo lo lleva en exclusiva.                                                                                                                                                                                      |
+| **Categorías de datos** | Referencia interna del inmueble en el sistema del cliente, fecha de inicio de la exclusiva y una **nota privada** en texto libre.                                                                                                                                                                   |
+| **NO se trata**         | **Nombre, correo o teléfono de la persona propietaria del inmueble.** No hay columnas para eso en `vistta.propiedad_meta`, no hay campos en el esquema de entrada, y hay una prueba que falla si alguien los añade. El informe se lo entrega el agente por su cuenta; Vistta no necesita conocerla. |
+| **Texto libre**         | La nota la escribe el cliente y puede contener dato personal de un tercero. Por eso **no sale de su panel**: no entra en el informe, no viaja a ningún destinatario y no va a los logs.                                                                                                             |
+| **Conservación**        | Se borra con el perfil (clave ajena en cascada).                                                                                                                                                                                                                                                    |
+| **Acceso**              | Solo el dueño del perfil.                                                                                                                                                                                                                                                                           |
+
+### B.4 Informe de actividad al propietario del inmueble
+
+**Es una comunicación a un tercero, y por eso se declara.** El cliente descarga
+un documento y se lo entrega a la persona propietaria del inmueble, que no es
+usuaria de Vistta.
+
+|                         |                                                                                                                                                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Responsable**         | El cliente de Vistta. Vistta es encargado: genera el documento, no lo entrega.                                                                                                                                  |
+| **Fin**                 | Que el agente pueda justificar su trabajo con datos en vez de con impresiones.                                                                                                                                  |
+| **Categorías de datos** | **Solo agregados**: cuántos enlaces se enviaron, cuántos se abrieron, tiempo medio de lectura, ranking de apartados por atención, cuántos volvieron y cuántos llegaron al final.                                |
+| **NO contiene**         | Ningún destinatario, ni identificable ni singularizable. Ninguna consulta que alimenta el informe selecciona `destinatario_ref` ni `destinatario_nota`, y hay una prueba que lee el informe entero buscándolos. |
+| **Umbral estadístico**  | Por debajo de **cuatro lecturas** no se emiten porcentajes, y no es una decisión de estilo: con dos o tres, un porcentaje singulariza. Salen los números absolutos y un aviso.                                  |
+| **Base jurídica**       | La del responsable —el cliente— frente a su mandante. Vistta no comunica nada por su cuenta: pone el documento a disposición de quien ya tiene los datos.                                                       |
+| **Destinatarios**       | La persona propietaria del inmueble, **por decisión y por mano del cliente**.                                                                                                                                   |
+
+> Las dos razones de que esto sea agregado son independientes y cada una basta
+> por sí sola: identificar compradores ante un tercero es una comunicación de
+> datos que nadie ha declarado, y el agente pierde su papel de intermediario en
+> cuanto el propietario ve la lista de sus clientes.
+
+### B.5 Avisos de reapertura
+
+Derivado de B.1 y B.2: **no incorpora ninguna categoría de dato nueva.** Cuando
+un pase se vuelve a abrir, se anota una fila en `vistta.avisos` con el pase, el
+perfil, la cuenta a la que avisar y cuántas veces ha pasado. El destinatario que
+el panel enseña al lado sale del pase (B.1) por una unión, no de esta tabla.
+
+Se borra con el pase (clave ajena en cascada), es **desactivable por cuenta**
+(`users.avisos_reapertura`) y no sale del panel de su dueño.
+
+### B.6 Envío de avisos al CRM del cliente
+
+**Aquí aparece un DESTINATARIO nuevo, y por eso este punto existe.** Cuando el
+cliente conecta su CRM, Vistta hace peticiones a un sistema de terceros que él
+elige y que trata los datos por su cuenta.
+
+|                     |                                                                                                                                                                                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Responsable**     | El cliente de Vistta, que es quien decide conectar su CRM y quién es su proveedor. Vistta es encargado y ejecuta esa instrucción.                                                                                                                                                           |
+| **Fin**             | Que el aviso de que un dosier se ha abierto llegue a la herramienta donde el cliente ya trabaja.                                                                                                                                                                                            |
+| **Qué se envía**    | Identificador del pase, número de aperturas, la referencia del destinatario **que el propio cliente escribió**, el dosier y su referencia, y cuándo.                                                                                                                                        |
+| **QUÉ NO SE ENVÍA** | **Las métricas de lectura.** Ni tiempo por apartado, ni ranking, ni si llegó al final. Que el cliente lo vea en su panel es una cosa; bombear el comportamiento de una persona identificada a un sistema de terceros es otra. Hay una prueba que falla si esos campos aparecen en la carga. |
+| **Destinatarios**   | El proveedor de CRM que elija el cliente, como **responsable propio** de lo que haga después con el dato. Vistta no lo elige ni lo controla.                                                                                                                                                |
+| **Transferencias**  | Las que implique ese proveedor. **Es el cliente quien las asume al configurarlo**, y la interfaz se lo dice antes de guardar la dirección.                                                                                                                                                  |
+| **Base jurídica**   | La instrucción documentada del responsable (art. 28.3.a): el cliente configura el destino, y puede quitarlo cuando quiera.                                                                                                                                                                  |
+| **Seguridad**       | Solo `https`, solo el puerto 443, sin seguir redirecciones, y con la carga firmada con HMAC-SHA256 para que el CRM pueda comprobar el origen.                                                                                                                                               |
+| **Conservación**    | Vistta no guarda copia del envío: solo si el último fue bien, cuándo y el TIPO del último error, sin la dirección ni el mensaje del proveedor.                                                                                                                                              |
+
+> **Dos cosas que este punto no cambia.** Sigue sin registrarse quién abre un
+> pase: lo que viaja al CRM es a quién dijo el cliente que se lo mandaba (B.1),
+> que es un dato que su CRM ya tiene porque salió de ahí. Y sigue sin salir el
+> detalle de la lectura (B.2): el aviso lleva un enlace de vuelta al panel, y el
+> detalle se consulta en Vistta.
+
+### B.7 Credenciales de conexión con el CRM
+
+|                         |                                                                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Responsable**         | Vistta, sobre los datos de la cuenta (punto A).                                                                                                                                                               |
+| **Categorías de datos** | **Hash SHA-256** del token con el que el CRM pide enlaces —nunca el token—, nombre que le puso el cliente, fecha de alta, de revocación y de último uso.                                                      |
+| **Excepción declarada** | La clave de firma de los avisos salientes se guarda **en claro**, y es la única del proyecto. No es un descuido: con un hash no se puede firmar. Se enseña una vez al crearla y no vuelve a salir por la API. |
+| **Conservación**        | Mientras exista la conexión; se borra con la cuenta (clave ajena en cascada).                                                                                                                                 |
 
 ---
 

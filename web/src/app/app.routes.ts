@@ -11,6 +11,23 @@ export const routes: Routes = [
    */
   { path: '', loadComponent: () => import('./landing/landing').then((m) => m.Landing) },
   { path: 'panel', loadComponent: () => import('./panel/panel').then((m) => m.Panel) },
+  /*
+   * La inteligencia de dosier, en su propio trozo. Perezosa como todo lo demás:
+   * quien entra a montar un perfil no descarga la tabla comparativa, y el
+   * informe —que se abre para imprimirlo— no arrastra el panel entero.
+   */
+  {
+    path: 'panel/actividad',
+    loadComponent: () => import('./inmobiliaria/actividad').then((m) => m.Actividad),
+  },
+  {
+    path: 'panel/integracion',
+    loadComponent: () => import('./integracion/integracion').then((m) => m.Integracion),
+  },
+  {
+    path: 'panel/informe/:id',
+    loadComponent: () => import('./inmobiliaria/informe').then((m) => m.Informe),
+  },
   // El viewer va aparte para que su bundle sea mínimo.
   { path: 'v/:token', loadComponent: () => import('./viewer/viewer').then((m) => m.Viewer) },
   { path: 'demo', loadComponent: () => import('./demo/demo').then((m) => m.Demo) },

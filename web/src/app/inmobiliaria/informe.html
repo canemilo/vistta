@@ -1,0 +1,280 @@
+<!-- La barra del panel. No sale en el papel: lo que se entrega es el informe. -->
+<header class="no-imprimir border-b border-borde-2 bg-sup">
+  <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+    <a
+      routerLink="/panel/actividad"
+      class="font-mono text-[11px] tracking-[0.16em] text-texto-3 uppercase hover:text-acento"
+    >
+      ← Volver a la actividad
+    </a>
+    <div class="flex flex-wrap items-center gap-3">
+      @for (p of periodos; track p.dias) {
+        <button
+          type="button"
+          (click)="cambiarPeriodo(p.dias)"
+          class="rounded-lg border px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] uppercase"
+          [class]="
+            dias() === p.dias
+              ? 'border-acento/60 text-acento'
+              : 'border-borde text-texto-3 hover:text-texto-2'
+          "
+          [attr.aria-pressed]="dias() === p.dias"
+        >
+          {{ p.texto }}
+        </button>
+      }
+      <button
+        type="button"
+        (click)="imprimir()"
+        class="rounded-lg border border-acento/60 px-4 py-1.5 font-mono text-[10px] tracking-[0.16em] text-acento uppercase hover:bg-acento/10"
+      >
+        Imprimir o guardar en PDF
+      </button>
+    </div>
+  </div>
+</header>
+
+@if (error()) {
+  <p
+    class="no-imprimir mx-auto mt-6 max-w-3xl rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] text-peligro"
+    role="alert"
+  >
+    {{ error() }}
+  </p>
+}
+
+@if (cargando()) {
+  <p class="no-imprimir mx-auto mt-6 max-w-3xl px-6 font-mono text-[12px] text-texto-3">
+    Preparando el informe…
+  </p>
+} @else if (informe(); as inf) {
+  <!-- ===================== EL DOCUMENTO ===================== -->
+  <main id="contenido" class="hoja mx-auto my-8 max-w-3xl border border-borde bg-sup px-8 py-8">
+    <!--
+      La marca es la del AGENTE, no la de Vistta: este papel lo entrega él y es
+      lo que hace que te recomiende. El color de acento sale de su perfil.
+    -->
+    <div
+      class="bloque flex flex-wrap items-start justify-between gap-4 border-b border-borde-2 pb-6"
+    >
+      <div class="flex items-center gap-4">
+        @if (inf.logo) {
+          <img [src]="inf.logo" alt="" class="h-12 w-auto" />
+        }
+        <div>
+          <h1
+            class="font-mono text-[18px] tracking-tight"
+            [style.color]="inf.brandColor || 'var(--color-titulo)'"
+          >
+            {{ inf.displayName }}
+          </h1>
+          @if (inf.propiedad?.referencia) {
+            <p class="mt-1 font-mono text-[11px] text-texto-3">
+              Referencia {{ inf.propiedad!.referencia }}
+            </p>
+          }
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+          Informe de actividad
+        </p>
+        <p class="mt-1 font-mono text-[11px] text-texto-2">
+          {{ enFecha(inf.periodo.desde) }} — {{ enFecha(inf.periodo.hasta) }}
+        </p>
+        @if (inf.propiedad?.exclusivaDesde) {
+          <p class="mt-1 font-mono text-[10px] text-texto-3">
+            En exclusiva desde {{ enFecha(inf.propiedad!.exclusivaDesde) }}
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- ================= LAS CIFRAS ================= -->
+    <section class="bloque mt-6">
+      <h2 class="font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase">
+        Cuánto se ha enseñado
+      </h2>
+
+      <dl class="mt-4 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-lg border border-borde-2 px-4 py-3">
+          <dt class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">Enviados</dt>
+          <dd class="mt-1 font-mono text-[22px] text-titulo">{{ inf.cifras.enviados }}</dd>
+        </div>
+        <div class="rounded-lg border border-borde-2 px-4 py-3">
+          <dt class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">Abiertos</dt>
+          <dd class="mt-1 font-mono text-[22px] text-titulo">
+            {{ inf.cifras.abiertos }}
+            @if (inf.cifras.pctApertura !== null) {
+              <span class="text-[13px] text-texto-2">({{ inf.cifras.pctApertura }}%)</span>
+            }
+          </dd>
+        </div>
+        <div class="rounded-lg border border-borde-2 px-4 py-3">
+          <dt class="font-mono text-[10px] tracking-[0.18em] text-texto-3 uppercase">
+            Lo volvieron a abrir
+          </dt>
+          <dd class="mt-1 font-mono text-[22px] text-titulo">{{ inf.relecturas }}</dd>
+        </div>
+      </dl>
+
+      <p class="mt-4 font-mono text-[12px] leading-relaxed text-texto-2">
+        @if (inf.mideLectura) {
+          Tiempo medio de lectura: <strong>{{ enTiempo(inf.cifras.msMedio) }}</strong> por dosier
+          abierto.
+          @if (inf.cifras.abiertos > 0) {
+            Llegaron al final
+            <strong>{{ inf.llegaronAlFinal }}</strong>
+            @if (inf.pctFinal !== null) {
+              ({{ inf.pctFinal }}%)
+            }
+            de las lecturas.
+          }
+        } @else {
+          Este plan no registra la actividad de lectura, así que este informe cuenta los envíos y
+          las aperturas, y no lo que se miró dentro.
+        }
+      </p>
+
+      @if (evolucion() !== null) {
+        <p class="mt-2 font-mono text-[12px] text-texto-2">
+          Respecto al periodo anterior, la apertura
+          @if (evolucion()! > 0) {
+            ha subido {{ evolucion() }} puntos.
+          } @else if (evolucion()! < 0) {
+            ha bajado {{ -evolucion()! }} puntos.
+          } @else {
+            se mantiene igual.
+          }
+        </p>
+      }
+
+      @if (!inf.datosSuficientes) {
+        <p
+          class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3 font-mono text-[11px] leading-relaxed text-aviso"
+        >
+          Todavía hay pocas lecturas para hablar en porcentajes, así que este informe da los números
+          tal cual. Con dos o tres datos, un porcentaje dice más de lo que sabe.
+        </p>
+      }
+    </section>
+
+    <!-- ================= QUÉ SE MIRA ================= -->
+    @if (inf.mideLectura) {
+      <section class="bloque mt-8">
+        <h2 class="font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase">
+          Qué se mira, y qué se salta
+        </h2>
+
+        @if (inf.apartados.length === 0) {
+          <p class="mt-3 font-mono text-[12px] text-texto-3">
+            Todavía no hay lecturas medidas en este periodo.
+          </p>
+        } @else {
+          <ul class="mt-4 space-y-2">
+            @for (a of inf.apartados; track a.seccionIdx) {
+              <li
+                class="flex flex-wrap items-baseline justify-between gap-3 border-b border-borde-3 pb-2"
+              >
+                <span class="font-mono text-[13px] text-texto">
+                  {{ nombreDeApartado(a.titulo, a.seccionIdx) }}
+                </span>
+                <span class="font-mono text-[12px] text-texto-2">
+                  @if (a.pctLectores !== null) {
+                    {{ a.pctLectores }}% pasó por aquí ·
+                  } @else {
+                    {{ a.lectores }} lecturas ·
+                  }
+                  {{ enTiempo(a.msMedio) }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (inf.saltados.length) {
+          <p class="mt-4 font-mono text-[12px] leading-relaxed text-texto-2">
+            <strong>Nadie llegó a</strong> {{ listaDeSaltados(inf) }}.
+          </p>
+        }
+      </section>
+    }
+
+    <!-- ================= EL PIE ================= -->
+    <footer class="bloque mt-8 border-t border-borde-2 pt-4">
+      <p class="font-mono text-[10px] leading-relaxed text-texto-3">
+        Datos agregados de {{ inf.cifras.enviados }} envíos del periodo. Este informe
+        <strong>no identifica a ningún comprador</strong>: no recoge quién abrió cada dosier ni
+        desde dónde. Los tiempos de lectura son <strong>aproximados</strong> —los mide el navegador
+        de quien lee, solo con la pestaña delante— y sirven para comparar entre apartados, no como
+        medida exacta.
+      </p>
+      <p class="mt-2 font-mono text-[10px] text-texto-3">
+        Generado el {{ enFecha(inf.generadoEn) }} con Vistta.
+      </p>
+    </footer>
+  </main>
+
+  <!-- ===================== LA FICHA (solo para el agente) ===================== -->
+  <section class="no-imprimir mx-auto mb-12 max-w-3xl px-6">
+    <div class="rounded-xl border border-borde bg-sup p-5">
+      <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
+        Ficha del inmueble
+      </h2>
+      <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+        Para ti. De la persona propietaria no se guarda nada —ni nombre, ni correo, ni teléfono—: el
+        informe se lo entregas tú, así que Vistta no necesita saber quién es.
+      </p>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+            Referencia
+          </span>
+          <input
+            [(ngModel)]="referencia"
+            maxlength="80"
+            placeholder="REF-118"
+            class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+          />
+        </label>
+        <label class="block">
+          <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+            En exclusiva desde
+          </span>
+          <input
+            type="date"
+            [(ngModel)]="exclusivaDesde"
+            class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none focus:border-acento/60"
+          />
+        </label>
+      </div>
+
+      <label class="mt-4 block">
+        <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+          Nota privada
+        </span>
+        <textarea
+          [(ngModel)]="propietarioNota"
+          maxlength="2000"
+          rows="3"
+          class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+          placeholder="No sale en el informe."
+        ></textarea>
+      </label>
+
+      <div class="mt-4 flex flex-wrap items-center gap-4">
+        <button
+          type="button"
+          (click)="guardarFicha()"
+          class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10"
+        >
+          Guardar ficha
+        </button>
+        @if (guardado()) {
+          <span class="font-mono text-[11px] text-acento" role="status">{{ guardado() }}</span>
+        }
+      </div>
+    </div>
+  </section>
+}

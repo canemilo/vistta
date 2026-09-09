@@ -5,6 +5,7 @@ import type { Db } from "../db";
 import {
   BorrarPerfilSchema,
   CreateProfileSchema,
+  FichaPropiedadSchema,
   PresignSchema,
   UpdateProfileSchema,
   idsDeMedios,
@@ -27,6 +28,9 @@ import { GRACIA_CONGELADO_MS } from "../lib/planes";
 import { activarPerfil, borrarPerfil } from "../lib/congelado";
 import { CuerpoDemasiadoGrandeError, leerCuerpoConTope } from "../lib/body";
 import { prepararLogo, LogoNoValidoError, LOGO_ENTRADA_MAXIMA } from "../lib/logo";
+import { generarInforme } from "../lib/informe";
+import { fichaDePropiedad, guardarFichaDePropiedad } from "../lib/propiedad";
+import { periodoDeLaConsulta } from "../lib/periodo";
 
 export function profilesRoutes({ config, db, storage }: Deps) {
   const profiles = new Hono<AppEnv>();
@@ -409,6 +413,60 @@ export function profilesRoutes({ config, db, storage }: Deps) {
     );
     if (rowCount === 0) return c.json({ error: "perfil no encontrado" }, 404);
     return c.json({ ok: true });
+  });
+
+  /**
+   * El informe al propietario del inmueble.
+   *
+   * Sale AGREGADO Y ANÓNIMO de `lib/informe.ts`, y ahí está explicado por qué:
+   * ninguna consulta de ese módulo selecciona el destinatario de un pase. Aquí
+   * lo único que se decide es de quién es el perfil.
+   *
+   * Un perfil CONGELADO también da informe, a diferencia de las rutas que
+   * escriben: lo que se pide es la historia de lo que ya pasó, y negarla porque
+   * la cuenta se haya pasado de plan sería esconder el trabajo del cliente
+   * justo cuando más le interesa enseñarlo.
+   */
+  profiles.get("/api/profiles/:id/informe", async (c) => {
+    const profileId = c.req.param("id");
+    if (!(await esSuyo(db, c, profileId))) {
+      return c.json({ error: "perfil no encontrado" }, 404);
+    }
+
+    const periodo = periodoDeLaConsulta(c.req.query("desde"), c.req.query("hasta"));
+    if (!periodo.ok) return c.json({ error: periodo.error }, 400);
+
+    const informe = await generarInforme(db, profileId, periodo.valor);
+    if (!informe) return c.json({ error: "perfil no encontrado" }, 404);
+    return c.json(informe);
+  });
+
+  /**
+   * La ficha del inmueble: referencia, nota del agente y desde cuándo tiene la
+   * exclusiva. Del PROPIETARIO no se guarda nada (ver la migración 0014).
+   */
+  profiles.get("/api/profiles/:id/propiedad", async (c) => {
+    const profileId = c.req.param("id");
+    if (!(await esSuyo(db, c, profileId))) {
+      return c.json({ error: "perfil no encontrado" }, 404);
+    }
+    return c.json({ ficha: await fichaDePropiedad(db, profileId) });
+  });
+
+  profiles.put("/api/profiles/:id/propiedad", async (c) => {
+    const profileId = c.req.param("id");
+    // Congelado se lee pero no se escribe, igual que el contenido.
+    if (!(await esSuyo(db, c, profileId, { soloActivos: true }))) {
+      return c.json({ error: "perfil no encontrado o congelado" }, 404);
+    }
+
+    const parsed = FichaPropiedadSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json({ error: "entrada no válida", detail: parsed.error.flatten() }, 400);
+    }
+
+    await guardarFichaDePropiedad(db, profileId, parsed.data);
+    return c.json({ ficha: await fichaDePropiedad(db, profileId) });
   });
 
   profiles.get("/api/media/:id", async (c) => {

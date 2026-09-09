@@ -4,6 +4,10 @@ import { completar, encolar, fallar, tomarTrabajo, type Trabajo } from "./lib/jo
 import { pasarReaper } from "./lib/reaper";
 import { purgar } from "./lib/purga";
 import { aplicarVencimientos, caducarCodigos } from "./lib/facturacion";
+import { registrarAviso } from "./lib/avisos";
+import { avisarAlCrm, type EventoDeWebhook } from "./lib/webhooks-salida";
+import { MAX_INTENTOS } from "./lib/jobs";
+import { TRABAJO_AVISO_REAPERTURA, TRABAJO_WEBHOOK_SALIDA } from "./lib/trabajos";
 
 /**
  * El trabajador de la cola. Vive en el mismo proceso que la API en el MVP, y
@@ -14,6 +18,9 @@ import { aplicarVencimientos, caducarCodigos } from "./lib/facturacion";
 export const TRABAJO_REAPER = "reaper";
 export const TRABAJO_PURGA = "purga";
 export const TRABAJO_VENCIMIENTOS = "vencimientos";
+
+// Los dos que encola `lib/pass.ts` viven en `lib/trabajos.ts`: tenerlos aquí
+// haría que ese módulo importara al trabajador entero.
 
 /** Cada cuánto se vuelve a encolar la limpieza de huérfanos. */
 export const PERIODO_REAPER_MS = 15 * 60 * 1000;
@@ -39,6 +46,14 @@ export const PERIODO_VENCIMIENTOS_MS = 60 * 60 * 1000;
 export interface DepsDelTrabajador {
   db: Db;
   storage: Storage;
+  /**
+   * De dónde sale el enlace de vuelta al panel que se le manda al CRM.
+   *
+   * Entra por dependencia como todo lo demás: `process.env` solo lo lee
+   * `server.ts`, y un trabajador que se lo leyera por su cuenta sería el
+   * segundo sitio del proyecto que habla con el entorno.
+   */
+  baseUrl: string;
 }
 
 type Manejador = (deps: DepsDelTrabajador, trabajo: Trabajo) => Promise<void>;
@@ -93,6 +108,45 @@ const MANEJADORES: Record<string, Manejador> = {
       );
     }
     await encolar(db, TRABAJO_VENCIMIENTOS, {}, Date.now() + PERIODO_VENCIMIENTOS_MS);
+  },
+
+  /**
+   * Alguien ha vuelto a abrir un dosier: el momento de llamar.
+   *
+   * El trabajo NO decide si agrupar. Eso lo decide el índice único parcial de
+   * la 0015 dentro de la propia sentencia (`lib/avisos.ts`), y así cinco
+   * reaperturas simultáneas dejan un aviso que dice cinco, no cinco avisos.
+   * Aquí solo se traduce «pasó esto» a «hay que avisar».
+   */
+  async [TRABAJO_AVISO_REAPERTURA]({ db }, trabajo) {
+    const passId = trabajo.payload["passId"];
+    // Un payload sin pase es un trabajo mal encolado, no un fallo que reintentar:
+    // se completa en silencio en vez de gastar cinco intentos.
+    if (typeof passId === "string") await registrarAviso(db, passId);
+  },
+
+  /**
+   * Contárselo al CRM del agente.
+   *
+   * Aquí, y no en la apertura del pase: si el CRM tarda cinco segundos o está
+   * caído, quien esperaría es el comprador que acaba de abrir el enlace.
+   *
+   * Si algún envío falla, `avisarAlCrm` lanza y la cola reintenta con espera
+   * creciente. Este trabajo es el único que sabe si es el ÚLTIMO intento, y por
+   * eso se lo dice: un intento fallido no apaga la conexión de nadie, un aviso
+   * perdido del todo sí cuenta para ello.
+   */
+  async [TRABAJO_WEBHOOK_SALIDA]({ db, baseUrl }, trabajo) {
+    const passId = trabajo.payload["passId"];
+    const evento = trabajo.payload["evento"];
+    if (typeof passId !== "string") return;
+    if (evento !== "apertura" && evento !== "reapertura") return;
+
+    await avisarAlCrm(
+      db,
+      { passId, evento: evento as EventoDeWebhook },
+      { baseUrl, esElUltimoIntento: trabajo.attempts >= MAX_INTENTOS }
+    );
   },
 };
 

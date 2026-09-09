@@ -128,6 +128,7 @@ describe("lo que NO se guarda de quien lee", () => {
       "ms_visible",
       "pass_id",
       "seccion_idx",
+      "seccion_titulo",
       "tipo",
       "ts",
     ]);

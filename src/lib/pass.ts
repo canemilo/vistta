@@ -5,6 +5,8 @@ import { ProfileDataSchema, idsDeMedios, type ProfileData, type Section } from "
 import { mediosDelPerfil, type MedioRow } from "./media-store";
 import type { MediaKind } from "./sniff";
 import { cuentaDelPerfil, pasesAbiertos } from "./cuentas";
+import { encolar } from "./jobs";
+import { TRABAJO_AVISO_REAPERTURA, TRABAJO_WEBHOOK_SALIDA } from "./trabajos";
 import {
   PLAZO_NUEVOS_POR_DEFECTO_MS,
   PLAZO_UNICO_MAX_MS,
@@ -280,6 +282,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     profile_id: string;
     destinatario_ref: string | null;
     tema: TemaDePase;
+    accesos_usados: number;
   }>(
     `UPDATE vistta.passes AS p SET
        accesos_usados      = p.accesos_usados + 1,
@@ -301,7 +304,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
                              END
      WHERE p.token_hash = $2
        AND ${pasAbribleSql("p", "$1")}
-     RETURNING p.id, p.profile_id, p.destinatario_ref, p.tema`,
+     RETURNING p.id, p.profile_id, p.destinatario_ref, p.tema, p.accesos_usados`,
     [now, tokenHash]
   );
 
@@ -326,6 +329,31 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     [claimed.profile_id]
   );
   if (!profile) return null;
+
+  /*
+   * ¿Es una REAPERTURA? Es la señal más fuerte del termómetro: el CRM sabe a
+   * quién se le mandó, no sabe quién ha vuelto el domingo por la noche.
+   *
+   * Va a la cola y no a una escritura aquí, por dos razones. La primera es que
+   * esto corre mientras alguien espera a que le salgan unas fotos. La segunda,
+   * más importante: SI FALLA, NO PUEDE ROMPER LA APERTURA. El pase ya está
+   * consumido a estas alturas —el UPDATE atómico ya pasó—, así que una
+   * excepción aquí le dejaría al cliente un enlace gastado y una pantalla de
+   * error. Por eso se traga el fallo y se anota sin PII.
+   */
+  const esReapertura = claimed.accesos_usados > 1;
+  try {
+    if (esReapertura) await encolar(db, TRABAJO_AVISO_REAPERTURA, { passId: claimed.id });
+    // Y lo mismo hacia fuera, si el agente ha conectado su CRM. Se encola
+    // siempre y decide el trabajador: mirar aquí si hay destino sería una
+    // consulta más en el camino que atiende a quien está abriendo el enlace.
+    await encolar(db, TRABAJO_WEBHOOK_SALIDA, {
+      passId: claimed.id,
+      evento: esReapertura ? "reapertura" : "apertura",
+    });
+  } catch (err) {
+    console.warn(`aviso no encolado : ${err instanceof Error ? err.name : "error"}`);
+  }
 
   const data = parseProfileData(profile.data);
   // Los medios salen de la instantánea del pase, no del JSON: si el perfil ha

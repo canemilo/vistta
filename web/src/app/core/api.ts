@@ -211,6 +211,146 @@ export interface CatalogoPublico {
   }[];
 }
 
+// ---------------------------------------------------------------------------
+// Inteligencia de dosier (bloque inmobiliario)
+// ---------------------------------------------------------------------------
+
+/**
+ * La ficha del inmueble. Del PROPIETARIO no hay nada, y no es un olvido: el
+ * informe se lo entrega el agente, así que Vistta no necesita conocerlo.
+ */
+export interface FichaDePropiedad {
+  referencia: string | null;
+  /** Nota del agente para el agente. No entra en el informe. */
+  propietarioNota: string | null;
+  exclusivaDesde: number | null;
+  actualizadoEn: number;
+}
+
+export interface ApartadoDelInforme {
+  titulo: string | null;
+  seccionIdx: number;
+  lectores: number;
+  /** null = no hay lecturas suficientes para hablar en porcentajes. */
+  pctLectores: number | null;
+  msMedio: number;
+}
+
+export interface CifrasDelPeriodo {
+  enviados: number;
+  abiertos: number;
+  pctApertura: number | null;
+  msMedio: number | null;
+}
+
+/**
+ * El informe al propietario: AGREGADO Y ANÓNIMO. Aquí no hay ni puede haber un
+ * destinatario concreto; el servidor no lo manda.
+ */
+export interface Informe {
+  profileId: string;
+  displayName: string;
+  brandColor: string | null;
+  logo: string | null;
+  propiedad: { referencia: string | null; exclusivaDesde: number | null } | null;
+  periodo: { desde: number; hasta: number };
+  generadoEn: number;
+  mideLectura: boolean;
+  datosSuficientes: boolean;
+  cifras: CifrasDelPeriodo;
+  relecturas: number;
+  llegaronAlFinal: number;
+  pctFinal: number | null;
+  apartados: ApartadoDelInforme[];
+  saltados: { titulo: string | null; seccionIdx: number }[];
+  anterior: CifrasDelPeriodo | null;
+}
+
+export type Temperatura = 'caliente' | 'tibio' | 'frio';
+
+/**
+ * Por qué está a esa temperatura. Llega en CÓDIGO y la frase la monta el panel:
+ * un número del 1 al 100 sin explicación no genera confianza ni acción.
+ */
+export type MotivoDeInteres =
+  'reapertura' | 'final' | 'atencion' | 'apertura-rapida' | 'abierto-incompleto' | 'sin-abrir';
+
+export interface PaseEnElTermometro {
+  passId: string;
+  profileId: string;
+  profileNombre: string;
+  destinatarioRef: string | null;
+  destinatarioNota: string | null;
+  creadoEn: number;
+  temperatura: Temperatura;
+  motivo: MotivoDeInteres;
+  cuando: number;
+  apartado: string | null;
+  apartadoIdx: number | null;
+  aperturas: number;
+  msLeidos: number;
+}
+
+export interface Aviso {
+  id: string;
+  profileId: string;
+  profileNombre: string;
+  passId: string;
+  tipo: 'reapertura';
+  veces: number;
+  creadoEn: number;
+  ultimoEn: number;
+  destinatarioRef: string | null;
+  destinatarioNota: string | null;
+}
+
+export interface FilaDeComparativa {
+  profileId: string;
+  displayName: string;
+  referencia: string | null;
+  enviados: number;
+  abiertos: number;
+  pctApertura: number | null;
+  msMedio: number | null;
+  llegaronAlFinal: number;
+  pctFinal: number | null;
+  datosSuficientes: boolean;
+  destacado: 'mejor-apertura' | 'apertura-baja' | null;
+}
+
+// ---------------------------------------------------------------------------
+// Conexiones con el CRM del agente
+// ---------------------------------------------------------------------------
+
+/** Una conexión por la que el CRM pide enlaces. El token NO está: solo su hash. */
+export interface ConexionDeEntrada {
+  id: string;
+  nombre: string;
+  profileId: string | null;
+  creadoEn: number;
+  /** Lo primero que mira quien dice que «no le funciona». */
+  ultimoUso: number | null;
+  revocadoEn: number | null;
+}
+
+/** A dónde manda Vistta los avisos. El secreto tampoco vuelve a salir. */
+export interface DestinoDeSalida {
+  id: string;
+  targetUrl: string;
+  eventos: ('apertura' | 'reapertura')[];
+  activo: boolean;
+  creadoEn: number;
+  fallos: number;
+  ultimoError: string | null;
+  ultimoEnvio: number | null;
+}
+
+export interface ResultadoDePrueba {
+  ok: boolean;
+  estado: number | null;
+  error: string | null;
+}
+
 /** Lo que el dueño del pase ve de la lectura. Ya sumado por el servidor. */
 export interface ResumenDeLectura {
   hayDatos: boolean;
@@ -684,6 +824,184 @@ export class Api {
       this.http.get<ResumenDeLectura>(`/api/passes/${passId}/lectura`, {
         headers: { authorization: `Bearer ${session}` },
       }),
+    );
+  }
+
+  // --- inteligencia de dosier (bloque inmobiliario) -------------------------
+
+  /**
+   * El informe de una propiedad. Sale del servidor ya agregado: el navegador no
+   * recibe una lista de lecturas que después tendría que sumar (ni por la que
+   * podría deducir quién miró qué).
+   */
+  informe(session: string, profileId: string, periodo?: { desde: number; hasta: number }) {
+    const params = periodo
+      ? new HttpParams().set('desde', periodo.desde).set('hasta', periodo.hasta)
+      : undefined;
+    return firstValueFrom(
+      this.http.get<Informe>(`/api/profiles/${profileId}/informe`, {
+        headers: { authorization: `Bearer ${session}` },
+        params,
+      }),
+    );
+  }
+
+  fichaDePropiedad(
+    session: string,
+    profileId: string,
+  ): Promise<{ ficha: FichaDePropiedad | null }> {
+    return firstValueFrom(
+      this.http.get<{ ficha: FichaDePropiedad | null }>(`/api/profiles/${profileId}/propiedad`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  guardarFicha(
+    session: string,
+    profileId: string,
+    ficha: Partial<Omit<FichaDePropiedad, 'actualizadoEn'>>,
+  ): Promise<{ ficha: FichaDePropiedad | null }> {
+    return firstValueFrom(
+      this.http.put<{ ficha: FichaDePropiedad | null }>(
+        `/api/profiles/${profileId}/propiedad`,
+        ficha,
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  /** A quién llamar hoy. Ya ordenado por el servidor. */
+  termometro(session: string): Promise<{ pases: PaseEnElTermometro[] }> {
+    return firstValueFrom(
+      this.http.get<{ pases: PaseEnElTermometro[] }>('/api/panel/termometro', {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  comparativa(
+    session: string,
+  ): Promise<{ periodo: { desde: number; hasta: number }; filas: FilaDeComparativa[] }> {
+    return firstValueFrom(
+      this.http.get<{ periodo: { desde: number; hasta: number }; filas: FilaDeComparativa[] }>(
+        '/api/panel/comparativa',
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  avisos(
+    session: string,
+  ): Promise<{ avisos: Aviso[]; activos: boolean; conexionApagada: boolean }> {
+    return firstValueFrom(
+      this.http.get<{ avisos: Aviso[]; activos: boolean; conexionApagada: boolean }>(
+        '/api/panel/avisos',
+        {
+          headers: { authorization: `Bearer ${session}` },
+        },
+      ),
+    );
+  }
+
+  configurarAvisos(session: string, activos: boolean): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.put<{ ok: boolean }>(
+        '/api/panel/avisos',
+        { activos },
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  avisoVisto(session: string, avisoId: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `/api/panel/avisos/${avisoId}/visto`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  // --- conexiones con el CRM ------------------------------------------------
+
+  integracion(
+    session: string,
+  ): Promise<{ entrada: ConexionDeEntrada[]; salida: DestinoDeSalida[] }> {
+    return firstValueFrom(
+      this.http.get<{ entrada: ConexionDeEntrada[]; salida: DestinoDeSalida[] }>(
+        '/api/panel/integracion',
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  /**
+   * Crea una conexión de entrada. La `url` que devuelve es la ÚNICA vez que se
+   * puede ver: en la base solo queda su hash. Quien llame tiene que enseñarla ya.
+   */
+  crearConexion(
+    session: string,
+    datos: { nombre: string; profileId?: string | null },
+  ): Promise<{ conexion: ConexionDeEntrada; url: string }> {
+    return firstValueFrom(
+      this.http.post<{ conexion: ConexionDeEntrada; url: string }>(
+        '/api/panel/integracion/entrada',
+        datos,
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  revocarConexion(session: string, id: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/panel/integracion/entrada/${id}`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  /** Igual que la de entrada: el `secreto` se ve una vez y no vuelve. */
+  guardarDestino(
+    session: string,
+    datos: { targetUrl: string },
+  ): Promise<{ destino: DestinoDeSalida; secreto: string }> {
+    return firstValueFrom(
+      this.http.post<{ destino: DestinoDeSalida; secreto: string }>(
+        '/api/panel/integracion/salida',
+        datos,
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  borrarDestino(session: string, id: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`/api/panel/integracion/salida/${id}`, {
+        headers: { authorization: `Bearer ${session}` },
+      }),
+    );
+  }
+
+  reactivarDestino(session: string, id: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `/api/panel/integracion/salida/${id}/reactivar`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
+    );
+  }
+
+  /** El botón que convierte esto en algo que un comercial puede hacer solo. */
+  probarDestino(session: string, id: string): Promise<ResultadoDePrueba> {
+    return firstValueFrom(
+      this.http.post<ResultadoDePrueba>(
+        `/api/panel/integracion/salida/${id}/prueba`,
+        {},
+        { headers: { authorization: `Bearer ${session}` } },
+      ),
     );
   }
 

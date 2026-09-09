@@ -158,6 +158,9 @@ describe("las plantillas ya no llevan color escrito a mano", () => {
     "app.html",
     "demo/demo.html",
     "pass-card/pass-card.html",
+    "inmobiliaria/actividad.html",
+    "inmobiliaria/informe.html",
+    "integracion/integracion.html",
   ])("%s usa tokens, no hexadecimales", (archivo) => {
     const html = readFileSync(join(process.cwd(), "web/src/app", archivo), "utf8");
     const sueltos = [...html.matchAll(/(?:bg|text|border|placeholder|ring)-\[#[0-9a-fA-F]{6}\]/g)];

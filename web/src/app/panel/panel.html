@@ -308,6 +308,23 @@
                 {{ uso().pasesAbiertos }} pases abiertos
               </p>
               <div class="my-1 h-px bg-borde-2" aria-hidden="true"></div>
+              <!--
+                La actividad de la cartera. Va aquí y no como pestaña del panel
+                porque no hace falta para montar un dosier ni para mandar un
+                enlace: se mira por la mañana, con el café.
+              -->
+              <a
+                routerLink="/panel/integracion"
+                class="block w-full rounded-lg px-2 py-2 text-left font-mono text-[11px] tracking-[0.14em] text-texto-2 hover:bg-sup-2 hover:text-acento"
+              >
+                CONECTAR CON TU CRM
+              </a>
+              <a
+                routerLink="/panel/actividad"
+                class="block w-full rounded-lg px-2 py-2 text-left font-mono text-[11px] tracking-[0.14em] text-texto-2 hover:bg-sup-2 hover:text-acento"
+              >
+                ACTIVIDAD Y AVISOS
+              </a>
               <button
                 type="button"
                 (click)="miCuenta.set(!miCuenta()); menuCuenta.open = false"

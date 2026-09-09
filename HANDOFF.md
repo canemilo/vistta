@@ -558,6 +558,52 @@ consumo reescrito a "leer y luego escribir", las dos peticiones seguían pasando
 16 el fallo aparece: 13 de 16 consumían el pase. Antes de dar por bueno un test de un invariante,
 rómpelo a propósito y comprueba que se pone rojo.
 
+## 3.bis Bloque J — inteligencia de dosier y CRM (2026-09-09)
+
+Dos encargos, hechos en este orden: `MEJORAS-INMOBILIARIA.md` y luego
+`INTEGRACION-CRM.md`. En los dos, el propio encargo dice que son **hipótesis
+comerciales sin validar**, y sigue siendo verdad: nadie ha enseñado todavía un
+informe a un agente inmobiliario de verdad, ni ha confirmado que vaya a
+configurar una conexión con su CRM. Está anotado en `docs/15` y `docs/16` como
+manda `docs/11`, no escondido.
+
+**Lo que hay:**
+
+- **Métricas de lectura útiles**: el tiempo va SANEADO en el navegador —el reloj
+  para con la pestaña al fondo, se corta al minuto sin interacción, y hay tope
+  por apartado— y el título del apartado lo pone el SERVIDOR, no el cliente.
+  Derivados: si se abrió, cuándo, cuántas veces, cuánto tardó, ranking,
+  apartados saltados y si llegó al final.
+- **Informe al propietario** (`GET /api/profiles/:id/informe`, `/panel/informe/:id`):
+  agregado y anónimo, con umbral de **cuatro lecturas** por debajo del cual no
+  se emite ni un porcentaje. Imprimible con la marca del agente.
+- **Termómetro** (`/api/panel/termometro`): estados cualitativos con su MOTIVO,
+  nunca una puntuación, y nunca un juicio sobre quien lee.
+- **Avisos de reapertura**: agrupados por un **índice único parcial** —el tope
+  con contador de este bloque—, con ráfaga de 16 verificada por mutación
+  (quitando las DOS defensas: 16 de 16 se cuelan).
+- **Comparativa** entre las propiedades del mismo agente, jamás contra las de
+  otro.
+- **Conexión con el CRM**: entrantes (`POST /api/webhooks/entrada/:token`, token
+  hasheado, doble límite por IP y por token, 404 uniforme) y salientes por la
+  cola, firmados con HMAC y **sin las métricas de lectura dentro**.
+
+**Lo que conviene saber antes de tocarlo:**
+
+- El guardia contra SSRF (`src/lib/url-segura.ts`) tiene una trampa que
+  encontró una PRUEBA y no el diseño: **cuando el host de la URL es una IP
+  literal, Node no llama al `lookup`**, así que el guardia del socket no se
+  ejecuta. Se cierra aparte, en `enviarWebhook`. Si alguien mueve ese código,
+  que compruebe que el test «un envío a una dirección interna no llega a salir»
+  sigue verde.
+- El envío completo contra un servidor real **no se puede probar aquí**: todo lo
+  que se levante en la máquina de pruebas está en una dirección privada y el
+  guardia lo rechaza, con razón. Falta verlo contra un webhook de Make.
+- `docs/15` y `docs/16` están escritos; `legal/rat.md` §B.3 a §B.7 declaran los
+  tratamientos nuevos, incluido el CRM como **destinatario**; y la EIPD tiene
+  dos riesgos nuevos analizados (el informe a un tercero, y que el termómetro
+  parezca un perfilado del art. 22).
+
 ## 4. Principios inviolables
 
 - Consumo del pase atómico y de un solo uso.

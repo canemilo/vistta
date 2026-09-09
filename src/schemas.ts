@@ -2,9 +2,16 @@ import { z } from "zod";
 import { ACCESOS_MINIMOS, VENTANA_MINIMA_MS } from "./lib/planes";
 import { EVENTOS_POR_ENVIO, MS_VISIBLE_MAXIMO } from "./lib/eventos";
 
-export const CreatePassSchema = z
+/**
+ * Los campos de un pase SIN el perfil.
+ *
+ * Se sacan aparte porque hay dos puertas que crean pases y no dicen el perfil
+ * igual: el panel siempre lo manda, y el webhook del CRM puede llevarlo fijado
+ * en la propia conexión. Lo demás —modos, plazos, destinatario— tiene que
+ * significar exactamente lo mismo por las dos, así que se escribe una vez.
+ */
+const camposDePase = z
   .object({
-    profileId: z.string().min(1).max(128),
     /**
      * Plazo para la PRIMERA apertura. El tope real lo pone el plan: aquí solo
      * se corta lo absurdo. `unico` se queda en 24 h como siempre.
@@ -71,7 +78,23 @@ export const CreatePassSchema = z
       });
     }
   });
+
+export const CreatePassSchema = camposDePase.and(
+  z.object({ profileId: z.string().min(1).max(128) })
+);
 export type CreatePassInput = z.infer<typeof CreatePassSchema>;
+
+/**
+ * Lo que manda el CRM por un webhook de entrada.
+ *
+ * `profileId` es OPCIONAL porque la conexión puede llevarlo fijado; si no lo
+ * lleva ninguno de los dos, la ruta contesta 400. Y si vienen los dos, manda el
+ * de la conexión: lo que el agente ató a una credencial concreta no lo puede
+ * cambiar quien tenga esa credencial.
+ */
+export const WebhookPaseSchema = camposDePase.and(
+  z.object({ profileId: z.string().min(1).max(128).optional() })
+);
 
 /**
  * Lo que manda el viewer con la telemetría de una lectura.
@@ -86,7 +109,7 @@ export const EventosSchema = z.object({
   eventos: z
     .array(
       z.object({
-        tipo: z.enum(["apertura", "seccion", "medio", "cierre"]),
+        tipo: z.enum(["apertura", "seccion", "medio", "cierre", "final"]),
         seccionIdx: z.number().int().min(0).max(100).optional(),
         mediaId: z.string().min(1).max(128).optional(),
         msVisible: z.number().int().min(0).max(MS_VISIBLE_MAXIMO).optional(),
@@ -237,6 +260,51 @@ export const PresignSchema = z.object({
   kind: z.enum(["image", "video", "doc"]),
   /** Tamaño declarado. No se cree; se usa para reservar y se contrasta luego. */
   bytes: z.number().int().positive(),
+});
+
+/**
+ * La ficha de la propiedad (bloque inmobiliario).
+ *
+ * Tres campos, y `null` significa BORRAR: es la única forma de quitar una
+ * referencia que se puso mal sin inventar un valor vacío que luego habría que
+ * distinguir de «no puesto».
+ *
+ * Lo que NO admite este esquema, y es lo importante: nombre, correo o teléfono
+ * del propietario del inmueble. No hay columnas para eso (ver la 0014) y
+ * tampoco campos aquí, para que no se cuelen por un `passthrough` futuro.
+ */
+export const FichaPropiedadSchema = z
+  .object({
+    referencia: z.string().max(80).nullable().optional(),
+    propietarioNota: z.string().max(2000).nullable().optional(),
+    exclusivaDesde: z.number().int().positive().nullable().optional(),
+  })
+  .strict();
+
+/** Encender o apagar los avisos de reapertura. */
+export const PreferenciaAvisosSchema = z.object({ activos: z.boolean() });
+
+/** Crear una conexión de entrada para el CRM. */
+export const ConexionDeEntradaSchema = z.object({
+  nombre: z.string().trim().min(1).max(80),
+  /** Si se fija aquí, el CRM ya no puede pedir pases de otro dosier. */
+  profileId: z.string().min(1).max(128).nullable().optional(),
+});
+
+/**
+ * El destino al que Vistta manda los avisos.
+ *
+ * La forma se comprueba aquí, pero lo que de verdad decide si esa dirección se
+ * puede llamar vive en `lib/url-segura.ts`, y hace falta la red para saberlo:
+ * un nombre público puede resolver a una dirección interna. Esto solo corta lo
+ * que ya se puede cortar sin salir del proceso.
+ */
+export const DestinoDeSalidaSchema = z.object({
+  targetUrl: z.string().trim().min(1).max(2000),
+  eventos: z
+    .array(z.enum(["apertura", "reapertura"]))
+    .min(1)
+    .optional(),
 });
 
 /** Todos los ids de medio que aparecen en un contenido. */

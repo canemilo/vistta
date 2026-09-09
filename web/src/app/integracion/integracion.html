@@ -1,0 +1,324 @@
+<div class="min-h-screen bg-fondo">
+  <header class="border-b border-borde-2 bg-sup">
+    <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div class="flex items-center gap-4 text-titulo">
+        <app-marca [alto]="32" />
+        <span class="font-mono text-[10px] tracking-[0.24em] text-texto-3 uppercase">
+          Conectar con tu CRM
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a
+          routerLink="/panel"
+          class="font-mono text-[11px] tracking-[0.16em] text-texto-3 uppercase hover:text-acento"
+        >
+          ← Volver al panel
+        </a>
+        <app-boton-tema />
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="mx-auto max-w-4xl px-6 py-8">
+    @if (error()) {
+      <p
+        class="mb-6 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] text-peligro"
+        role="alert"
+      >
+        {{ error() }}
+      </p>
+    }
+    @if (copiado()) {
+      <p class="mb-6 font-mono text-[11px] text-acento" role="status">{{ copiado() }}</p>
+    }
+
+    @if (cargando()) {
+      <p class="font-mono text-[12px] text-texto-3">Cargando…</p>
+    } @else {
+      <!-- ============ B: los avisos, que es lo que de verdad vale ============ -->
+      <section class="rounded-xl border border-borde bg-sup p-5">
+        <h1 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
+          Recibir avisos de lectura en tu CRM
+        </h1>
+        <p class="mt-2 font-mono text-[12px] leading-relaxed text-texto-2">
+          Cuando alguien abre —o vuelve a abrir— uno de tus dosieres, Vistta se lo cuenta al sistema
+          que tú digas. Es el momento de llamar, y te llega donde ya trabajas.
+        </p>
+        <p class="mt-2 font-mono text-[11px] leading-relaxed text-texto-3">
+          Se envía qué dosier, a quién se lo mandaste y cuándo lo abrió.
+          <strong class="text-texto-2">El detalle de la lectura no sale de Vistta</strong>: qué
+          apartados miró y cuánto se consulta aquí, en Actividad.
+        </p>
+
+        @if (salida().length === 0) {
+          <div class="mt-4 flex flex-wrap items-end gap-3">
+            <label class="min-w-[18rem] flex-1">
+              <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+                Dirección de tu CRM
+              </span>
+              <input
+                [(ngModel)]="urlDestino"
+                placeholder="https://hook.tucrm.com/…"
+                class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+              />
+            </label>
+            <button
+              type="button"
+              (click)="guardarDestino()"
+              class="rounded-lg border border-acento/60 px-4 py-2.5 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10"
+            >
+              Guardar conexión
+            </button>
+          </div>
+          <p class="mt-2 font-mono text-[10px] text-texto-3">
+            Tiene que empezar por https:// y ser una dirección pública de internet.
+          </p>
+        } @else {
+          @for (d of salida(); track d.id) {
+            <div
+              class="mt-4 rounded-lg border px-4 py-3"
+              [class]="d.activo ? 'border-borde-2' : 'border-peligro/50 bg-peligro-fondo'"
+            >
+              <p class="font-mono text-[13px] break-all text-texto">{{ d.targetUrl }}</p>
+
+              @if (!d.activo) {
+                <!--
+                  Un aviso roto EN SILENCIO es peor que no tenerlo: el agente cree
+                  que su CRM le avisa y no le avisa nadie. Por eso se dice aquí y
+                  también en la pantalla de Actividad, que es la que abre a diario.
+                -->
+                <p class="mt-2 font-mono text-[12px] leading-relaxed text-peligro">
+                  <strong>Desconectada.</strong> Los últimos intentos fallaron ({{
+                    enCastellano(d.ultimoError)
+                  }}), así que hemos dejado de enviar para no perder avisos en silencio. Arregla la
+                  dirección en tu CRM y vuelve a activarla.
+                </p>
+              } @else {
+                <p class="mt-1 font-mono text-[11px] text-texto-3">
+                  Último envío: {{ cuando(d.ultimoEnvio) }}
+                  @if (d.ultimoError) {
+                    · último problema: {{ enCastellano(d.ultimoError) }}
+                  }
+                </p>
+              }
+
+              @if (prueba()?.id === d.id) {
+                <p
+                  class="mt-2 font-mono text-[12px]"
+                  [class]="prueba()!.ok ? 'text-acento' : 'text-peligro'"
+                  role="status"
+                >
+                  {{ prueba()!.texto }}
+                </p>
+              }
+
+              <div class="mt-3 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  (click)="probar(d)"
+                  class="rounded-lg border border-acento/60 px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-acento uppercase hover:bg-acento/10"
+                >
+                  Enviar prueba
+                </button>
+                @if (!d.activo) {
+                  <button
+                    type="button"
+                    (click)="reactivar(d)"
+                    class="rounded-lg border border-borde px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-texto-2 uppercase hover:text-acento"
+                  >
+                    Volver a activar
+                  </button>
+                }
+                <button
+                  type="button"
+                  (click)="borrarDestino(d)"
+                  class="font-mono text-[10px] tracking-[0.16em] text-texto-3 uppercase hover:text-peligro"
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+          }
+        }
+
+        @if (secretoNuevo(); as secreto) {
+          <div class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3">
+            <p class="font-mono text-[11px] leading-relaxed text-aviso">
+              <strong>Copia esta clave ahora.</strong> Sirve para que tu CRM compruebe que un aviso
+              viene de verdad de Vistta. No se puede volver a ver: si la pierdes, hay que crear la
+              conexión otra vez.
+            </p>
+            <p class="mt-2 font-mono text-[12px] break-all text-texto">{{ secreto }}</p>
+            <button
+              type="button"
+              (click)="copiar(secreto, 'La clave')"
+              class="mt-2 rounded-lg border border-borde px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-texto-2 uppercase hover:text-acento"
+            >
+              Copiar clave
+            </button>
+          </div>
+        }
+      </section>
+
+      <!-- ============ A: los enlaces automáticos ============ -->
+      <section class="mt-6 rounded-xl border border-borde bg-sup p-5">
+        <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
+          Crear enlaces automáticamente desde tu CRM
+        </h2>
+        <p class="mt-2 font-mono text-[12px] leading-relaxed text-texto-2">
+          Genera una conexión y pégala en tu CRM. Cuando allí pase lo que tú decidas —mover un
+          contacto de etapa, por ejemplo—, Vistta creará el enlace del dosier y se lo devolverá para
+          que quede en la ficha.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-end gap-3">
+          <label class="min-w-[14rem] flex-1">
+            <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+              Nombre (para reconocerla)
+            </span>
+            <input
+              [(ngModel)]="nombreConexion"
+              maxlength="80"
+              placeholder="Witei · pisos en exclusiva"
+              class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+            />
+          </label>
+          <label class="min-w-[14rem] flex-1">
+            <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+              Para qué dosier
+            </span>
+            <select
+              [(ngModel)]="perfilConexion"
+              class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none focus:border-acento/60"
+            >
+              <option value="">El que diga tu CRM</option>
+              @for (p of perfiles(); track p.id) {
+                <option [value]="p.id">{{ p.displayName }}</option>
+              }
+            </select>
+          </label>
+          <button
+            type="button"
+            (click)="crearConexion()"
+            [disabled]="!nombreConexion.trim()"
+            class="rounded-lg border border-acento/60 px-4 py-2.5 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10 disabled:opacity-40"
+          >
+            Generar conexión
+          </button>
+        </div>
+
+        @if (urlNueva(); as url) {
+          <div class="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo px-4 py-3">
+            <p class="font-mono text-[11px] leading-relaxed text-aviso">
+              <strong>Cópiala ahora: solo se enseña esta vez.</strong> Trátala como una contraseña
+              —quien la tenga puede crear enlaces de tus dosieres—, y si se te pierde, anúlala y
+              genera otra.
+            </p>
+            <p class="mt-2 font-mono text-[12px] break-all text-texto">{{ url }}</p>
+            <button
+              type="button"
+              (click)="copiar(url, 'La dirección')"
+              class="mt-2 rounded-lg border border-borde px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-texto-2 uppercase hover:text-acento"
+            >
+              Copiar
+            </button>
+          </div>
+        }
+
+        @if (entrada().length) {
+          <ul class="mt-4 space-y-2">
+            @for (c of entrada(); track c.id) {
+              <li
+                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-borde-2 px-4 py-3"
+              >
+                <div class="min-w-0">
+                  <p class="font-mono text-[13px] text-texto">
+                    {{ c.nombre }}
+                    @if (c.revocadoEn) {
+                      <span class="ml-2 text-[11px] text-texto-3">(anulada)</span>
+                    }
+                  </p>
+                  <p class="mt-1 font-mono text-[11px] text-texto-3">
+                    Para {{ nombreDePerfil(c.profileId) }} · último uso: {{ cuando(c.ultimoUso) }}
+                  </p>
+                </div>
+                @if (!c.revocadoEn) {
+                  <button
+                    type="button"
+                    (click)="revocar(c)"
+                    class="font-mono text-[10px] tracking-[0.16em] text-texto-3 uppercase hover:text-peligro"
+                  >
+                    Anular
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <!-- ============ Ayuda. Sin esto, un campo de URL no lo rellena nadie ============ -->
+      <section class="mt-6 rounded-xl border border-borde bg-sup p-5">
+        <button
+          type="button"
+          (click)="ayudaAbierta.set(!ayudaAbierta())"
+          class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase hover:text-acento"
+          [attr.aria-expanded]="ayudaAbierta()"
+        >
+          Cómo se hace en tu CRM {{ ayudaAbierta() ? '▲' : '▼' }}
+        </button>
+
+        @if (ayudaAbierta()) {
+          <div class="mt-4 space-y-5 font-mono text-[12px] leading-relaxed text-texto-2">
+            <div>
+              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">
+                Make (antes Integromat) · lo más sencillo
+              </h3>
+              <ol class="mt-2 list-decimal space-y-1 pl-5 text-texto-3">
+                <li>
+                  Crea un escenario nuevo y elige el módulo <em>Webhooks → Custom webhook</em>.
+                </li>
+                <li>Copia la dirección que te da Make y pégala arriba, en «Recibir avisos».</li>
+                <li>
+                  Vuelve aquí y pulsa <strong>Enviar prueba</strong>: Make la recibirá al vuelo.
+                </li>
+                <li>
+                  Detrás del webhook, engancha lo que quieras: crear una tarea, avisar por WhatsApp,
+                  escribir en tu hoja de cálculo.
+                </li>
+              </ol>
+            </div>
+
+            <div>
+              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">HubSpot</h3>
+              <ol class="mt-2 list-decimal space-y-1 pl-5 text-texto-3">
+                <li>Necesitas un plan con <em>Operations Hub</em> o pasar por Make/Zapier.</li>
+                <li>En Automatizaciones, crea un flujo con desencadenante <em>Webhook</em>.</li>
+                <li>
+                  Pega aquí la dirección que te dé y usa el campo del contacto para asociarlo.
+                </li>
+              </ol>
+            </div>
+
+            <div>
+              <h3 class="font-mono text-[11px] tracking-[0.18em] text-texto uppercase">
+                Witei, Inmovilla y similares
+              </h3>
+              <p class="mt-2 text-texto-3">
+                Si tu CRM no admite conexiones automáticas —muchos del sector no—, la vía es Make o
+                Zapier en medio: reciben el aviso de Vistta y hacen en tu CRM lo que configures.
+                Pregunta a tu proveedor si tienen API abierta antes de montarlo.
+              </p>
+            </div>
+
+            <p class="text-texto-3">
+              Cada aviso llega firmado con la clave que te dimos al crear la conexión, en la
+              cabecera <span class="text-texto-2">X-Vistta-Firma</span>. Si tu CRM sabe comprobarla,
+              úsala; si no, no pasa nada: la dirección solo la conoces tú.
+            </p>
+          </div>
+        }
+      </section>
+    }
+  </main>
+</div>

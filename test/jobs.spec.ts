@@ -10,6 +10,7 @@ import {
   db,
   galeriaCon,
   panelSession,
+  DEPS_DEL_TRABAJADOR,
   resetDb,
   seedProfile,
   storage,
@@ -68,7 +69,7 @@ describe("cola de trabajos", () => {
 
   it("un trabajo de tipo desconocido no tumba al trabajador", async () => {
     await encolar(db, "inventado");
-    await expect(procesarUno({ db, storage })).resolves.toBe(true);
+    await expect(procesarUno(DEPS_DEL_TRABAJADOR)).resolves.toBe(true);
     const fila = await db.one<{ status: string; last_error: string }>(
       `SELECT status, last_error FROM vistta.jobs`
     );
@@ -77,7 +78,7 @@ describe("cola de trabajos", () => {
   });
 
   it("con la cola vacía no hay nada que hacer", async () => {
-    expect(await procesarUno({ db, storage })).toBe(false);
+    expect(await procesarUno(DEPS_DEL_TRABAJADOR)).toBe(false);
   });
 
   it("los trabajos periódicos se reencolan solos tras ejecutarse", async () => {
@@ -88,7 +89,7 @@ describe("cola de trabajos", () => {
     expect(periodicos).toBeGreaterThan(0);
 
     // Se vacía la cola: cada trabajo queda hecho y deja su sucesor esperando.
-    while (await procesarUno({ db, storage })) {
+    while (await procesarUno(DEPS_DEL_TRABAJADOR)) {
       /* seguir */
     }
     const { rows } = await db.query<{ kind: string; status: string }>(

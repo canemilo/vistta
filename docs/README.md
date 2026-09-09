@@ -22,22 +22,24 @@ documento.
 
 ## Qué hay aquí
 
-| Documento                         | Para quién        | Qué responde                                          |
-| --------------------------------- | ----------------- | ----------------------------------------------------- |
-| `01-como-funciona.md`             | Todos             | Qué hace el producto y qué promete de verdad          |
-| `02-propuesta-comercial.md`       | Cliente           | Planes, precios y qué incluye cada uno                |
-| `03-hoja-de-ruta.md`              | Cliente y equipo  | Qué está hecho, qué falta y en qué orden              |
-| `04-ficha-tecnica.md`             | Técnico y compras | Stack, límites, requisitos y dependencias             |
-| `05-arquitectura.md`              | Técnico           | Cómo está construido y por qué así                    |
-| `06-casos-de-uso.md`              | Todos             | Actores, casos de uso y flujos principales            |
-| `07-manual-del-cliente.md`        | Cliente           | Cómo se usa, paso a paso                              |
-| `08-operacion-y-mantenimiento.md` | Técnico           | Despliegue, copias, incidencias y niveles de servicio |
-| `09-acuerdos-y-encargos.md`       | Cliente           | Alcance, soporte, cómo se piden cambios               |
-| `10-metricas.md`                  | Todos             | Estado medido del proyecto y qué medir del producto   |
-| `11-puesta-en-produccion.md`      | Técnico           | Del dominio a Vistta funcionando, paso a paso         |
-| `12-vps-produccion.md`            | Técnico           | El VPS concreto: acceso, endurecimiento, Docker y DNS |
-| `13-migracion-a-r2.md`            | Técnico           | Bucket, token, verificación y migración de los medios |
-| `14-supabase-opcional.md`         | Técnico           | La base fuera de la máquina: cómo, y por qué no       |
+| Documento                         | Para quién        | Qué responde                                           |
+| --------------------------------- | ----------------- | ------------------------------------------------------ |
+| `01-como-funciona.md`             | Todos             | Qué hace el producto y qué promete de verdad           |
+| `02-propuesta-comercial.md`       | Cliente           | Planes, precios y qué incluye cada uno                 |
+| `03-hoja-de-ruta.md`              | Cliente y equipo  | Qué está hecho, qué falta y en qué orden               |
+| `04-ficha-tecnica.md`             | Técnico y compras | Stack, límites, requisitos y dependencias              |
+| `05-arquitectura.md`              | Técnico           | Cómo está construido y por qué así                     |
+| `06-casos-de-uso.md`              | Todos             | Actores, casos de uso y flujos principales             |
+| `07-manual-del-cliente.md`        | Cliente           | Cómo se usa, paso a paso                               |
+| `08-operacion-y-mantenimiento.md` | Técnico           | Despliegue, copias, incidencias y niveles de servicio  |
+| `09-acuerdos-y-encargos.md`       | Cliente           | Alcance, soporte, cómo se piden cambios                |
+| `10-metricas.md`                  | Todos             | Estado medido del proyecto y qué medir del producto    |
+| `11-puesta-en-produccion.md`      | Técnico           | Del dominio a Vistta funcionando, paso a paso          |
+| `12-vps-produccion.md`            | Técnico           | El VPS concreto: acceso, endurecimiento, Docker y DNS  |
+| `13-migracion-a-r2.md`            | Técnico           | Bucket, token, verificación y migración de los medios  |
+| `14-supabase-opcional.md`         | Técnico           | La base fuera de la máquina: cómo, y por qué no        |
+| `15-inteligencia-de-dosier.md`    | Cliente y equipo  | Qué mira quien recibe un dosier, y qué se hace con eso |
+| `16-conectar-tu-crm.md`           | Cliente y técnico | Conectar Vistta con el CRM del agente, y qué se envía  |
 
 ## Lo que NO está aquí
 
