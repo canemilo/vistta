@@ -162,6 +162,106 @@ describe("la mecánica del tema oscuro", () => {
  * Una pantalla del panel no decide el tema de nadie. Lo que sí tiene aspecto
  * propio es el papel, y para eso está `@media print`.
  */
+/*
+ * EL DOCUMENTO DEL PASE, QUE ES LO QUE VE EL CLIENTE DEL CLIENTE.
+ *
+ * Estaba fuera de esta prueba, y era el sitio donde menos podía estarlo: la
+ * paleta del panel se mide desde que los grises se quedaron en 4,38, y la del
+ * documento —el único artefacto que se entrega a alguien de fuera— no la medía
+ * nadie. Sus dos temas viven acotados a su propio componente, así que hay que
+ * leerlos de ahí.
+ */
+const DOC = readFileSync(join(process.cwd(), "web/src/app/document/pass-document.ts"), "utf8");
+
+function paletaDelDocumento(tema: "claro" | "oscuro"): Record<string, string> {
+  const bloque =
+    tema === "oscuro"
+      ? DOC.slice(DOC.indexOf(":host {"), DOC.indexOf(":host(.tema-claro)"))
+      : DOC.slice(DOC.indexOf(":host(.tema-claro)"));
+  return Object.fromEntries(
+    [...bloque.matchAll(/--color-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]])
+  );
+}
+
+describe.each(["claro", "oscuro"] as const)("documento del pase: tema %s", (tema) => {
+  const tokens = paletaDelDocumento(tema);
+  const superficies = ["fondo", "sup", "sup-2", "sup-3"];
+
+  it.each(["titulo", "texto", "texto-2", "texto-3", "texto-4", "acento"])(
+    "«%s» se lee sobre las cuatro superficies (AA: 4.5)",
+    (texto) => {
+      for (const fondo of superficies) {
+        const r = contraste(tokens[texto], tokens[fondo]);
+        expect(
+          r,
+          `--color-${texto} (${tokens[texto]}) sobre --color-${fondo} (${tokens[fondo]}) da ${r.toFixed(2)}`
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  );
+
+  it("mantiene la jerarquía sobre el papel del documento", () => {
+    const escalones = ["titulo", "texto", "texto-2", "texto-3", "texto-4"].map((t) =>
+      contraste(tokens[t], tokens["fondo"])
+    );
+    for (let i = 1; i < escalones.length; i++) {
+      expect(escalones[i - 1], `el escalón ${i} rompe el orden`).toBeGreaterThanOrEqual(
+        escalones[i]
+      );
+    }
+  });
+});
+
+/*
+ * El tema claro está escrito TRES veces: en `styles.css` (la aplicación), en el
+ * documento del pase y en el bloque de impresión del informe. Ninguna de las
+ * tres puede heredar de otra —las dos últimas tienen que pisar un tema oscuro
+ * ya aplicado—, así que la copia es forzosa. Lo que no es forzoso es que se
+ * separen en silencio, que es como se estropean estas cosas: alguien afina la
+ * paleta en un sitio y el cliente recibe un documento con la vieja.
+ */
+describe("las tres copias del tema claro dicen lo mismo", () => {
+  const app = tokensDe("claro");
+  const compartidos = [
+    "fondo",
+    "sup",
+    "sup-2",
+    "sup-3",
+    "borde",
+    "borde-2",
+    "borde-3",
+    "titulo",
+    "texto",
+    "texto-2",
+    "texto-3",
+    "texto-4",
+    "acento",
+    "acento-tenue",
+  ];
+
+  it("el documento del pase usa la paleta clara de la aplicación", () => {
+    const doc = paletaDelDocumento("claro");
+    for (const t of compartidos) {
+      expect(doc[t], `--color-${t} se ha separado de styles.css`).toBe(app[t]);
+    }
+  });
+
+  it("el informe imprime con la paleta clara de la aplicación", () => {
+    const fuente = readFileSync(join(process.cwd(), "web/src/app/inmobiliaria/informe.ts"), "utf8");
+    const alImprimir = fuente.split("@media print")[1] ?? "";
+    const tokens = Object.fromEntries(
+      [...alImprimir.matchAll(/--color-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [
+        m[1],
+        m[2],
+      ])
+    );
+    // El fondo no: en papel es blanco, no el suelo gris de la pantalla.
+    for (const t of compartidos.filter((x) => x !== "fondo")) {
+      expect(tokens[t], `--color-${t} se ha separado de styles.css`).toBe(app[t]);
+    }
+  });
+});
+
 describe("ninguna pantalla del panel se salta el tema del usuario", () => {
   it.each([
     "inmobiliaria/informe.ts",

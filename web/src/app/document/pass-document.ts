@@ -81,22 +81,35 @@ export interface DocProfile {
       color: var(--color-texto);
     }
 
-    /* El mismo documento, en claro. Mismos nombres, otros valores. */
+    /*
+     * El mismo documento, en claro. Mismos nombres, otros valores.
+     *
+     * Los valores son LOS MISMOS que el tema claro de web/src/styles.css, y
+     * hay una prueba que se pone roja si dejan de serlo. No se pueden heredar:
+     * cuando el navegador de quien lee está en oscuro, esos tokens ya vienen
+     * reasignados, y heredarlos traería justo lo que hay que deshacer. Así que
+     * es una copia a la fuerza, y por eso está vigilada.
+     *
+     * Lo que cambió con ellos: el suelo dejó de ser casi blanco. Con #f7f9fa
+     * bajo tarjetas #ffffff no había dónde apoyarse y el documento salía plano;
+     * un suelo de verdad también hace que las fotos respiren, que es lo que
+     * este documento existe para enseñar.
+     */
     :host(.tema-claro) {
-      --color-fondo: #f7f9fa;
+      --color-fondo: #e3ebee;
       --color-sup: #ffffff;
-      --color-sup-2: #eef3f4;
-      --color-sup-3: #e4ebed;
-      --color-borde: #d3dfe2;
-      --color-borde-2: #e2eaec;
-      --color-borde-3: #edf2f3;
-      --color-titulo: #07242f;
-      --color-texto: #0f2c37;
-      --color-texto-2: #33545e;
-      --color-texto-3: #4c6a73;
-      --color-texto-4: #556d75;
-      --color-acento: #09714f;
-      --color-acento-tenue: #0f8f66;
+      --color-sup-2: #eaf1f3;
+      --color-sup-3: #d7e2e6;
+      --color-borde: #c2d2d7;
+      --color-borde-2: #d5e0e3;
+      --color-borde-3: #e6edef;
+      --color-titulo: #062330;
+      --color-texto: #0d2a35;
+      --color-texto-2: #294b56;
+      --color-texto-3: #3d5c66;
+      --color-texto-4: #46646d;
+      --color-acento: #05704c;
+      --color-acento-tenue: #0c855e;
       --color-sobre-acento: #ffffff;
     }
   `,
