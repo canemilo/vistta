@@ -9,6 +9,16 @@
 > disco; ahora describe lo que hay.
 > **Si vuelves a encontrar una discrepancia, gana el disco, no este archivo.**
 
+## 0.bis Dónde están los encargos
+
+Los cuatro documentos de encargo del proyecto viven en **`encargos/`**, tal y
+como se recibieron. **Los cuatro están ejecutados**, y los cuatro afirman cosas
+sobre el repositorio que ya no son ciertas —el número de la última migración,
+entre otras—. `encargos/README.md` las enumera una por una.
+
+No son instrucciones vigentes. Lo que hay construido se lee en `docs/`, en
+`legal/` y en el código.
+
 ## 0. Estado real (verificado en el árbol de trabajo)
 
 - Backend **Node + Hono + PostgreSQL**. Cloudflare Workers, D1 y R2 han desaparecido del repo.
