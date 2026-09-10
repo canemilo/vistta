@@ -8,6 +8,7 @@ import { BarraPanel } from './cabecera/barra-panel';
 import { EditorCabecera } from './editor/editor-cabecera';
 import { ListaSecciones } from './editor/lista-secciones';
 import { EntradaPanel } from './entrada/entrada';
+import { FichaInmueble } from '../inmobiliaria/ficha-inmueble';
 import { AccionesPanel } from './estado/acciones-panel';
 import { EstadoPases } from './estado/estado-pases';
 import { EstadoPerfil } from './estado/estado-perfil';
@@ -51,6 +52,7 @@ import { PerfilesCongelados } from './perfiles/perfiles-congelados';
     MiCuenta,
     Planes,
     EditorCabecera,
+    FichaInmueble,
     ListaSecciones,
     GenerarPase,
     ListaPases,

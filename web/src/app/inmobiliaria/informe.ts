@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Api, type FichaDePropiedad, type Informe as InformeDto } from '../core/api';
+import { FichaInmueble } from './ficha-inmueble';
 import { CabeceraPanel } from '../core/cabecera-panel';
 import { CLAVE_SESION } from '../core/sesion';
 
@@ -32,7 +32,7 @@ const PERIODOS = [
  */
 @Component({
   selector: 'app-informe',
-  imports: [FormsModule, CabeceraPanel],
+  imports: [CabeceraPanel, FichaInmueble],
   templateUrl: './informe.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -126,27 +126,12 @@ export class Informe {
   protected readonly periodos = PERIODOS;
   protected readonly dias = signal(30);
   protected readonly informe = signal<InformeDto | null>(null);
-  protected readonly ficha = signal<FichaDePropiedad | null>(null);
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
-  protected readonly guardado = signal('');
-  /**
-   * El fallo al guardar la FICHA, con señal propia.
-   *
-   * No vale la `error` de arriba, y esto se corrigió después de que alguien
-   * dijera «guardo y no hace nada»: esa se pinta encima del documento, y quien
-   * pulsa «Guardar ficha» está al final de un informe de dos pantallas. Desde
-   * ahí, guardar bien y guardar mal se ven exactamente igual.
-   */
-  protected readonly errorFicha = signal('');
-
-  /** Los campos de la ficha, editables. */
-  protected referencia = '';
-  protected exclusivaDesde = '';
-  protected propietarioNota = '';
 
   private readonly sesion = sessionStorage.getItem(CLAVE_SESION);
-  private readonly profileId = this.ruta.snapshot.paramMap.get('id') ?? '';
+  /** Público: se lo pasa al componente de la ficha, que es quien la edita. */
+  protected readonly profileId = this.ruta.snapshot.paramMap.get('id') ?? '';
 
   constructor() {
     if (!this.sesion) void this.router.navigate(['/panel']);
@@ -158,18 +143,14 @@ export class Informe {
     this.cargando.set(true);
     try {
       const hasta = Date.now();
-      const [informe, ficha] = await Promise.all([
-        this.api.informe(this.sesion, this.profileId, {
+      // La ficha ya no se pide aquí: la carga su propio componente, que es el
+      // que la enseña. Pedirla en dos sitios era pedirla dos veces.
+      this.informe.set(
+        await this.api.informe(this.sesion, this.profileId, {
           desde: hasta - this.dias() * DIA,
           hasta,
         }),
-        this.api.fichaDePropiedad(this.sesion, this.profileId),
-      ]);
-      this.informe.set(informe);
-      this.ficha.set(ficha.ficha);
-      this.referencia = ficha.ficha?.referencia ?? '';
-      this.propietarioNota = ficha.ficha?.propietarioNota ?? '';
-      this.exclusivaDesde = enFechaDeCampo(ficha.ficha?.exclusivaDesde ?? null);
+      );
     } catch {
       this.error.set('No se ha podido cargar el informe.');
     } finally {
@@ -182,47 +163,32 @@ export class Informe {
     await this.cargar();
   }
 
-  protected async guardarFicha(): Promise<void> {
-    if (!this.sesion) return;
-    this.guardado.set('');
-    this.errorFicha.set('');
-    try {
-      const { ficha } = await this.api.guardarFicha(this.sesion, this.profileId, {
-        referencia: this.referencia.trim() || null,
-        propietarioNota: this.propietarioNota.trim() || null,
-        exclusivaDesde: deFechaDeCampo(this.exclusivaDesde),
-      });
-      this.ficha.set(ficha);
-      /*
-       * La cabecera del informe se actualiza EN SITIO, sin volver a pedir el
-       * informe entero.
-       *
-       * Antes aquí había un `cargar()`, y era la causa de que guardar
-       * «no hiciera nada»: `cargar()` enciende `cargando`, y la plantilla
-       * sustituye el bloque entero —documento y ficha— por un «Preparando el
-       * informe…». O sea que al pulsar Guardar desaparecía el formulario que
-       * se acababa de rellenar, la página saltaba arriba y volvía a montarse
-       * un segundo después. Desde el otro lado eso no se lee como «guardado»,
-       * se lee como «se ha ido algo».
-       *
-       * Y no hacía falta: de la ficha, lo único que sale en el papel son la
-       * referencia y la fecha de exclusiva, que ya vienen en la respuesta.
-       */
-      this.informe.update((inf) =>
-        inf === null
-          ? inf
-          : {
-              ...inf,
-              propiedad: {
-                referencia: ficha?.referencia ?? null,
-                exclusivaDesde: ficha?.exclusivaDesde ?? null,
-              },
+  /**
+   * La ficha se ha guardado: la cabecera del PAPEL se actualiza en sitio.
+   *
+   * En sitio y no con un `cargar()`, y esto ya costó un fallo: `cargar()`
+   * enciende `cargando`, y la plantilla sustituye el bloque entero —documento y
+   * ficha— por un «Preparando el informe…». O sea que al pulsar Guardar
+   * desaparecía el formulario recién rellenado, la página saltaba arriba y
+   * volvía a montarse un segundo después. Eso no se lee como «guardado», se lee
+   * como «se ha ido algo».
+   *
+   * Y no hace falta: de la ficha, lo único que sale en el papel son la
+   * referencia y la fecha de exclusiva, y las dos vienen en lo que se acaba de
+   * guardar.
+   */
+  protected fichaGuardada(ficha: FichaDePropiedad | null): void {
+    this.informe.update((inf) =>
+      inf === null
+        ? inf
+        : {
+            ...inf,
+            propiedad: {
+              referencia: ficha?.referencia ?? null,
+              exclusivaDesde: ficha?.exclusivaDesde ?? null,
             },
-      );
-      this.guardado.set('Ficha guardada.');
-    } catch {
-      this.errorFicha.set('No se ha podido guardar la ficha. Vuelve a intentarlo.');
-    }
+          },
+    );
   }
 
   protected imprimir(): void {
@@ -273,18 +239,4 @@ export class Informe {
     }
     return i.cifras.pctApertura - i.anterior.pctApertura;
   }
-}
-
-/** ms → `yyyy-mm-dd`, que es lo que entiende un `<input type="date">`. */
-function enFechaDeCampo(ts: number | null): string {
-  if (ts === null) return '';
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Y la vuelta. Vacío es `null`: borrar la fecha tiene que ser posible. */
-function deFechaDeCampo(valor: string): number | null {
-  if (!valor) return null;
-  const ts = Date.parse(`${valor}T00:00:00`);
-  return Number.isNaN(ts) ? null : ts;
 }

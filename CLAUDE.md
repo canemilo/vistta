@@ -257,8 +257,12 @@ no se negocian:
   Si un área importara a otra del mismo nivel las dependencias darían la vuelta: los pases ya conocen
   el perfil, y «elegir perfil» necesita los pases.
 - **Sin zona, lo que se escribe tras un `await` tiene que ser SEÑAL.** Angular repinta al despachar
-  un evento de plantilla, no al volver de una petición. Un campo normal con `ngModel` vale; un error
-  del servidor guardado en un campo normal no se pinta hasta que el usuario toque otra cosa.
+  un evento de plantilla, no al volver de una petición. Un campo normal con `ngModel` vale mientras
+  SOLO lo escriba el usuario; en cuanto lo escribe también una carga —un formulario que se rellena
+  con lo que devuelve el servidor— tiene que ser señal, con `[ngModel]` + `(ngModelChange)`. Pasó en
+  la ficha del inmueble: al cambiar de dosier seguía enseñando la referencia del anterior. En el
+  informe no se veía porque la pantalla entera se recreaba al cargar, que era otro fallo y tapaba
+  este.
 - **El editor enseña la ESTRUCTURA, no un formulario.** Los apartados van encogidos, uno desplegado
   a la vez, y cada fila dice el tipo, el título y cuánto lleva («Galería · 8 fotos»). Se reordena
   arrastrando (CDK, solo en el bundle del panel) **y** con botones: los botones son el camino del
@@ -314,6 +318,11 @@ cada uno sale por un sitio distinto, a propósito:
   un sistema de terceros no es lo mismo que enseñarla en el panel de su dueño,
   aunque el texto sea idéntico, porque cambia quién la custodia. Hay una prueba
   por cada una de las dos salidas.
+- **La ficha se edita desde DOS pantallas y hay UN componente**
+  (`inmobiliaria/ficha-inmueble.ts`): el editor del panel y el informe. Vivía solo dentro del
+  informe, así que anotar la referencia de un piso recién montado obligaba a pasar por una pantalla
+  de actividad que todavía no tenía nada que enseñar. Copiar el formulario habría dejado dos sitios
+  donde corregir el mismo fallo, y esta pantalla ya tuvo uno.
 - La nota tampoco viaja en `GET /api/profiles`: ese listado se pide en cada carga
   del panel y alimenta un desplegable. Repartir dos mil caracteres en una
   respuesta que no los usa es repartirlos sin motivo.

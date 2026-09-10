@@ -1,4 +1,5 @@
 import {
+  type FichaDePropiedad,
   type EstadoDeCuenta,
   type LimitesDePlan,
   type OpcionesDePase,
@@ -120,6 +121,24 @@ export class ApiFalsa {
   };
 
   preview = () => Promise.resolve('');
+
+  /** La ficha del inmueble, por perfil. Vive fuera del contenido del dosier. */
+  fichas: Record<string, FichaDePropiedad> = {};
+  fichaDePropiedad = (_s: string, id: string) =>
+    Promise.resolve({ ficha: this.fichas[id] ?? null });
+  guardarFicha = (_s: string, id: string, ficha: Record<string, unknown>) => {
+    this.fichas[id] = {
+      referencia: (ficha['referencia'] as string | null) ?? null,
+      propietarioNota: (ficha['propietarioNota'] as string | null) ?? null,
+      exclusivaDesde: (ficha['exclusivaDesde'] as number | null) ?? null,
+      actualizadoEn: 1,
+    };
+    // El servidor devuelve la fila guardada, y el panel se apoya en ello para
+    // enseñar la referencia nueva sin volver a preguntar.
+    const fila = this.perfiles.find((p) => p.id === id);
+    if (fila) fila.referencia = this.fichas[id].referencia;
+    return Promise.resolve({ ficha: this.fichas[id] });
+  };
 
   /** Enlaces ya generados y opciones con las que se pidió el último. */
   pases: PaseListado[] = [];

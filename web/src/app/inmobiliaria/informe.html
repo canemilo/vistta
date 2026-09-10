@@ -218,83 +218,12 @@
     </footer>
   </main>
 
-  <!-- ===================== LA FICHA (solo para el agente) ===================== -->
+  <!--
+    La ficha del inmueble, en su propio componente porque se usa también en el
+    panel: para anotar algo de un inmueble no puede haber que pasar por una
+    pantalla de actividad que quizá esté vacía.
+  -->
   <section class="no-imprimir mx-auto mb-12 max-w-3xl px-6">
-    <div class="rounded-xl border border-borde bg-sup p-5">
-      <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
-        Ficha del inmueble
-      </h2>
-      <!--
-        DÓNDE VIVE, dicho aquí. Es la pregunta que hizo quien la usó —«no sé
-        dónde está guardada»— y tiene respuesta: se queda pegada a ESTE dosier,
-        no al informe, así que sigue estando la próxima vez que se entre. Lo que
-        despistaba es que no se ve en ninguna otra pantalla, y con razón: es una
-        nota interna, no contenido.
-      -->
-      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.65] text-texto-3">
-        Se guarda en <strong>este dosier</strong> y la ves solo tú, aquí.
-        <strong>No sale en el dosier</strong> que recibe tu cliente ni en el informe que imprimes
-        —salvo la referencia y la fecha de exclusiva, que van en la cabecera del papel—.
-      </p>
-      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.65] text-texto-3">
-        De la persona propietaria no se guarda nada —ni nombre, ni correo, ni teléfono—: el informe
-        se lo entregas tú, así que Vistta no necesita saber quién es.
-      </p>
-
-      <div class="mt-4 grid gap-4 sm:grid-cols-2">
-        <label class="block">
-          <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
-            Referencia
-          </span>
-          <input
-            [(ngModel)]="referencia"
-            maxlength="80"
-            placeholder="REF-118"
-            class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
-          />
-        </label>
-        <label class="block">
-          <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
-            En exclusiva desde
-          </span>
-          <input
-            type="date"
-            [(ngModel)]="exclusivaDesde"
-            class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none focus:border-acento/60"
-          />
-        </label>
-      </div>
-
-      <label class="mt-4 block">
-        <span class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
-          Nota privada
-        </span>
-        <textarea
-          [(ngModel)]="propietarioNota"
-          maxlength="2000"
-          rows="3"
-          class="mt-1 w-full rounded-lg border border-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
-          placeholder="No sale en el informe."
-        ></textarea>
-      </label>
-
-      <div class="mt-4 flex flex-wrap items-center gap-4">
-        <button
-          type="button"
-          (click)="guardarFicha()"
-          class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10"
-        >
-          Guardar ficha
-        </button>
-        @if (guardado()) {
-          <span class="font-mono text-[11px] text-acento" role="status">{{ guardado() }}</span>
-        }
-        <!-- El fallo, DONDE SE PULSÓ. El de arriba se pinta encima del
-             documento, a dos pantallas de aquí. -->
-        @if (errorFicha()) {
-          <span class="font-mono text-[11px] text-peligro" role="alert">{{ errorFicha() }}</span>
-        }
-      </div>
-    </div>
+    <app-ficha-inmueble [profileId]="profileId" (guardada)="fichaGuardada($event)" />
   </section>
 }

@@ -121,6 +121,20 @@ export class AccionesPanel {
   }
 
   /**
+   * Vuelve a leer la cuenta sin tocar el perfil abierto.
+   *
+   * La usa la ficha del inmueble al guardar: la referencia se enseña en el
+   * selector de perfiles, así que sin esto el desplegable seguiría diciendo la
+   * vieja hasta la próxima recarga. Recargar la cuenta y no el perfil es
+   * deliberado: lo que está escrito en el editor y sin guardar no se puede
+   * pisar por haber tocado una nota.
+   */
+  async refrescar(): Promise<void> {
+    const sesion = this.nucleo.token();
+    if (sesion) await this.cuenta.recargar(sesion);
+  }
+
+  /**
    * Crea un perfil y se cambia a él: quien lo acaba de crear lo que quiere es
    * empezar a montarlo, no volver a buscarlo en el desplegable.
    *
