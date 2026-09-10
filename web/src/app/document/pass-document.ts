@@ -111,7 +111,31 @@ export interface DocProfile {
       --doc-titulo-tam: 11px;
       --doc-titulo-espaciado: 0.24em;
       --doc-titulo-caja: uppercase;
+      --doc-titulo-peso: 400;
+      --doc-titulo-margen: 0;
+      --doc-titulo-filete: 0;
 
+      /* DOSIER: el título va en su columna y se queda anclado al recorrer. */
+      --doc-rejilla-apartado: var(--doc-lado) 1fr;
+      --doc-lado-posicion: sticky;
+      --doc-lado-alineacion: start;
+      --doc-numero: none;
+
+      /* El texto cuenta y luego se enseña. */
+      --doc-orden-texto: 1;
+      --doc-orden-fotos: 2;
+
+      /* Las fotos van enmarcadas: es lo que hace que se lea ordenado. */
+      --doc-foto-radio: 0.5rem;
+      --doc-foto-borde: 1px solid var(--color-borde-2);
+
+      /* Sin capitular: es una firma de revista y aquí no toca. */
+      --doc-capitular: 1em;
+      --doc-capitular-flota: none;
+      --doc-capitular-peso: inherit;
+
+      /* Los apartados se numeran desde uno en cada documento. */
+      counter-reset: apartado;
       display: block;
       min-height: 100%;
       --color-fondo: #060e17;
@@ -176,6 +200,22 @@ export interface DocProfile {
      */
     :host(.estilo-editorial) {
       --doc-aire: 8.5rem;
+      /* Una sola columna: el titular va SOBRE el texto, como en una página. */
+      --doc-rejilla-apartado: 1fr;
+      --doc-lado-posicion: static;
+      --doc-lado-alineacion: stretch;
+      --doc-titulo-peso: 500;
+      --doc-titulo-margen: 0.35em;
+      --doc-titulo-filete: 1px;
+      /* Los apartados van numerados, que es la otra firma de una revista. */
+      --doc-numero: counter(apartado, decimal-leading-zero) ' · ';
+      /* Sin marco ni esquinas: la foto es la página, no una tarjeta. */
+      --doc-foto-radio: 0;
+      --doc-foto-borde: none;
+      /* Capitular en la entradilla. */
+      --doc-capitular: 3.1em;
+      --doc-capitular-flota: left;
+      --doc-capitular-peso: 500;
       --doc-cuerpo: 20px;
       --doc-interlineado: 1.95;
       --doc-parrafos: 1.5em;
@@ -202,6 +242,17 @@ export interface DocProfile {
      */
     :host(.estilo-compacto) {
       --doc-aire: 2.5rem;
+      /* Banda con filete arriba, ancho completo, y la mercancía debajo. */
+      --doc-rejilla-apartado: 1fr;
+      --doc-lado-posicion: static;
+      --doc-lado-alineacion: stretch;
+      --doc-titulo-margen: 0.5em;
+      --doc-titulo-filete: 1px;
+      /* LAS FOTOS PRIMERO: un catálogo enseña y luego explica. */
+      --doc-orden-texto: 3;
+      --doc-orden-fotos: 2;
+      --doc-foto-radio: 0.25rem;
+      --doc-foto-borde: 1px solid var(--color-borde-3);
       --doc-cuerpo: 15px;
       --doc-interlineado: 1.55;
       --doc-parrafos: 0.9em;
@@ -237,20 +288,101 @@ export interface DocProfile {
     .doc-apartado {
       margin-top: var(--doc-aire);
       column-gap: 2.5rem;
+      counter-increment: apartado;
     }
 
     @media (min-width: 768px) {
       .doc-apartado {
-        grid-template-columns: var(--doc-lado) 1fr;
+        grid-template-columns: var(--doc-rejilla-apartado);
+      }
+    }
+
+    /*
+     * El encabezado. Anclado en el dosier —se queda a la vista mientras se
+     * recorre un bloque largo— y quieto en las otras dos, donde va encima del
+     * contenido y anclarlo solo taparía la página.
+     */
+    @media (min-width: 768px) {
+      .doc-lado {
+        position: var(--doc-lado-posicion);
+        top: 5rem;
+        align-self: var(--doc-lado-alineacion);
       }
     }
 
     .doc-titulo-apartado {
       font-family: var(--doc-titulo-familia);
       font-size: var(--doc-titulo-tam);
+      font-weight: var(--doc-titulo-peso);
       letter-spacing: var(--doc-titulo-espaciado);
       text-transform: var(--doc-titulo-caja);
       line-height: 1.25;
+      padding-top: var(--doc-titulo-margen);
+      border-top: var(--doc-titulo-filete) solid var(--color-borde-3);
+    }
+
+    /*
+     * El número del apartado. Es una firma de maqueta, no información, y por eso
+     * va en un pseudoelemento y no en la plantilla: así no entra en el HTML que
+     * se guarda ni depende de que alguien lo escriba bien.
+     *
+     * OJO, sin embargo: el contenido generado por CSS SÍ lo anuncian la mayoría
+     * de los lectores de pantalla actuales, así que quien use uno oirá «cero uno
+     * punto» antes del título. Es ruido menor y localizado —solo en esta
+     * maqueta, solo en los títulos de apartado— y se acepta a sabiendas; lo que
+     * no se puede es decir que no ocurre.
+     */
+    .doc-titulo-apartado::before {
+      content: var(--doc-numero);
+      color: var(--color-texto-4);
+    }
+
+    .doc-orden-texto {
+      order: var(--doc-orden-texto);
+    }
+
+    .doc-orden-fotos {
+      order: var(--doc-orden-fotos);
+    }
+
+    /*
+     * En el catálogo las fotos van primero, así que el margen superior que
+     * separa la foto del texto sobra arriba y falta abajo.
+     */
+    :host(.estilo-compacto) .doc-orden-fotos {
+      margin-top: 0;
+    }
+
+    :host(.estilo-compacto) .doc-orden-texto {
+      margin-top: 1.25rem;
+    }
+
+    .doc-foto {
+      border-radius: var(--doc-foto-radio);
+      border: var(--doc-foto-borde);
+    }
+
+    .doc-foto:focus-visible {
+      border-color: var(--color-acento);
+      outline: 2px solid var(--color-acento);
+      outline-offset: 2px;
+    }
+
+    /*
+     * La capitular de la entradilla: solo en revista, y solo ahí.
+     *
+     * Es el detalle que hace que se lea como una página impresa y no como una
+     * ficha. En las otras dos maquetas mide un cuadratín y no flota, o sea, no existe:
+     * una capitular en un catálogo es un adorno fuera de sitio.
+     */
+    .doc-entradilla::first-letter {
+      font-size: var(--doc-capitular);
+      float: var(--doc-capitular-flota);
+      font-weight: var(--doc-capitular-peso);
+      line-height: 0.85;
+      padding-right: 0.08em;
+      padding-top: 0.06em;
+      color: var(--color-titulo);
     }
 
     .doc-lectura {

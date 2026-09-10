@@ -23,16 +23,33 @@ export class EditorCabecera {
   protected readonly medios = inject(EstadoMedios);
 
   /**
-   * Los tres estilos, con lo que los distingue de verdad.
+   * Las tres maquetas, con lo que las distingue de verdad.
    *
-   * Nombrados por lo que HACEN y no por un adjetivo de diseño: «editorial» sin
-   * la frase de al lado no le dice nada a quien va a elegir, que no es
-   * diseñador y está montando un dosier para un cliente concreto.
+   * Nombradas por lo que SON y descritas por lo que hacen: «editorial» a secas
+   * no le dice nada a quien va a elegir, que no es diseñador y está montando un
+   * dosier para un cliente concreto. La frase de al lado es la que decide.
+   *
+   * Los VALORES no son los nombres. `compacto` se llama «Catálogo» desde que
+   * dejó de ser un ajuste de densidad y pasó a ser una maqueta, pero el valor
+   * guardado sigue siendo el de siempre: cambiarlo dejaría de validar los
+   * perfiles que ya lo tienen escrito, y eso no se hace por un rótulo.
    */
   protected readonly ESTILOS: { valor: Estilo; etiqueta: string; pista: string }[] = [
-    { valor: 'sobrio', etiqueta: 'Sobrio', pista: 'El de siempre. Equilibrado.' },
-    { valor: 'editorial', etiqueta: 'Editorial', pista: 'Más aire y letra mayor, para leer.' },
-    { valor: 'compacto', etiqueta: 'Compacto', pista: 'Más piezas a la vista, para hojear.' },
+    {
+      valor: 'sobrio',
+      etiqueta: 'Dosier',
+      pista: 'Título al margen y rejilla ordenada. El de siempre.',
+    },
+    {
+      valor: 'editorial',
+      etiqueta: 'Editorial',
+      pista: 'Una columna, apartados numerados y fotos grandes sin marco.',
+    },
+    {
+      valor: 'compacto',
+      etiqueta: 'Catálogo',
+      pista: 'Las fotos primero, muchas y apretadas; el texto debajo.',
+    },
   ];
 
   /** Ausente es `sobrio`: el contenido anterior a este campo sigue siendo válido. */

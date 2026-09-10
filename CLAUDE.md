@@ -268,6 +268,15 @@ no se negocian:
 - **«Guardado» / «Sin guardar», siempre a la vista, y sin guardado automático.** Guardar PUBLICA: un
   pase ya enviado enseña el perfil tal y como esté guardado, así que escribir a medias no puede
   cambiarle el dosier a alguien que lo está mirando.
+- **`data.estilo` son tres MAQUETAS, no tres tallas.** Dosier (`sobrio`): el título en su propia
+  columna y anclado, rejilla ordenada de tres, fotos enmarcadas. Editorial: una sola columna con el
+  titular encima, apartados numerados, capitular en la entradilla y fotos grandes sin marco ni
+  esquinas. Catálogo (`compacto`): las FOTOS PRIMERO y el texto debajo, cuatro por fila y apretadas.
+  Todo sale de variables sobre la MISMA plantilla —incluido el cambio de orden, que es un `order`—:
+  tres plantillas serían tres sitios donde corregir el mismo fallo.
+- **Los VALORES guardados no son los rótulos.** `compacto` se llama «Catálogo» en pantalla desde que
+  dejó de ser un ajuste de densidad. El valor no se renombra: dejaría de validar los perfiles que ya
+  lo tienen escrito, y eso no se hace por un rótulo.
 - **Un estilo que no se ve no es un estilo.** `data.estilo` empezó siendo dos factores que
   multiplicaban un margen y un tamaño de letra: la clase se ponía, las variables resolvían y los
   tres enlaces se veían iguales, porque 80/116/52 px de separación y 16/17,9/15 de cuerpo no se

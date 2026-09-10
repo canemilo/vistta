@@ -269,7 +269,7 @@ describe('Editor · el estilo del dosier', () => {
   afterEach(() => sessionStorage.clear());
 
   it('se ofrecen tres, y ninguno es claro ni oscuro', () => {
-    for (const e of ['Sobrio', 'Editorial', 'Compacto']) {
+    for (const e of ['Dosier', 'Editorial', 'Catálogo']) {
       expect(estilo(e)).withContext(e).toBeDefined();
     }
     /*
@@ -281,8 +281,8 @@ describe('Editor · el estilo del dosier', () => {
     expect(estilo('Oscuro')).toBeUndefined();
   });
 
-  it('sin elegir nada, el marcado es sobrio', () => {
-    expect(estilo('Sobrio')!.getAttribute('aria-pressed')).toBe('true');
+  it('sin elegir nada, el marcado es el dosier de siempre', () => {
+    expect(estilo('Dosier')!.getAttribute('aria-pressed')).toBe('true');
     expect(estilo('Editorial')!.getAttribute('aria-pressed')).toBe('false');
     // Y no se escribe nada en el contenido: ausente sigue siendo válido.
     expect(TestBed.inject(EstadoPerfil).contenido().estilo).toBeUndefined();

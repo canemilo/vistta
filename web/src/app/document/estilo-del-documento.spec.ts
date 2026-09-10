@@ -65,6 +65,23 @@ describe('El estilo del documento se ve', () => {
       columnas: getComputedStyle(dentro('.doc-rejilla')).gridTemplateColumns.split(' ').length,
       titulo: px(getComputedStyle(dentro('.doc-titulo-apartado')).fontSize),
       tituloCaja: getComputedStyle(dentro('.doc-titulo-apartado')).textTransform,
+      // La MAQUETA: dónde va el título, en qué orden van texto y fotos, y si la
+      // foto se enmarca. Es lo que hace que sean tres modelos y no tres tallas.
+      /*
+       * La rejilla del apartado se lee de la VARIABLE y no del valor calculado,
+       * y es la única de esta lista que hace trampa. Motivo: solo se aplica a
+       * partir de 768 px —en un móvil las tres maquetas van a una columna, que
+       * es lo correcto— y el iframe donde corren estas pruebas es más estrecho
+       * que eso. Medir el valor calculado aquí daría «una columna» para las
+       * tres y la prueba no diría nada.
+       */
+      rejillaApartado: getComputedStyle(host).getPropertyValue('--doc-rejilla-apartado').trim(),
+      ordenTexto: getComputedStyle(dentro('.doc-lectura')).order,
+      ordenFotos: getComputedStyle(dentro('.doc-rejilla')).order,
+      marcoFoto: getComputedStyle(dentro('.doc-foto')).borderTopWidth,
+      radioFoto: getComputedStyle(dentro('.doc-foto')).borderTopLeftRadius,
+      numero: getComputedStyle(dentro('.doc-titulo-apartado'), '::before').content,
+      capitular: px(getComputedStyle(dentro('.doc-entradilla'), '::first-letter').fontSize),
     };
   }
 
@@ -144,6 +161,67 @@ describe('El estilo del documento se ve', () => {
     expect(sobrio.tituloCaja).toBe('uppercase');
     expect(editorial.tituloCaja).toBe('none');
     expect(editorial.titulo).toBeGreaterThanOrEqual(sobrio.titulo * 2);
+  });
+
+  /*
+   * ================= LAS TRES MAQUETAS =================
+   *
+   * Esto es lo que se pidió después de ver que tres tallas de la misma página
+   * seguían siendo la misma página: que cada opción fuera un MODELO. Lo que se
+   * mide aquí no son medidas, es estructura.
+   */
+
+  it('el dosier pone el título en su propia columna; los otros dos, encima', async () => {
+    const sobrio = await medidas('sobrio');
+    const editorial = await medidas('editorial');
+    const compacto = await medidas('compacto');
+
+    // Dos columnas: la del título y la del contenido.
+    expect(sobrio.rejillaApartado.split(' ').length).toBe(2);
+    // Una sola: el encabezado va sobre el contenido, a lo ancho.
+    expect(editorial.rejillaApartado).toBe('1fr');
+    expect(compacto.rejillaApartado).toBe('1fr');
+  });
+
+  /*
+   * Un catálogo enseña la mercancía y luego explica; un dosier lo cuenta y
+   * luego lo enseña. Es el cambio de orden, y se hace con `order` sobre el
+   * mismo HTML: sin él haría falta una segunda plantilla que mantener.
+   */
+  it('el catálogo pone las fotos antes que el texto', async () => {
+    const sobrio = await medidas('sobrio');
+    const compacto = await medidas('compacto');
+
+    expect(Number(sobrio.ordenTexto)).toBeLessThan(Number(sobrio.ordenFotos));
+    expect(Number(compacto.ordenTexto)).toBeGreaterThan(Number(compacto.ordenFotos));
+  });
+
+  it('en editorial la foto es la página: sin marco y sin esquinas', async () => {
+    const sobrio = await medidas('sobrio');
+    const editorial = await medidas('editorial');
+
+    expect(sobrio.marcoFoto).not.toBe('0px');
+    expect(parseFloat(sobrio.radioFoto)).toBeGreaterThan(0);
+    expect(editorial.marcoFoto).toBe('0px');
+    expect(parseFloat(editorial.radioFoto)).toBe(0);
+  });
+
+  /*
+   * Las dos firmas de la revista: apartados numerados y capitular. Van en
+   * pseudoelementos a propósito —son maqueta, no información—, así que un
+   * lector de pantalla no lee «cero uno punto» antes de cada título.
+   */
+  it('editorial numera los apartados y abre con capitular; las otras no', async () => {
+    const sobrio = await medidas('sobrio');
+    const editorial = await medidas('editorial');
+    const compacto = await medidas('compacto');
+
+    expect(editorial.numero).toContain('counter');
+    expect(sobrio.numero).toBe('none');
+    expect(compacto.numero).toBe('none');
+
+    expect(editorial.capitular).toBeGreaterThan(editorial.entradilla * 2);
+    expect(sobrio.capitular).toBeCloseTo(sobrio.entradilla, 0);
   });
 
   /*
