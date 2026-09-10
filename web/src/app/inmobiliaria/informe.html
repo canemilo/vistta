@@ -224,9 +224,21 @@
       <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">
         Ficha del inmueble
       </h2>
+      <!--
+        DÓNDE VIVE, dicho aquí. Es la pregunta que hizo quien la usó —«no sé
+        dónde está guardada»— y tiene respuesta: se queda pegada a ESTE dosier,
+        no al informe, así que sigue estando la próxima vez que se entre. Lo que
+        despistaba es que no se ve en ninguna otra pantalla, y con razón: es una
+        nota interna, no contenido.
+      -->
       <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.65] text-texto-3">
-        Para ti. De la persona propietaria no se guarda nada —ni nombre, ni correo, ni teléfono—: el
-        informe se lo entregas tú, así que Vistta no necesita saber quién es.
+        Se guarda en <strong>este dosier</strong> y la ves solo tú, aquí.
+        <strong>No sale en el dosier</strong> que recibe tu cliente ni en el informe que imprimes
+        —salvo la referencia y la fecha de exclusiva, que van en la cabecera del papel—.
+      </p>
+      <p class="mt-2 max-w-[62ch] font-serif text-[14px] leading-[1.65] text-texto-3">
+        De la persona propietaria no se guarda nada —ni nombre, ni correo, ni teléfono—: el informe
+        se lo entregas tú, así que Vistta no necesita saber quién es.
       </p>
 
       <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -276,6 +288,11 @@
         </button>
         @if (guardado()) {
           <span class="font-mono text-[11px] text-acento" role="status">{{ guardado() }}</span>
+        }
+        <!-- El fallo, DONDE SE PULSÓ. El de arriba se pinta encima del
+             documento, a dos pantallas de aquí. -->
+        @if (errorFicha()) {
+          <span class="font-mono text-[11px] text-peligro" role="alert">{{ errorFicha() }}</span>
         }
       </div>
     </div>

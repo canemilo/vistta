@@ -130,6 +130,15 @@ export class Informe {
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
   protected readonly guardado = signal('');
+  /**
+   * El fallo al guardar la FICHA, con señal propia.
+   *
+   * No vale la `error` de arriba, y esto se corrigió después de que alguien
+   * dijera «guardo y no hace nada»: esa se pinta encima del documento, y quien
+   * pulsa «Guardar ficha» está al final de un informe de dos pantallas. Desde
+   * ahí, guardar bien y guardar mal se ven exactamente igual.
+   */
+  protected readonly errorFicha = signal('');
 
   /** Los campos de la ficha, editables. */
   protected referencia = '';
@@ -176,6 +185,7 @@ export class Informe {
   protected async guardarFicha(): Promise<void> {
     if (!this.sesion) return;
     this.guardado.set('');
+    this.errorFicha.set('');
     try {
       const { ficha } = await this.api.guardarFicha(this.sesion, this.profileId, {
         referencia: this.referencia.trim() || null,
@@ -183,11 +193,35 @@ export class Informe {
         exclusivaDesde: deFechaDeCampo(this.exclusivaDesde),
       });
       this.ficha.set(ficha);
-      // Se recarga el informe: la referencia sale en la cabecera del documento.
-      await this.cargar();
+      /*
+       * La cabecera del informe se actualiza EN SITIO, sin volver a pedir el
+       * informe entero.
+       *
+       * Antes aquí había un `cargar()`, y era la causa de que guardar
+       * «no hiciera nada»: `cargar()` enciende `cargando`, y la plantilla
+       * sustituye el bloque entero —documento y ficha— por un «Preparando el
+       * informe…». O sea que al pulsar Guardar desaparecía el formulario que
+       * se acababa de rellenar, la página saltaba arriba y volvía a montarse
+       * un segundo después. Desde el otro lado eso no se lee como «guardado»,
+       * se lee como «se ha ido algo».
+       *
+       * Y no hacía falta: de la ficha, lo único que sale en el papel son la
+       * referencia y la fecha de exclusiva, que ya vienen en la respuesta.
+       */
+      this.informe.update((inf) =>
+        inf === null
+          ? inf
+          : {
+              ...inf,
+              propiedad: {
+                referencia: ficha?.referencia ?? null,
+                exclusivaDesde: ficha?.exclusivaDesde ?? null,
+              },
+            },
+      );
       this.guardado.set('Ficha guardada.');
     } catch {
-      this.error.set('No se ha podido guardar la ficha.');
+      this.errorFicha.set('No se ha podido guardar la ficha. Vuelve a intentarlo.');
     }
   }
 

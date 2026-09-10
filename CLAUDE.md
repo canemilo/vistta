@@ -236,6 +236,17 @@ no se negocian:
 
 ## El panel (desde K)
 
+- **Un fallo se lee DONDE SE PULSÓ.** Es la regla que ya tenían la contraseña y el logotipo, y que
+  la ficha del inmueble se había saltado: su error se pintaba encima del documento y quien pulsa
+  «Guardar ficha» está al final de un informe de dos pantallas, así que guardar bien y guardar mal
+  se veían igual. Si una acción vive al pie de una página larga, su confirmación y su fallo viven
+  con ella.
+- **Guardar algo pequeño no recarga la pantalla entera.** La ficha llamaba a `cargar()` al guardar,
+  y eso enciende `cargando`: la plantilla sustituía documento y formulario por «Preparando el
+  informe…», la página saltaba arriba y volvía a montarse. Se lee como «se ha ido algo», no como
+  «guardado». Lo que sí cambia —la referencia de la cabecera— se actualiza en sitio con lo que ya
+  devuelve el guardado.
+
 - **El panel es un ARMAZÓN, no un componente.** `panel.ts` era de 1.000 líneas y su plantilla de
   1.600, con la sesión, los perfiles, la edición, los medios, los pases y los ajustes dentro. Ahora
   son doce componentes bajo `entrada/`, `cabecera/`, `perfiles/`, `editor/`, `pases/` y `ajustes/`,
