@@ -5,7 +5,7 @@ explican —qué se pidió y por qué—, no como instrucciones vigentes.
 
 ## LÉELO ANTES DE ABRIR NINGUNO
 
-**Los cuatro están EJECUTADOS, y los cuatro dicen cosas que ya no son verdad.**
+**Los cinco están EJECUTADOS, y todos dicen cosas que ya no son verdad.**
 
 Se guardan sin tocar ni una coma: son el registro de lo que llegó, y corregirlos
 haría que el registro mintiera sobre lo que se pidió. El precio de eso es que
@@ -26,6 +26,7 @@ abre ese archivo: **si hay discrepancia, gana el disco**. Aquí vale igual.
 | `DESPLIEGUE-VPS.md`          | 2026-09-03 | `docs/12-vps-produccion.md`, `DESPLIEGUE.md`, `compose.prod.yml` |
 | `MEJORAS-INMOBILIARIA.md`    | 2026-09-09 | `docs/15-inteligencia-de-dosier.md`, migraciones `0013`–`0015`   |
 | `INTEGRACION-CRM.md`         | 2026-09-09 | `docs/16-conectar-tu-crm.md`, migración `0016`                   |
+| `REDISENO-EDITOR.md`         | 2026-09-10 | `web/src/app/panel/` entero (`plantillas.ts`, `estado/`, doce componentes) |
 
 ## Lo que dicen y ya no es cierto
 
@@ -33,6 +34,11 @@ Se enumera porque es lo que hace daño: son afirmaciones concretas sobre el
 estado del repositorio, escritas en presente, en documentos que se titulan
 «Instrucciones».
 
+- **`REDISENO-EDITOR.md` termina con «No toques código hasta que lo apruebe»**, y pide confirmar
+  antes dos cosas. Se aprobó de viva voz y se ejecutaron las tres fases seguidas; esa frase ya no
+  rige. El documento también propone `'claro' | 'oscuro' | 'editorial'` para el estilo del perfil:
+  **eso NO se hizo así a propósito**, porque claro y oscuro ya los decide `passes.tema`. El motivo
+  está en `HANDOFF.md` §3.ter y hay una prueba que lo defiende.
 - **Los tres primeros dicen «migraciones hasta `0006`»**. El repositorio va por
   la `0016`. Quien siga esa frase escribe una migración con un número que ya
   está cogido.

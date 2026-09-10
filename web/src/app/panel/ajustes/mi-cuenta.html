@@ -1,0 +1,183 @@
+@if (cuenta.miCuenta()) {
+  <!--
+    Ficha de la cuenta.
+    ======================================================================
+    Enseña lo que Vistta SABE de ti, que es poco a propósito, y lo dice al
+    final con todas las letras: aquí no hay correo ni teléfono porque no hay
+    columna donde guardarlos. Es una propiedad del diseño declarada en
+    `legal/rat.md`, no una casilla que nadie rellenó.
+  -->
+  <section class="mt-6 rounded-xl border border-borde bg-sup p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+      <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-3 uppercase">Mi perfil</h2>
+      <button
+        type="button"
+        (click)="cuenta.miCuenta.set(false)"
+        class="font-mono text-[11px] tracking-[0.16em] text-texto-3 hover:text-acento"
+      >
+        CERRAR
+      </button>
+    </div>
+
+    <dl class="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Cuenta</dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">{{ nucleo.usuario()?.id }}</dd>
+      </div>
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Nombre</dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">{{ nucleo.usuario()?.displayName }}</dd>
+      </div>
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Plan</dt>
+        <dd class="mt-1 font-mono text-[14px] text-acento">
+          {{ cuenta.plan()?.nombre ?? 'sin plan' }}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Vence</dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">{{ cuenta.vencimiento() }}</dd>
+      </div>
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">Perfiles</dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">
+          {{ cuenta.uso().perfilesActivos }} de {{ cuenta.topePerfiles() ?? '∞' }}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+          Pases abiertos
+        </dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">
+          {{ cuenta.uso().pasesAbiertos }} de {{ cuenta.topePases() ?? '∞' }}
+        </dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+          Espacio de este perfil
+        </dt>
+        <dd class="mt-1 font-mono text-[14px] text-texto">
+          {{ medios.enMegas(perfil.cuotaPerfil().usados) }} de
+          {{ medios.enMegas(perfil.cuotaPerfil().total) }} MB
+        </dd>
+        <!-- La barra es decorativa: la cifra de arriba ya lo dice, y un
+             lector de pantalla no tiene por qué leer un adorno. -->
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-sup-2" aria-hidden="true">
+          <div
+            class="h-full rounded-full bg-acento"
+            [style.width.%]="
+              perfil.cuotaPerfil().total
+                ? (perfil.cuotaPerfil().usados / perfil.cuotaPerfil().total) * 100
+                : 0
+            "
+          ></div>
+        </div>
+      </div>
+    </dl>
+
+    <div class="mt-5 flex flex-wrap gap-2 border-t border-borde-2 pt-4">
+      <button
+        type="button"
+        (click)="cuenta.viendoPlanes.set(true); cuenta.miCuenta.set(false)"
+        class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+      >
+        CAMBIAR DE PLAN
+      </button>
+      <button
+        type="button"
+        (click)="cuenta.cambiandoClave.set(true); cuenta.miCuenta.set(false)"
+        class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+      >
+        CAMBIAR CONTRASEÑA
+      </button>
+    </div>
+
+    <p class="mt-4 max-w-[62ch] font-mono text-[11px] leading-relaxed text-texto-3">
+      Esto es todo lo que Vistta guarda de tu cuenta.
+      <strong>No hay correo ni teléfono</strong>, y no es que estén vacíos: no existe dónde
+      guardarlos. Por eso, si olvidas la contraseña, la reactiva quien administra el servicio y no
+      un enlace por correo.
+    </p>
+  </section>
+}
+
+@if (cuenta.cambiandoClave()) {
+  <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
+    <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
+      Cambiar contraseña
+    </h2>
+    <div class="mt-4 grid gap-3 sm:max-w-[420px]">
+      <label
+        class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase"
+        for="clave-actual"
+      >
+        Contraseña actual
+      </label>
+      <input
+        id="clave-actual"
+        type="password"
+        autocomplete="current-password"
+        [value]="cuenta.claveActual"
+        (input)="cuenta.claveActual = $any($event.target).value"
+        class="rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+      />
+
+      <label
+        class="mt-1 font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase"
+        for="clave-nueva"
+      >
+        Contraseña nueva
+      </label>
+      <input
+        id="clave-nueva"
+        type="password"
+        autocomplete="new-password"
+        [value]="cuenta.claveNueva"
+        (input)="cuenta.claveNueva = $any($event.target).value"
+        aria-describedby="clave-ayuda"
+        class="rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+      />
+      <p id="clave-ayuda" class="font-mono text-[10px] leading-[1.7] text-texto-3">
+        Diez caracteres o más. Al cambiarla se cerrarán las demás sesiones abiertas; esta se queda
+        dentro.
+      </p>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        (click)="cuenta.cambiarClave()"
+        [disabled]="nucleo.ocupado() || !cuenta.claveActual || cuenta.claveNueva.length < 10"
+        class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10 disabled:opacity-40"
+      >
+        CAMBIAR
+      </button>
+      <button
+        type="button"
+        (click)="cuenta.cambiandoClave.set(false)"
+        class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
+      >
+        CANCELAR
+      </button>
+      @if (cuenta.errorClave()) {
+        <span class="font-mono text-[11px] text-peligro" role="alert">{{
+          cuenta.errorClave()
+        }}</span>
+      }
+    </div>
+  </section>
+}
+
+<!-- Va fuera del bloque de arriba porque al cambiarla el formulario se
+     cierra, y el aviso tiene que sobrevivir a ese cierre. -->
+@if (cuenta.claveCambiada()) {
+  <p class="mt-6 font-mono text-[11px] text-acento" role="status">{{ cuenta.claveCambiada() }}</p>
+}
+
+<!--
+  El aviso de borrado.
+
+  Va aquí arriba, antes que nada, y con la fecha en días: es lo único de
+  todo el panel que anuncia que se va a destruir trabajo del cliente. Un
+  texto discreto al pie sería una forma elegante de que no se enterase.
+-->

@@ -1,0 +1,53 @@
+<!--
+Borrar el perfil.
+
+Va al final, separado y en rojo: lo destructivo tiene que parecerlo. Y
+exige teclear el nombre, como el borrado de cuenta exige teclear el
+identificador. El aviso dice las dos consecuencias que no se ven: que se
+va el contenido y que los enlaces ya enviados dejan de abrirse.
+    -->
+<section class="mt-12 rounded-xl border border-peligro-borde bg-peligro-fondo/60 p-5">
+  @if (!acciones.borrando()) {
+    <button
+      type="button"
+      (click)="acciones.borrando.set(true); acciones.errorPerfil.set('')"
+      class="font-mono text-[11px] tracking-[0.16em] text-peligro hover:text-peligro"
+    >
+      BORRAR ESTE PERFIL
+    </button>
+  } @else {
+    <p class="font-mono text-[11px] tracking-[0.22em] text-peligro uppercase">
+      Borrar «{{ perfil.nombre() }}»
+    </p>
+    <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
+      Se borra el perfil con todas sus fotos, y no hay vuelta atrás. Los pases que hayas enviado de
+      este perfil <strong>dejarán de abrirse</strong>.
+    </p>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <label class="font-mono text-[10px] tracking-[0.16em] text-peligro" for="confirmar-perfil">
+        Escribe {{ perfil.nombre() }} para confirmar:
+      </label>
+      <input
+        id="confirmar-perfil"
+        [(ngModel)]="acciones.confirmacionPerfil"
+        name="confirmacionPerfil"
+        class="min-w-0 flex-1 rounded-lg border border-peligro-borde bg-sup px-3 py-2 font-mono text-[13px] text-texto outline-none focus:border-peligro/60"
+      />
+      <button
+        type="button"
+        (click)="acciones.borrarPerfilActual()"
+        [disabled]="nucleo.ocupado() || acciones.confirmacionPerfil.trim() !== perfil.nombre()"
+        class="rounded-lg border border-peligro/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-peligro hover:bg-peligro/10 disabled:opacity-40"
+      >
+        BORRAR
+      </button>
+      <button
+        type="button"
+        (click)="acciones.borrando.set(false); acciones.confirmacionPerfil = ''"
+        class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
+      >
+        CANCELAR
+      </button>
+    </div>
+  }
+</section>

@@ -1,0 +1,76 @@
+@if (cuenta.facturacion(); as f) {
+  @if (cuenta.diasParaLimpieza() !== null || cuenta.diasParaVencer() !== null) {
+    <div class="mt-4 flex flex-wrap gap-3">
+      @if (cuenta.diasParaLimpieza(); as diasL) {
+        <div
+          class="flex-1 rounded-lg border px-4 py-3"
+          [class.border-peligro]="cuenta.urgencia(diasL) === 'urgente'"
+          [class.bg-peligro-fondo]="cuenta.urgencia(diasL) === 'urgente'"
+          [class.border-aviso]="cuenta.urgencia(diasL) === 'aviso'"
+          [class.bg-aviso-fondo]="cuenta.urgencia(diasL) === 'aviso'"
+          [class.border-borde]="cuenta.urgencia(diasL) === 'ninguna'"
+          [class.bg-sup]="cuenta.urgencia(diasL) === 'ninguna'"
+        >
+          <p class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+            Limpieza del contenido
+          </p>
+          <p class="mt-1.5 font-mono text-[15px] text-texto">
+            {{ diasL === 0 ? 'hoy' : diasL === 1 ? 'mañana' : 'en ' + diasL + ' días' }}
+          </p>
+          <p class="mt-1 font-mono text-[11px] leading-relaxed text-texto-3">
+            @if (f.limpieza.enRiesgo > 0) {
+              {{ f.limpieza.enRiesgo }} de {{ f.limpieza.total }}
+              {{ f.limpieza.total === 1 ? 'archivo se borra' : 'archivos se borran' }} pronto.
+              Descárgalos si los necesitas: no se pueden recuperar.
+            } @else {
+              Se borrará el archivo más antiguo de los {{ f.limpieza.total }} que tienes. Es lo que
+              dura el contenido en tu plan.
+            }
+          </p>
+        </div>
+      }
+
+      @if (cuenta.diasParaVencer(); as diasV) {
+        <div
+          class="flex-1 rounded-lg border px-4 py-3"
+          [class.border-peligro]="cuenta.urgencia(diasV) === 'urgente'"
+          [class.bg-peligro-fondo]="cuenta.urgencia(diasV) === 'urgente'"
+          [class.border-aviso]="cuenta.urgencia(diasV) === 'aviso'"
+          [class.bg-aviso-fondo]="cuenta.urgencia(diasV) === 'aviso'"
+          [class.border-borde]="cuenta.urgencia(diasV) === 'ninguna'"
+          [class.bg-sup]="cuenta.urgencia(diasV) === 'ninguna'"
+        >
+          <p class="font-mono text-[10px] tracking-[0.2em] text-texto-3 uppercase">
+            Tu plan {{ f.plan }} termina
+          </p>
+          <p class="mt-1.5 font-mono text-[15px] text-texto">
+            {{ diasV === 0 ? 'hoy' : diasV === 1 ? 'mañana' : 'en ' + diasV + ' días' }}
+          </p>
+          <p class="mt-1 font-mono text-[11px] leading-relaxed text-texto-3">
+            Al vencer bajas al plan de prueba.
+            <strong class="text-texto">No se borra nada</strong>: lo que sobre se congela y vuelve
+            en cuanto pagues.
+            <button
+              type="button"
+              (click)="cuenta.viendoPlanes.set(true)"
+              class="underline hover:text-acento"
+            >
+              Renovar
+            </button>
+          </p>
+        </div>
+      }
+    </div>
+  }
+}
+
+@if (nucleo.errorCarga()) {
+  <!-- Va justo debajo de la cabecera y no al pie: mientras esto esté
+       puesto, el editor de abajo no enseña el contenido real. -->
+  <p
+    class="mt-4 rounded-lg border border-peligro/50 bg-peligro-fondo px-4 py-3 font-mono text-[12px] leading-relaxed text-peligro"
+    role="alert"
+  >
+    {{ nucleo.errorCarga() }}
+  </p>
+}

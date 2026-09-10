@@ -33,6 +33,8 @@ export interface PassView {
   sections: SectionView[];
   /** Aspecto con el que lo quiso enseñar quien mandó el enlace. */
   tema: TemaDePase;
+  /** Con cuánto aire se lee. Lo eligió quien montó el perfil, no quien lo manda. */
+  estilo: Estilo;
   watermark: string;
   /**
    * Testigo para mandar la telemetría de esta lectura. `null` si el plan de
@@ -404,9 +406,18 @@ export type EditableSection =
   | { type: 'galeria'; title?: string; items: MediaRef[]; display?: Presentacion }
   | { type: 'proyecto'; title?: string; body?: string; items: MediaRef[]; display?: Presentacion };
 
+/**
+ * El estilo con el que se presenta el dosier. Ausente = `sobrio`.
+ *
+ * No decide claro u oscuro: eso es el tema del PASE, y lo elige quien manda el
+ * enlace. Aquí solo se elige con cuánto aire se lee.
+ */
+export type Estilo = 'sobrio' | 'editorial' | 'compacto';
+
 export interface ProfileContent {
   tagline?: string;
   intro?: string;
+  estilo?: Estilo;
   sections: EditableSection[];
 }
 

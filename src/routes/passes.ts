@@ -220,6 +220,12 @@ export function passesRoutes({ config, db }: Deps) {
       },
       sections,
       tema: view.tema,
+      /*
+       * El estilo sale del PERFIL y el tema del PASE, y por eso viajan por
+       * separado aunque los dos hablen de aspecto. Quien manda el enlace elige
+       * claro u oscuro; quien montó el dosier eligió con cuánto aire se lee.
+       */
+      estilo: view.estilo ?? "sobrio",
       watermark: watermarkFor(view.passId, new Date(), view.destinatarioRef),
       /*
        * Testigo para la telemetría de ESTA lectura. Se emite solo si el plan de

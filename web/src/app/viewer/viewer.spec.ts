@@ -12,6 +12,9 @@ const VISTA = (eventos: string | null, tema: 'oscuro' | 'claro' = 'oscuro'): Pas
   profile: { id: 'p1', displayName: 'Estudio', brandColor: null },
   sections: [],
   tema,
+  // Ausente en el contenido = `sobrio`, y el servidor ya lo resuelve antes de
+  // mandarlo: al viewer llega siempre uno de los tres.
+  estilo: 'sobrio',
   watermark: 'PASE · abcdef12 · 10:15',
   eventos,
 });

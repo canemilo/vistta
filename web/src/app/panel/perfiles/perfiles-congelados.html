@@ -1,0 +1,36 @@
+@if (cuenta.congelados().length) {
+  <section class="mt-6 rounded-xl border border-aviso/40 bg-aviso/5 p-5" role="alert">
+    <p class="font-mono text-[11px] tracking-[0.22em] text-aviso uppercase">Perfiles congelados</p>
+    <p class="mt-2 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
+      Tu plan da para {{ cuenta.plan()?.limites?.perfiles ?? 1 }}
+      {{ cuenta.plan()?.limites?.perfiles === 1 ? 'perfil activo' : 'perfiles activos' }}. Los de
+      abajo siguen guardados con todo su contenido, pero no se pueden editar ni enviar. Puedes
+      activar el que necesites en cualquier momento: entrará este y se congelará otro.
+    </p>
+    <ul class="mt-4 flex flex-col gap-2">
+      @for (p of cuenta.congelados(); track p.id) {
+        <li
+          class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-borde bg-sup-2 px-4 py-3"
+        >
+          <span class="font-mono text-[12px] text-texto">{{ p.displayName }}</span>
+          <span class="font-mono text-[11px] text-aviso">
+            Se borra en {{ cuenta.diasHasta(p.purgeAt) }}
+            {{ cuenta.diasHasta(p.purgeAt) === 1 ? 'día' : 'días' }}
+          </span>
+          <button
+            type="button"
+            (click)="acciones.rescatar(p.id)"
+            [disabled]="nucleo.ocupado()"
+            class="rounded-lg border border-aviso/50 px-3 py-1.5 font-mono text-[11px] tracking-[0.16em] text-aviso hover:border-aviso disabled:opacity-40"
+          >
+            ACTIVAR ESTE
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<!-- Facturación.
+     El código de pago va antes que el catálogo: si hay uno pendiente, lo
+     que el cliente necesita es ese código, no volver a elegir plan. -->

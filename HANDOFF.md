@@ -614,6 +614,111 @@ manda `docs/11`, no escondido.
   dos riesgos nuevos analizados (el informe a un tercero, y que el termómetro
   parezca un perfilado del art. 22).
 
+## 3.ter Bloque K — el montaje de perfiles (2026-09-10)
+
+Encargo: `encargos/REDISENO-EDITOR.md`. **Las tres fases están hechas.**
+
+El problema que ataca no era de funciones que faltaran —estaban todas—: montar
+un perfil obligaba a decidir a la vez qué apartados hacer, en qué orden, qué
+escribir y cómo enseñar las fotos, sobre un lienzo en blanco y en un editor que
+pintaba los treinta bloques abiertos uno detrás de otro.
+
+### Fase 1 — plantillas de partida
+
+- `web/src/app/panel/plantillas.ts`: cuatro plantillas por CASO DE USO (dosier
+  de propiedad, portfolio, presupuesto, catálogo) más «Desde cero», que va la
+  última. Por caso de uso y no por sector: nombrarlas «Inmobiliaria» o
+  «Arquitectura» haría que quien no se ve en ninguna eligiera el lienzo vacío,
+  que es justo lo que esto quita.
+- Una plantilla es **solo contenido inicial**. No hay tipo nuevo, ni columna, ni
+  nada que recuerde de dónde salió un perfil. Por eso no existe «cambiar de
+  plantilla» después: machacaría lo escrito.
+- `test/plantillas.spec.ts` las valida contra `ProfileDataSchema` **de verdad**,
+  cruzando la frontera `test/` → `web/`. Es el único sitio del repositorio donde
+  eso se hace, y existe porque las dos mitades se separarían en silencio: en
+  TypeScript la plantilla seguiría compilando y lo que fallaría sería el `PUT`,
+  en producción, con el cliente delante.
+- Los textos de ejemplo son INSTRUCCIONES («Describe aquí…»), no prosa
+  verosímil. Antes de generar el pase se **avisa** si quedan sin tocar, y no se
+  bloquea: siempre hay un dosier de tres fotos donde el texto sobra.
+
+### Fase 2 — el panel, partido
+
+`panel.ts` iba por 1.000 líneas y `panel.html` por 1.620. Ahora:
+
+- **Estado en `panel/estado/`**, en cinco servicios y un coordinador:
+  `nucleo` (lo que cruza todo: sesión, ocupado, error, aviso), `estado-sesion`,
+  `estado-cuenta`, `estado-perfil`, `estado-medios`, `estado-pases`, y
+  `acciones-panel` para lo que toca varias áreas a la vez (entrar, elegir
+  perfil, crear, borrar, rescatar). **Ninguna área importa a otra del mismo
+  nivel**: es lo que impide que las dependencias den la vuelta, porque los
+  pases ya conocen el perfil y «elegir perfil» necesita los pases.
+- **Doce componentes** bajo `entrada/`, `cabecera/`, `perfiles/`, `editor/`,
+  `pases/` y `ajustes/`. `panel.html` queda en 99 líneas y solo decide el orden
+  en que se apilan las cosas.
+- El HTML se movió **tal cual**, con un transformador que solo reapunta lo que
+  Angular evalúa (interpolaciones, atributos con `(`, `[` o `*`, y las
+  condiciones de `@if`/`@for`). El texto visible y los comentarios no se
+  tocaron, que es lo que hace revisable el traslado.
+- `panel.spec.ts` (1.032 líneas) **no se borró**: se repartió en
+  `entrada.spec.ts`, `perfiles.spec.ts`, `borrar-perfil.spec.ts` y
+  `pases.spec.ts`, con el doble de la API en `panel.fixtures.ts`. Las 112
+  pruebas de entonces siguen pasando y siguen probando POR EL DOM, que es la
+  decisión que las hizo útiles: lo que falló la primera vez no fue la lógica,
+  fue que ninguna pantalla la llamaba.
+- Un solo cambio de forma en las pruebas: `elegirPerfil` ya no se alcanza desde
+  el componente, se pide a `AccionesPanel`.
+
+### Fase 3 — el editor
+
+- **Lista de apartados encogidos**, uno desplegado a la vez. Cada fila dice el
+  tipo, el título y cuánto lleva («Galería · 8 fotos»). Es lo que devuelve la
+  estructura a la vista, que es lo que hay que ver para poder ordenarla.
+- **Reordenar de dos formas**: arrastrando (`@angular/cdk/drag-drop`, versión
+  20.2 para casar con Angular 20) y con SUBIR/BAJAR. Los botones no sobran: son
+  el camino del teclado y el del móvil. Lo desplegado SIGUE al bloque que se
+  mueve.
+- **Ayuda en contexto**: cada tipo de bloque dice para qué sirve, en el botón
+  que lo crea y dentro del bloque abierto; el contador de fotos por apartado
+  enseña el tope (60, el mismo del servidor) desde la primera foto y no al
+  chocar; el de caracteres aparece solo al 80 % del tope.
+- **Estado de guardado explícito**: «Guardado» / «Sin guardar», siempre a la
+  vista. Y **no hay guardado automático a propósito**: guardar PUBLICA —un pase
+  ya enviado enseña el perfil tal y como esté guardado—, así que escribir a
+  medias no puede cambiarle el dosier a alguien que lo está mirando.
+- **`estilo` en `ProfileDataSchema`**, opcional: `sobrio` (por defecto),
+  `editorial` y `compacto`. Cambia dos variables de escala del documento —el
+  aire entre apartados y el cuerpo del texto— y nada más.
+
+**Desvío consciente, y el único del encargo:** el encargo proponía
+`'claro' | 'oscuro' | 'editorial'`. **No se ha hecho así, y no debe hacerse.**
+Claro y oscuro ya los decide `passes.tema`, que elige quien MANDA el enlace y
+viaja con él (`docs/11`, CLAUDE.md). Con las dos cosas, la misma decisión
+tendría dos dueños y la respuesta a «¿por qué se ve oscuro si lo puse claro?»
+dependería de cuál gana. Hay una prueba que se pone roja si alguien añade
+`claro` u `oscuro` al enum.
+
+**Segundo desvío, menor:** el encargo pedía `bloque-texto`, `bloque-galeria` y
+`bloque-proyecto`. Se han hecho DOS, por capacidad: el esquema dice que
+`proyecto` tiene cuerpo Y fotos, así que el tercero sería una copia de los otros
+dos pegada, y la siguiente corrección se haría en una de las tres.
+
+### Lo que NO se ha podido comprobar aquí
+
+Se dice, como manda `docs/11`:
+
+- **El arrastre no tiene prueba automática.** Lo que se prueba es
+  `reordenarSeccion`, que es lo que el arrastre llama al soltar; el gesto en sí
+  (ratón y táctil) no se ha simulado. Los botones SUBIR/BAJAR sí están probados
+  por el DOM, así que reordenar sigue estando cubierto por un camino.
+- **La accesibilidad del editor nuevo no se ha vuelto a medir con Lighthouse.**
+  CLAUDE.md declara 100 en el panel, medido sobre el build de producción, y esa
+  cifra es ANTERIOR a esta pantalla. El arrastre del CDK y los desplegables son
+  justo lo que puede bajarla. Hay que volver a medirla antes de dar por buena
+  esa línea.
+- Las plantillas y el editor son, como el bloque J, **hipótesis sin validar**:
+  nadie ha montado todavía un dosier real con esto delante.
+
 ## 4. Principios inviolables
 
 - Consumo del pase atómico y de un solo uso.

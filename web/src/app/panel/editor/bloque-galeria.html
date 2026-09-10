@@ -1,0 +1,113 @@
+@if (seccion().type !== 'texto') {
+  <!--
+    Cómo se presentarán estas fotos.
+
+    Va aquí, junto a las fotos que afecta, y no en un ajuste general
+    del perfil: la decisión es distinta para cada bloque —una serie de
+    verticales pide carrusel y una selección de apaisadas pide
+    cuadrícula— y verla al lado de lo que cambia evita tener que
+    recordar cuál era cuál.
+  -->
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <span class="font-mono text-[10px] tracking-[0.16em] text-texto-3 uppercase">
+      Presentación
+    </span>
+    @for (modo of perfil.PRESENTACIONES; track modo.valor) {
+      <button
+        type="button"
+        (click)="perfil.editarSeccion(si(), $any({ display: modo.valor }))"
+        [attr.aria-pressed]="perfil.presentacionDe(seccion()) === modo.valor"
+        [title]="modo.pista"
+        class="rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em]"
+        [class]="
+          perfil.presentacionDe(seccion()) === modo.valor
+            ? 'border-acento/60 bg-acento/10 text-acento'
+            : 'border-borde text-texto-2 hover:border-acento/40'
+        "
+      >
+        {{ modo.etiqueta }}
+      </button>
+    }
+  </div>
+
+  <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    @for (foto of perfil.itemsDe(si()); track foto.mediaId) {
+      <figure class="group min-w-0">
+        <div class="relative aspect-4/3 overflow-hidden rounded-lg border border-borde-2 bg-sup-2">
+          @if (perfil.miniaturas()[foto.mediaId]) {
+            <img
+              [src]="perfil.miniaturas()[foto.mediaId]"
+              alt=""
+              class="h-full w-full object-cover"
+            />
+          }
+          <!-- Los índices son (si, $index): la sección y la foto DENTRO
+             de ella. Antes se pasaba $index en los dos sitios, así que
+             tocar el pie de una foto de la tercera sección editaba la
+             primera. Y el botón de quitar era sr-only: existía solo
+             para un lector de pantalla, y ni siquiera bien. -->
+          <button
+            type="button"
+            (click)="perfil.quitarFoto(si(), $index)"
+            [attr.aria-label]="'Quitar la foto ' + ($index + 1) + ' de ' + seccion().title"
+            class="absolute top-2 right-2 rounded border border-borde bg-sup-2/90 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-texto-2 opacity-0 transition-opacity group-focus-within:opacity-100 hover:border-peligro/60 hover:text-peligro focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            QUITAR
+          </button>
+        </div>
+        <input
+          [value]="foto.caption ?? ''"
+          (input)="perfil.editarFoto(si(), $index, $any($event.target).value)"
+          [attr.aria-label]="'Pie de la foto ' + ($index + 1)"
+          placeholder="Pie de foto"
+          class="mt-1.5 w-full rounded border border-transparent bg-transparent px-1 py-1 font-mono text-[10px] text-texto-2 outline-none placeholder:text-texto-3 focus:border-borde"
+        />
+      </figure>
+    }
+  </div>
+
+  <!--
+    El tope se dice ANTES de chocar con él.
+
+    Sesenta archivos por apartado es el mismo número que aplica el servidor
+    (`SectionSchema`). Enterarse al subir el 61 obliga a deshacer trabajo ya
+    hecho; verlo desde el primero deja repartir en dos apartados, que además es
+    mejor dosier.
+  -->
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <label
+      class="inline-block cursor-pointer rounded-lg border border-dashed border-borde px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+      [class.opacity-40]="perfil.itemsDe(si()).length >= TOPE_FOTOS"
+    >
+      AÑADIR ARCHIVOS
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/gif,application/pdf,video/mp4,video/webm"
+        multiple
+        class="hidden"
+        [disabled]="perfil.itemsDe(si()).length >= TOPE_FOTOS"
+        (change)="medios.subirFotos(si(), $event)"
+      />
+    </label>
+    <span class="font-mono text-[10px] text-texto-3">
+      {{ perfil.itemsDe(si()).length }} de {{ TOPE_FOTOS }}
+      @if (perfil.itemsDe(si()).length >= TOPE_FOTOS) {
+        · este apartado está lleno, reparte en otro
+      }
+    </span>
+  </div>
+
+  <!--
+  Esto tiene que estar escrito, y con estas palabras.
+
+  Las fotos salen marcadas con el identificador de cada visita metido
+  en los píxeles; el vídeo no, porque marcarlo obligaría a recodificarlo
+  en cada apertura. Callarlo dejaría al cliente creyendo que su vídeo
+  lleva una protección que no lleva, y de eso va la mitad del producto.
+-->
+  <p class="mt-2 max-w-[54ch] font-mono text-[10px] leading-[1.7] text-texto-3">
+    Las imágenes salen con la marca de cada visita incrustada en los píxeles. Los vídeos y los PDF
+    se envían tal cual: <strong>no llevan marca</strong>. Nada de esto impide una captura de
+    pantalla.
+  </p>
+}

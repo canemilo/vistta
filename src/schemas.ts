@@ -206,6 +206,29 @@ const titulo = z.string().max(160).optional();
 export const PresentacionSchema = z.enum(["cuadricula", "carrusel"]);
 export type Presentacion = z.infer<typeof PresentacionSchema>;
 
+/**
+ * El ESTILO con el que se presenta un dosier.
+ *
+ * Tres, resueltos, y no un editor de temas: el objetivo de todo este bloque es
+ * quitar decisiones, no añadirlas. Cada uno cambia el aire y el tamaño de la
+ * letra del documento, nada más:
+ *
+ *   sobrio    — el de siempre, y el que se aplica si no se dice nada.
+ *   editorial — más aire y más cuerpo de letra. Para dosieres que se LEEN.
+ *   compacto  — menos aire y más piezas a la vista. Para catálogos largos.
+ *
+ * OJO: esto NO decide claro u oscuro. Eso es `passes.tema`, lo elige quien
+ * manda el enlace y viaja con él. Meter «claro» y «oscuro» aquí habría dado dos
+ * dueños a la misma decisión —el del perfil y el del pase— y la respuesta a
+ * «¿por qué se ve oscuro si lo puse claro?» dependería de cuál gana.
+ *
+ * Es OPCIONAL, igual que `display` en las galerías, y por el mismo motivo: si
+ * fuera obligatorio, guardar un perfil anterior a este campo empezaría a
+ * fallar.
+ */
+export const EstiloSchema = z.enum(["sobrio", "editorial", "compacto"]);
+export type Estilo = z.infer<typeof EstiloSchema>;
+
 export const SectionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("texto"), title: titulo, body: z.string().max(5000) }),
   z.object({
@@ -228,6 +251,7 @@ export type Section = z.infer<typeof SectionSchema>;
 export const ProfileDataSchema = z.object({
   tagline: z.string().max(200).optional(),
   intro: z.string().max(2000).optional(),
+  estilo: EstiloSchema.optional(),
   sections: z.array(SectionSchema).max(30).default([]),
   // Formato antiguo: se sigue aceptando y se normaliza a secciones al abrir.
   bio: z.string().max(2000).optional(),

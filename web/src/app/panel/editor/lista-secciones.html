@@ -1,0 +1,159 @@
+<!--
+  Los bloques, como LISTA y no como formulario interminable.
+
+  Antes esto pintaba los treinta bloques abiertos, uno detrás de otro, y montar
+  un dosier era desplazarse por una columna de campos sin ver nunca la
+  estructura. La estructura es justo lo que hay que ver para ordenarla, así que
+  ahora cada bloque es una fila que dice lo suyo —«Galería · 8 fotos»— y solo se
+  abre el que se está tocando.
+-->
+<div class="mt-8 flex flex-wrap items-baseline justify-between gap-2">
+  <h2 class="font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase">
+    Apartados del dosier
+  </h2>
+  @if (perfil.contenido().sections.length) {
+    <p class="font-mono text-[10px] text-texto-3">
+      {{ perfil.contenido().sections.length }}
+      {{ perfil.contenido().sections.length === 1 ? 'apartado' : 'apartados' }} · arrastra para
+      reordenar
+    </p>
+  }
+</div>
+
+<div
+  class="lista-apartados mt-3 flex flex-col gap-2"
+  cdkDropList
+  (cdkDropListDropped)="perfil.reordenarSeccion($event.previousIndex, $event.currentIndex)"
+>
+  @for (seccion of perfil.contenido().sections; track $index; let si = $index) {
+    <section
+      class="rounded-xl border border-borde-2 bg-sup/60"
+      cdkDrag
+      cdkDragBoundary=".lista-apartados"
+    >
+      <!-- La sombra que sigue al dedo mientras se arrastra. -->
+      <div
+        class="h-[3.25rem] rounded-xl border border-dashed border-acento/50"
+        *cdkDragPlaceholder
+      ></div>
+
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
+        <!--
+          El asa es SUYA y no la fila entera: arrastrando desde cualquier sitio,
+          seleccionar el texto de un título se convierte en mover el bloque.
+        -->
+        <button
+          type="button"
+          cdkDragHandle
+          class="cursor-grab touch-none font-mono text-[13px] text-texto-3 hover:text-texto active:cursor-grabbing"
+          [attr.aria-label]="'Arrastrar el apartado ' + (si + 1)"
+        >
+          ⣿
+        </button>
+
+        <button
+          type="button"
+          (click)="perfil.desplegar(si)"
+          [attr.aria-expanded]="perfil.desplegado() === si"
+          class="fila-apartado flex min-w-0 flex-1 items-baseline gap-2 text-left"
+        >
+          <span class="font-mono text-[10px] tracking-[0.2em] text-acento/80 uppercase">
+            {{ NOMBRE[seccion.type] }}
+          </span>
+          <span class="min-w-0 flex-1 truncate font-mono text-[12px] text-texto">
+            {{ seccion.title || 'Sin título' }}
+          </span>
+          <span class="shrink-0 font-mono text-[10px] text-texto-3">{{ resumen(seccion) }}</span>
+        </button>
+
+        <div class="flex items-center gap-2 font-mono text-[10px] text-texto-3">
+          <button
+            type="button"
+            (click)="perfil.moverSeccion(si, -1)"
+            [disabled]="$first"
+            [attr.aria-label]="'Subir el apartado ' + (si + 1)"
+            class="hover:text-texto disabled:opacity-30"
+          >
+            SUBIR
+          </button>
+          <button
+            type="button"
+            (click)="perfil.moverSeccion(si, 1)"
+            [disabled]="$last"
+            [attr.aria-label]="'Bajar el apartado ' + (si + 1)"
+            class="hover:text-texto disabled:opacity-30"
+          >
+            BAJAR
+          </button>
+          <button
+            type="button"
+            (click)="perfil.quitarSeccion(si)"
+            [attr.aria-label]="'Quitar el apartado ' + (si + 1)"
+            class="hover:text-peligro"
+          >
+            QUITAR
+          </button>
+        </div>
+      </div>
+
+      @if (perfil.desplegado() === si) {
+        <div class="border-t border-borde-2 px-3 pt-3 pb-4">
+          <!-- Qué es este bloque, en una línea. Se lee cuando hace falta y no
+               antes: dentro del que se está tocando. -->
+          <p class="max-w-[62ch] font-mono text-[10px] leading-[1.7] text-texto-3">
+            {{ PARA_QUE[seccion.type] }}
+          </p>
+
+          <label class="sr-only" [attr.for]="'titulo-' + si">Título del apartado</label>
+          <input
+            [id]="'titulo-' + si"
+            [value]="seccion.title ?? ''"
+            (input)="perfil.editarSeccion(si, { title: $any($event.target).value })"
+            [attr.maxlength]="TOPE_TITULO"
+            placeholder="Título del bloque"
+            class="mt-3 w-full rounded-lg border border-borde bg-sup-2 px-3 py-2 font-mono text-[12px] tracking-[0.14em] text-texto uppercase outline-none placeholder:text-texto-3 focus:border-acento/60"
+          />
+
+          <!--
+            El cuerpo y las fotos, en dos componentes.
+
+            Por CAPACIDAD y no por tipo, aunque el encargo hablara de tres
+            bloques. El esquema dice que `texto` tiene cuerpo, `galeria` tiene
+            fotos y `proyecto` tiene las DOS cosas: con un componente por tipo,
+            el de proyecto sería una copia del de texto pegada a una copia del
+            de galería, y la siguiente corrección se haría en una de las tres.
+          -->
+          <app-bloque-texto [si]="si" [seccion]="seccion" />
+          <app-bloque-galeria [si]="si" [seccion]="seccion" />
+        </div>
+      }
+    </section>
+  } @empty {
+    <p class="max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto-2">
+      Todavía no hay apartados. Empieza por un texto que presente el trabajo, o por una galería.
+    </p>
+  }
+</div>
+
+<!--
+  Añadir, con una frase de qué es cada cosa.
+
+  Tres botones que solo decían «+ TEXTO», «+ PROYECTO» y «+ GALERÍA» obligaban a
+  probar para saber en qué se diferencian. Costaba un bloque de más y borrarlo.
+-->
+<div class="mt-4 grid gap-2 sm:grid-cols-3">
+  @for (tipo of TIPOS; track tipo) {
+    <button
+      type="button"
+      (click)="anadir(tipo)"
+      class="rounded-lg border border-borde px-3 py-2.5 text-left hover:border-acento/60"
+    >
+      <span class="block font-mono text-[11px] tracking-[0.16em] text-texto-2 uppercase">
+        + {{ NOMBRE[tipo] }}
+      </span>
+      <span class="mt-1 block font-mono text-[10px] leading-[1.6] text-texto-3">
+        {{ PARA_QUE[tipo] }}
+      </span>
+    </button>
+  }
+</div>

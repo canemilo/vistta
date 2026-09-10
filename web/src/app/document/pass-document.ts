@@ -30,6 +30,15 @@ export interface DocSection {
   display?: Presentacion;
 }
 
+/**
+ * Con cuánto aire se lee el documento. Ausente = `sobrio`.
+ *
+ * No decide claro u oscuro: eso es el tema del PASE. Aquí solo cambian el aire
+ * y el cuerpo de la letra, que es lo que separa un dosier que se LEE de un
+ * catálogo que se HOJEA.
+ */
+export type Estilo = 'sobrio' | 'editorial' | 'compacto';
+
 export interface DocProfile {
   /** Logotipo del cliente, ya reducido a data URI por el servidor. */
   logo?: string | null;
@@ -45,7 +54,11 @@ export interface DocProfile {
 @Component({
   selector: 'app-pass-document',
   templateUrl: './pass-document.html',
-  host: { '[class.tema-claro]': "tema() === 'claro'" },
+  host: {
+    '[class.tema-claro]': "tema() === 'claro'",
+    '[class.estilo-editorial]': "estilo() === 'editorial'",
+    '[class.estilo-compacto]': "estilo() === 'compacto'",
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /*
@@ -58,8 +71,16 @@ export interface DocProfile {
      * quien manda el enlace, no el navegador de quien lo abre. Alguien con el
      * móvil en modo oscuro que reciba un pase claro lo verá claro, que es como
      * su remitente quiso enseñar ese trabajo.
+     *
+     * Y trae DOS VARIABLES DE ESCALA, que es todo el estilo del documento: una
+     * multiplica la separación entre apartados y otra el cuerpo del texto que
+     * se lee. Todo lo que cambia de un estilo a otro pasa
+     * por aquí, así que añadir un cuarto estilo es escribir dos números, no
+     * repasar la plantilla entera buscando qué se quedó sin ajustar.
      */
     :host {
+      --doc-aire: 1;
+      --doc-letra: 1;
       display: block;
       min-height: 100%;
       --color-fondo: #060e17;
@@ -112,6 +133,32 @@ export interface DocProfile {
       --color-acento-tenue: #0c855e;
       --color-sobre-acento: #ffffff;
     }
+
+    /* Para dosieres que se LEEN: más aire y más cuerpo. */
+    :host(.estilo-editorial) {
+      --doc-aire: 1.45;
+      --doc-letra: 1.12;
+    }
+
+    /* Para catálogos largos: más piezas a la vista y menos desplazamiento. */
+    :host(.estilo-compacto) {
+      --doc-aire: 0.65;
+      --doc-letra: 0.94;
+    }
+
+    /*
+     * Dónde se aplican. Dos clases y dos reglas: la separación entre apartados
+     * y el cuerpo de lo que se lee. El resto del documento —las fotos, la barra
+     * de estado, los pies— no cambia con el estilo, y eso es a propósito: lo
+     * que se está eligiendo es cómo se lee, no otro diseño.
+     */
+    .doc-apartado {
+      margin-top: calc(5rem * var(--doc-aire));
+    }
+
+    .doc-lectura {
+      font-size: calc(1em * var(--doc-letra));
+    }
   `,
 })
 export class PassDocument {
@@ -123,6 +170,13 @@ export class PassDocument {
    * la paleta: `host: { '[class.tema-claro]': ... }` de abajo.
    */
   readonly tema = input<'oscuro' | 'claro'>('oscuro');
+  /**
+   * El aire con el que se lee. Va por clase en el host, como el tema, y lo
+   * único que toca son dos variables de escala: ni una regla suelta por
+   * estilo. Con reglas sueltas, el tercer estilo se olvida en la mitad de los
+   * sitios y el documento sale a medias.
+   */
+  readonly estilo = input<Estilo>('sobrio');
   /** Enlace mostrado en la barra de estado. */
   readonly enlace = input('');
 

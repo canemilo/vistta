@@ -1,0 +1,130 @@
+<section class="mt-8 grid gap-4">
+  <label class="font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase" for="nombre">
+    Nombre que aparece arriba
+  </label>
+  <input
+    id="nombre"
+    [value]="perfil.nombre()"
+    (input)="perfil.nombre.set($any($event.target).value); nucleo.aviso.set('')"
+    class="rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-mono text-[15px] text-titulo outline-none focus:border-acento/60"
+  />
+
+  <!--
+    Logotipo del cliente.
+    ======================================================================
+    Se sube tal cual y el servidor lo reduce a 320x120 en WebP: unos 7 kB.
+    Va DENTRO de la respuesta del pase, así que no cuesta una petición más
+    a quien abre el enlace desde el móvil, que es el caso que importa.
+  -->
+  <span class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase">
+    Tu logotipo (opcional)
+  </span>
+  <div class="flex flex-wrap items-center gap-4">
+    @if (perfil.logo()) {
+      <img
+        [src]="perfil.logo()"
+        alt="Logotipo actual del perfil"
+        class="h-16 w-auto max-w-[16rem] rounded border border-borde-2 bg-sup-2 object-contain p-2"
+      />
+    } @else {
+      <span
+        class="flex h-16 w-[16rem] items-center justify-center rounded border border-dashed border-borde font-mono text-[10px] tracking-[0.18em] text-texto-3"
+      >
+        SIN LOGOTIPO
+      </span>
+    }
+    <label
+      class="cursor-pointer rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-2 hover:border-acento/60 hover:text-acento"
+    >
+      {{ medios.subiendoLogo() ? 'SUBIENDO…' : perfil.logo() ? 'CAMBIAR' : 'SUBIR' }}
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        class="sr-only"
+        [disabled]="medios.subiendoLogo()"
+        (change)="medios.elegirLogo($event)"
+      />
+    </label>
+    @if (perfil.logo()) {
+      <button
+        type="button"
+        (click)="medios.quitarLogo()"
+        class="rounded-lg border border-borde px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-texto-3 hover:border-peligro/60 hover:text-peligro"
+      >
+        QUITAR
+      </button>
+    }
+  </div>
+  <p class="font-mono text-[11px] text-texto-3">
+    Se reduce a 480 × 180 y se guarda en WebP; queda en unos pocos kilobytes y viaja dentro del
+    propio pase. Se conserva la transparencia, así que un PNG con fondo transparente se ve bien en
+    los dos aspectos.
+  </p>
+  @if (medios.errorLogo()) {
+    <p class="font-mono text-[11px] text-peligro">{{ medios.errorLogo() }}</p>
+  }
+
+  <label class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase" for="tagline">
+    Una línea sobre lo que haces
+  </label>
+  <input
+    id="tagline"
+    [value]="perfil.contenido().tagline ?? ''"
+    (input)="perfil.actualizar({ tagline: $any($event.target).value })"
+    placeholder="Fotografía de arquitectura y espacio construido."
+    aria-label="Frase de presentación del perfil"
+    class="rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-serif text-[15px] text-texto italic outline-none placeholder:text-texto-3 focus:border-acento/60"
+  />
+
+  <label class="mt-2 font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase" for="intro">
+    Presentación
+  </label>
+  <textarea
+    id="intro"
+    rows="3"
+    [value]="perfil.contenido().intro ?? ''"
+    (input)="perfil.actualizar({ intro: $any($event.target).value })"
+    placeholder="A quién va dirigido este pase y qué va a encontrar."
+    aria-label="Introducción del pase"
+    class="resize-y rounded-lg border border-borde bg-sup-2 px-3 py-2.5 font-serif text-[15px] leading-[1.7] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+  ></textarea>
+
+  <!--
+    El estilo: con cuánto aire se lee.
+
+    Tres opciones resueltas, no un editor de temas. Lo que se busca es QUITAR
+    decisiones, y un ajuste de tipografía libre las multiplica.
+
+    Y no incluye «claro» ni «oscuro» a propósito, aunque sería lo primero que
+    alguien esperaría de algo llamado «estilo»: eso lo elige quien MANDA el
+    enlace, pase por pase, y aquí se está montando el perfil. Con las dos cosas
+    en el mismo sitio, la respuesta a «¿por qué se ve oscuro si lo puse claro?»
+    dependería de cuál gana.
+  -->
+  <fieldset class="estilo-dosier mt-2">
+    <legend class="font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase">
+      Cómo se lee
+    </legend>
+    <div class="mt-2 flex flex-wrap gap-2">
+      @for (e of ESTILOS; track e.valor) {
+        <button
+          type="button"
+          (click)="perfil.actualizar({ estilo: e.valor })"
+          [attr.aria-pressed]="estiloActual() === e.valor"
+          [title]="e.pista"
+          class="rounded border px-3 py-1.5 text-left font-mono text-[10px] tracking-[0.12em]"
+          [class]="
+            estiloActual() === e.valor
+              ? 'border-acento/60 bg-acento/10 text-acento'
+              : 'border-borde text-texto-2 hover:border-acento/40'
+          "
+        >
+          <span class="block uppercase">{{ e.etiqueta }}</span>
+          <span class="mt-0.5 block text-[10px] tracking-normal normal-case opacity-80">
+            {{ e.pista }}
+          </span>
+        </button>
+      }
+    </div>
+  </fieldset>
+</section>

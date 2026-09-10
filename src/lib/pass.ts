@@ -1,6 +1,6 @@
 import type { Db } from "../db";
 import { generateToken, hashToken } from "./token";
-import type { Presentacion } from "../schemas";
+import type { Estilo, Presentacion } from "../schemas";
 import { ProfileDataSchema, idsDeMedios, type ProfileData, type Section } from "../schemas";
 import { mediosDelPerfil, type MedioRow } from "./media-store";
 import type { MediaKind } from "./sniff";
@@ -54,6 +54,8 @@ export interface PassView {
   logo: string | null;
   tagline?: string;
   intro?: string;
+  /** Con qué aire se presenta. Del PERFIL, no del pase; ausente = `sobrio`. */
+  estilo?: Estilo;
   sections: SeccionDePase[];
 }
 
@@ -376,6 +378,7 @@ export async function consumePass(db: Db, token: string): Promise<PassView | nul
     logo: profile.logo,
     tagline: data.tagline,
     intro: data.intro ?? data.bio,
+    estilo: data.estilo,
     sections: resolverSecciones(normalizeSections(data), medios),
   };
 }

@@ -68,7 +68,7 @@
 
   @if (profile().intro) {
     <p
-      class="surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-texto"
+      class="doc-lectura surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-texto"
       style="animation-delay: 90ms"
     >
       {{ profile().intro }}
@@ -81,7 +81,7 @@
          sabe dónde empieza y acaba una sección. Sin métricas, no lo mira nadie. -->
     <section
       [attr.data-seccion]="$index"
-      class="surge mt-20 grid gap-x-10 gap-y-6 border-t border-borde-3 pt-10 md:mt-24 md:grid-cols-[180px_1fr]"
+      class="doc-apartado surge grid gap-x-10 gap-y-6 border-t border-borde-3 pt-10 md:grid-cols-[180px_1fr]"
       [style.animation-delay]="120 + $index * 70 + 'ms'"
     >
       <!-- El título se queda anclado mientras se recorre el bloque -->
@@ -102,7 +102,9 @@
 
       <div class="min-w-0">
         @if (seccion.body) {
-          <div class="max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-texto">
+          <div
+            class="doc-lectura max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-texto"
+          >
             @for (parrafo of seccion.body.split('\n\n'); track $index) {
               <p>{{ parrafo }}</p>
             }

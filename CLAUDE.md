@@ -213,7 +213,47 @@ no se negocian:
   único que falla es `is-crawlable`. Un buscador que abra un pase lo consume.
 - Accesibilidad medida sobre el BUILD DE PRODUCCIÓN, no sobre `ng serve` (allí el rendimiento no
   significa nada): 100 de accesibilidad y 100 de buenas prácticas en el panel y en el documento.
+- **Un perfil nuevo no nace en blanco** (`panel/plantillas.ts`). Una plantilla es SOLO contenido
+  inicial: un `ProfileData` prerrellenado, sin tipo nuevo, sin columna y sin nada que recuerde de
+  dónde salió el perfil. Por eso viven en el frontend y por eso no hay «cambiar de plantilla»
+  después —machacaría lo escrito—. Van por CASO DE USO, no por sector, y «Desde cero» sigue estando
+  y va la última. `test/plantillas.spec.ts` las valida contra `ProfileDataSchema` de verdad: es el
+  único sitio donde `test/` importa de `web/`, y sin él las dos mitades se separan en silencio.
+- Los textos de ejemplo de las plantillas son INSTRUCCIONES («Describe aquí…»), nunca prosa
+  verosímil: si alguien manda el dosier sin tocarlos, lo que recibe su cliente delata el descuido en
+  vez de disimularlo. Antes de generar el pase se AVISA, sin bloquear.
 - Hay pruebas de frontend (Karma + Chrome de verdad) y van en `pnpm check` y en el CI.
+
+## El panel (desde K)
+
+- **El panel es un ARMAZÓN, no un componente.** `panel.ts` era de 1.000 líneas y su plantilla de
+  1.600, con la sesión, los perfiles, la edición, los medios, los pases y los ajustes dentro. Ahora
+  son doce componentes bajo `entrada/`, `cabecera/`, `perfiles/`, `editor/`, `pases/` y `ajustes/`,
+  y `panel.html` solo decide el orden en que se apilan.
+- **El estado vive en `panel/estado/`**, en áreas que NO se importan entre sí: `nucleo` (sesión,
+  ocupado, error, aviso), `estado-sesion`, `estado-cuenta`, `estado-perfil`, `estado-medios`,
+  `estado-pases`, y `acciones-panel` para lo que cruza varias (entrar, elegir perfil, crear, borrar).
+  Si un área importara a otra del mismo nivel las dependencias darían la vuelta: los pases ya conocen
+  el perfil, y «elegir perfil» necesita los pases.
+- **Sin zona, lo que se escribe tras un `await` tiene que ser SEÑAL.** Angular repinta al despachar
+  un evento de plantilla, no al volver de una petición. Un campo normal con `ngModel` vale; un error
+  del servidor guardado en un campo normal no se pinta hasta que el usuario toque otra cosa.
+- **El editor enseña la ESTRUCTURA, no un formulario.** Los apartados van encogidos, uno desplegado
+  a la vez, y cada fila dice el tipo, el título y cuánto lleva («Galería · 8 fotos»). Se reordena
+  arrastrando (CDK, solo en el bundle del panel) **y** con botones: los botones son el camino del
+  teclado y el del móvil, y quitarlos «porque ya se arrastra» deja fuera a quien navega con teclado.
+- **Los topes se dicen antes de chocar con ellos** y son los MISMOS números del servidor (60 fotos
+  por apartado, 5.000 caracteres de cuerpo, 160 de título).
+- **«Guardado» / «Sin guardar», siempre a la vista, y sin guardado automático.** Guardar PUBLICA: un
+  pase ya enviado enseña el perfil tal y como esté guardado, así que escribir a medias no puede
+  cambiarle el dosier a alguien que lo está mirando.
+- **`data.estilo` (`sobrio`/`editorial`/`compacto`) NO decide claro u oscuro**, y no es un olvido:
+  eso es `passes.tema`, lo elige quien manda el enlace y viaja con él. Con dos dueños para la misma
+  decisión, «¿por qué se ve oscuro si lo puse claro?» dependería de cuál gana. Hay una prueba que
+  falla si alguien añade `claro` u `oscuro` al enum. El estilo solo mueve dos variables de escala del
+  documento: el aire entre apartados y el cuerpo del texto.
+- Es opcional, como `display` en las galerías y por el mismo motivo: obligatorio, guardar un perfil
+  anterior al campo empezaría a fallar.
 
 ## Producción (desde H)
 

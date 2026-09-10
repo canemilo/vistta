@@ -1,0 +1,134 @@
+@if (acciones.creando()) {
+  <section class="mt-6 rounded-xl border border-borde bg-sup-2 p-5">
+    <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">Nuevo perfil</h2>
+    <p class="mt-2 max-w-[60ch] font-mono text-[10px] leading-[1.7] text-texto-3">
+      Un perfil es un trabajo que se enseña por separado, con su propio contenido y sus propios
+      pases. Tu plan da para
+      {{ cuenta.topePerfiles() === null ? 'los que quieras' : cuenta.topePerfiles() }}
+      @if (cuenta.topePerfiles() !== null) {
+        {{ cuenta.topePerfiles() === 1 ? 'perfil activo' : 'perfiles activos' }}
+      }
+      y tienes {{ cuenta.uso().perfilesActivos }}.
+    </p>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <input
+        [(ngModel)]="acciones.nombrePerfilNuevo"
+        name="nombrePerfilNuevo"
+        (keydown.enter)="acciones.crearPerfil()"
+        placeholder="Nombre del perfil"
+        aria-label="Nombre del perfil nuevo"
+        class="min-w-0 flex-1 rounded-lg border border-borde bg-sup px-3 py-2.5 font-mono text-[13px] text-texto outline-none placeholder:text-texto-3 focus:border-acento/60"
+      />
+    </div>
+
+    <!--
+      De qué se parte. Un grupo de radios de verdad —no una rejilla de
+      `div` con `click`—: así el teclado lo recorre con las flechas, el
+      lector de pantalla anuncia «2 de 5» y el estado seleccionado no
+      depende de que el color se vea.
+
+      La miniatura es la LISTA DE BLOQUES, no un render. Un render sería
+      mentira, porque la plantilla no trae fotos, y obligaría a montar el
+      viewer aquí dentro para elegir algo que se cambia en treinta segundos.
+    -->
+    <fieldset class="mt-5">
+      <legend class="font-mono text-[10px] tracking-[0.22em] text-texto-2 uppercase">
+        De qué partimos
+      </legend>
+      <p class="mt-2 max-w-[62ch] font-mono text-[10px] leading-[1.7] text-texto-3">
+        Trae los apartados ya puestos y los textos por escribir. Después se edita como cualquier
+        otro perfil: esto solo decide con qué empiezas.
+      </p>
+      <div class="mt-3 grid gap-2 sm:grid-cols-2">
+        @for (p of PLANTILLAS; track p.id) {
+          <label
+            class="flex cursor-pointer gap-3 rounded-lg border p-3 hover:border-acento/60"
+            [class.border-acento]="acciones.plantillaElegida() === p.id"
+            [class.bg-sup]="acciones.plantillaElegida() === p.id"
+            [class.border-borde]="acciones.plantillaElegida() !== p.id"
+          >
+            <input
+              type="radio"
+              name="plantilla"
+              [value]="p.id"
+              [checked]="acciones.plantillaElegida() === p.id"
+              (change)="acciones.plantillaElegida.set(p.id)"
+              class="mt-1 accent-acento"
+            />
+            <span class="min-w-0">
+              <span class="block font-mono text-[12px] text-texto">{{ p.nombre }}</span>
+              <span class="mt-1 block font-serif text-[13px] leading-[1.5] text-texto-2">
+                {{ p.para }}
+              </span>
+              <!-- La estructura, en palabras: es lo que de verdad se elige. -->
+              <span class="mt-2 flex flex-wrap gap-1">
+                @for (b of p.contenido.sections; track $index) {
+                  <span
+                    class="rounded border border-borde-2 px-1.5 py-0.5 font-mono text-[9px] tracking-[0.12em] text-texto-3 uppercase"
+                  >
+                    {{ NOMBRE_DE_BLOQUE[b.type] }}
+                  </span>
+                } @empty {
+                  <span class="font-mono text-[9px] tracking-[0.12em] text-texto-3 uppercase">
+                    sin apartados
+                  </span>
+                }
+              </span>
+            </span>
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="mt-5 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        (click)="acciones.crearPerfil()"
+        [disabled]="nucleo.ocupado() || !acciones.nombrePerfilNuevo.trim()"
+        class="rounded-lg border border-acento/60 px-4 py-2 font-mono text-[11px] tracking-[0.16em] text-acento hover:bg-acento/10 disabled:opacity-40"
+      >
+        CREAR
+      </button>
+      <button
+        type="button"
+        (click)="acciones.creando.set(false)"
+        class="font-mono text-[10px] tracking-[0.16em] text-texto-3 hover:text-texto-2"
+      >
+        CANCELAR
+      </button>
+    </div>
+    @if (acciones.errorPerfil()) {
+      <p class="mt-3 font-mono text-[11px] text-peligro" role="alert">
+        {{ acciones.errorPerfil() }}
+      </p>
+    }
+  </section>
+}
+
+<!-- Cuando el plan ya no da para más, se dice aquí en vez de dejar un botón
+     apagado sin explicación. -->
+@if (!cuenta.puedeCrearPerfil()) {
+  <p class="mt-4 font-mono text-[10px] text-texto-3">
+    Tienes {{ cuenta.uso().perfilesActivos }} de {{ cuenta.topePerfiles() }}
+    {{ cuenta.topePerfiles() === 1 ? 'perfil' : 'perfiles' }} de tu plan. Para tener más, cambia de
+    plan; los que sobren al bajar se congelan, no se borran.
+  </p>
+}
+
+<!--
+  Cambiar la propia contraseña.
+
+  Existe porque el administrador entrega una temporal y le dice al cliente
+  que la cambie al entrar: sin este formulario, esa instrucción no se puede
+  cumplir y la temporal se queda puesta para siempre.
+
+  Pide la actual aunque haya sesión abierta: un ordenador sin bloquear no
+  puede convertirse en un cambio de credenciales.
+-->
+<!--
+  Las dos cuentas atrás.
+  ========================================================================
+  Van juntas y arriba porque las dos hablan de perder algo: una, el trabajo
+  que ya está subido; la otra, el plan que lo sostiene. El color solo cambia
+  cuando queda poco: un aviso encendido siempre deja de leerse a la semana.
+-->
