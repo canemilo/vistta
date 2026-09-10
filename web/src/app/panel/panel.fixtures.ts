@@ -22,11 +22,12 @@ import {
  * extensión el runner lo cargaría como una suite vacía.
  */
 
-const PERFIL = (id: string, nombre: string): ProfileRow => ({
+const PERFIL = (id: string, nombre: string, referencia: string | null = null): ProfileRow => ({
   id,
   displayName: nombre,
   status: 'activo',
   purgeAt: null,
+  referencia,
 });
 
 export const LIMITES = (perfiles: number): LimitesDePlan => ({

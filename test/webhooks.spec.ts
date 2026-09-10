@@ -466,6 +466,28 @@ describe("avisos salientes", () => {
       expect(carga).not.toContain(prohibido);
     }
   });
+
+  /*
+   * NI LA NOTA DE LA FICHA. De la ficha del inmueble sale al CRM la referencia
+   * —para eso está: es la que permite casar el aviso con la ficha que el agente
+   * ya tiene allí— y NADA MÁS.
+   *
+   * La nota es lo que el agente piensa del propietario, escrito para sí mismo.
+   * Mandarla a un sistema de terceros no es lo mismo que enseñarla en su propio
+   * panel, aunque el texto sea idéntico: cambia quién lo custodia y quién puede
+   * leerlo después. Se comprueba sobre el TIPO y sobre la consulta, que es
+   * donde se colaría, y no sobre un envío concreto: un envío que no lleva la
+   * nota no demuestra que no exista un camino que sí.
+   */
+  it("la carga no lleva la nota privada de la ficha", async () => {
+    const fuente = await import("node:fs/promises").then((fs) =>
+      fs.readFile("src/lib/webhooks-salida.ts", "utf8")
+    );
+    expect(fuente).not.toContain("propietario_nota");
+    expect(fuente).not.toContain("propietarioNota");
+    // Y la referencia sí, que es la que le sirve al CRM.
+    expect(fuente).toContain("referencia");
+  });
 });
 
 describe("la pantalla de conexiones", () => {

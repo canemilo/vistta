@@ -255,6 +255,34 @@ describe('Panel · perfiles y cierre de sesión', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Queda texto de ejemplo');
   });
 
+  /*
+   * LA REFERENCIA, DONDE SE TRABAJA.
+   *
+   * Nació de una pregunta de quien lo usaba: «¿cómo se ven las fichas
+   * guardadas?». La referencia se escribía en la ficha del inmueble y no volvía
+   * a aparecer en ninguna pantalla del panel, así que con cuatro dosieres
+   * llamados «Piso centro» había que abrirlos uno a uno para saber cuál era
+   * cuál. Es el nombre con el que el agente los llama de verdad.
+   */
+  it('el selector enseña la referencia del inmueble junto al nombre', async () => {
+    api.perfiles = [PERFIL('p_uno', 'Piso centro', 'REF-42')];
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    const opcion = fixture.nativeElement.querySelector('option') as HTMLOptionElement;
+    expect(opcion.textContent).toContain('Piso centro');
+    expect(opcion.textContent).toContain('REF-42');
+  });
+
+  it('sin referencia no se inventa un separador colgando', async () => {
+    api.perfiles = [PERFIL('p_uno', 'Piso centro')];
+    fixture = TestBed.createComponent(Panel);
+    await estabiliza();
+
+    const opcion = fixture.nativeElement.querySelector('option') as HTMLOptionElement;
+    expect(opcion.textContent!.trim()).toBe('Piso centro');
+  });
+
   it('si el servidor dice 409, se traduce en vez de enseñarlo crudo', async () => {
     // Puede pasar con el botón activo: el recuento de la pantalla envejece si
     // hay otra pestaña o cambia el plan. Manda el servidor.

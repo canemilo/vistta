@@ -150,6 +150,15 @@ export interface ProfileRow {
   status: 'activo' | 'congelado';
   /** Fecha en que se borrará si nadie lo rescata. null si está activo. */
   purgeAt: number | null;
+  /**
+   * La referencia del CRM del agente, si la puso en la ficha del inmueble.
+   *
+   * Viene con el listado porque es el nombre con el que llama de verdad a un
+   * inmueble: se escribía en la ficha y no volvía a verse en ninguna pantalla
+   * de trabajo, y un dato que se pide y no se devuelve nunca no lo rellena
+   * nadie.
+   */
+  referencia?: string | null;
 }
 
 export type ModoDePase = 'unico' | 'accesos' | 'ventana';
@@ -310,6 +319,8 @@ export interface FilaDeComparativa {
   profileId: string;
   displayName: string;
   referencia: string | null;
+  /** La nota de la ficha del inmueble. Solo la ve su dueño, y solo aquí. */
+  propietarioNota: string | null;
   enviados: number;
   abiertos: number;
   pctApertura: number | null;

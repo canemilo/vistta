@@ -59,10 +59,27 @@ export function profilesRoutes({ config, db, storage }: Deps) {
       displayName: string;
       status: string;
       frozenAt: number | null;
+      referencia: string | null;
     }>(
-      `SELECT id, display_name AS "displayName", status, frozen_at AS "frozenAt"
-       FROM vistta.profiles WHERE owner_id = $1
-       ORDER BY status, display_name`,
+      /*
+       * La referencia viene con el listado, y solo la referencia.
+       *
+       * Es el nombre con el que el agente llama de verdad a un inmueble —el que
+       * tiene en su CRM— y hasta ahora la escribía en la ficha y no volvía a
+       * verla en ninguna pantalla de trabajo. Un dato que se pide y no se
+       * devuelve nunca es un dato que nadie rellena.
+       *
+       * La NOTA PRIVADA no sube por aquí a propósito: este listado se pide en
+       * cada carga del panel y va al selector de perfiles, o sea, a una lista
+       * desplegable. Una nota de dos mil caracteres no pinta ahí, y traerla en
+       * una respuesta que no la usa es repartirla sin motivo.
+       */
+      `SELECT p.id, p.display_name AS "displayName", p.status,
+              p.frozen_at AS "frozenAt", pm.referencia
+       FROM vistta.profiles p
+       LEFT JOIN vistta.propiedad_meta pm ON pm.profile_id = p.id
+       WHERE p.owner_id = $1
+       ORDER BY p.status, p.display_name`,
       [usuario.id]
     );
     const cuenta = await cuentaDelUsuario(db, usuario.id);
@@ -72,6 +89,7 @@ export function profilesRoutes({ config, db, storage }: Deps) {
         id: p.id,
         displayName: p.displayName,
         status: p.status,
+        referencia: p.referencia,
         // Fecha en la que se borra, no "hace cuánto se congeló": es lo que el
         // cliente necesita para decidir, y evita que el panel repita el cálculo.
         purgeAt: p.frozenAt === null ? null : p.frozenAt + GRACIA_CONGELADO_MS,

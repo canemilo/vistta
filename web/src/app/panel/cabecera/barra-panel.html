@@ -32,9 +32,16 @@
         aria-label="Perfil que se está editando"
         class="min-w-0 max-w-[15rem] truncate rounded-lg border border-borde bg-sup-2 px-3 py-1.5 font-mono text-[12px] text-texto outline-none focus:border-acento/60"
       >
+        <!--
+          La REFERENCIA va con el nombre, y no es adorno: es como el agente
+          llama de verdad a un inmueble. Se escribía en la ficha y no volvía a
+          verse en ninguna pantalla de trabajo, así que con cuatro dosieres
+          llamados «Piso centro» había que abrirlos para saber cuál era cuál.
+        -->
         @for (p of cuenta.perfiles(); track p.id) {
           <option [value]="p.id" [disabled]="p.status === 'congelado'">
-            {{ p.displayName }}{{ p.status === 'congelado' ? ' · congelado' : '' }}
+            {{ p.displayName }}{{ p.referencia ? ' · ' + p.referencia : ''
+            }}{{ p.status === 'congelado' ? ' · congelado' : '' }}
           </option>
         }
       </select>

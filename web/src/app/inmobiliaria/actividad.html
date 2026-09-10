@@ -236,6 +236,25 @@
                             f.referencia
                           }}</span>
                         }
+                        <!--
+                          La nota de la ficha, AQUÍ.
+
+                          Se escribía en el informe y no volvía a aparecer en
+                          ninguna pantalla: era un cajón. Su sitio es este, que
+                          es donde se decide a quién llamar hoy —«el propietario
+                          aprieta», «bajar precio en octubre»— y donde está al
+                          lado de las cifras de esa propiedad.
+
+                          Es privada: no sale en el informe, que se entrega a un
+                          tercero, ni viaja al CRM. Hay una prueba por cada uno.
+                        -->
+                        @if (f.propietarioNota) {
+                          <span
+                            class="mt-1 block max-w-[36ch] font-serif text-[12px] leading-[1.5] text-texto-3 italic"
+                          >
+                            {{ f.propietarioNota }}
+                          </span>
+                        }
                         @if (f.destacado === 'mejor-apertura') {
                           <span class="mt-1 block font-mono text-[10px] text-acento">
                             la más abierta

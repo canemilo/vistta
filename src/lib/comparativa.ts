@@ -31,6 +31,20 @@ export interface FilaDeComparativa {
   displayName: string;
   /** La referencia del CRM del agente, si la puso. */
   referencia: string | null;
+  /**
+   * La nota que el agente escribió en la ficha del inmueble.
+   *
+   * Viaja hasta aquí a propósito, y es un cambio de sitio, no de dato: se
+   * escribía en el informe y no volvía a aparecer en ninguna pantalla, o sea,
+   * era un cajón. Su sitio es este, que es donde se decide a quién llamar hoy:
+   * «este propietario aprieta» o «bajar precio en octubre» solo sirven de algo
+   * al lado de las cifras de esa propiedad.
+   *
+   * Sale SOLO por aquí, que es una ruta del dueño. No entra en el informe —ese
+   * se entrega a un tercero—, ni en la carga de los webhooks al CRM, y hay una
+   * prueba por cada uno de los dos.
+   */
+  propietarioNota: string | null;
   enviados: number;
   abiertos: number;
   /** null por debajo del umbral: con dos datos, un porcentaje engaña. */
@@ -52,6 +66,7 @@ interface FilaCruda {
   id: string;
   display_name: string;
   referencia: string | null;
+  propietario_nota: string | null;
   enviados: number;
   abiertos: number;
   ms: number | null;
@@ -68,7 +83,7 @@ export async function comparativaDeLaCuenta(
   const desde = opciones.desde ?? hasta - PERIODO_POR_DEFECTO_MS;
 
   const { rows } = await db.query<FilaCruda>(
-    `SELECT p.id, p.display_name, pm.referencia,
+    `SELECT p.id, p.display_name, pm.referencia, pm.propietario_nota,
             c.enviados, c.abiertos, t.ms, f.finales
      FROM vistta.profiles p
      LEFT JOIN vistta.propiedad_meta pm ON pm.profile_id = p.id
@@ -108,6 +123,7 @@ export async function comparativaDeLaCuenta(
       profileId: r.id,
       displayName: r.display_name,
       referencia: r.referencia,
+      propietarioNota: r.propietario_nota,
       enviados: r.enviados ?? 0,
       abiertos: r.abiertos ?? 0,
       pctApertura: pct(r.abiertos ?? 0, r.enviados ?? 0),

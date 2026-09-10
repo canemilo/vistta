@@ -472,6 +472,94 @@ describe("Fase 3 · comparativa", () => {
   });
 });
 
+/*
+ * DÓNDE SE VE LO QUE SE ESCRIBE EN LA FICHA.
+ *
+ * Nació de una pregunta de quien la usaba: «¿cómo se ven las fichas guardadas o
+ * qué se hace con esas fichas?». La respuesta era mala: la referencia salía en
+ * la cabecera del informe y en la comparativa, y la nota privada no salía en
+ * ningún sitio. Se escribía y solo se reencontraba volviendo a ese mismo
+ * formulario. Un dato que se pide y no se devuelve nunca no lo rellena nadie.
+ *
+ * Estas pruebas fijan dónde SÍ se ve cada campo y —lo más importante— dónde no
+ * puede verse nunca.
+ */
+describe("la ficha se ve donde se trabaja", () => {
+  it("la referencia viaja con el listado de perfiles del panel", async () => {
+    const { perfil } = await agente("marina");
+    const sesion = await panelSession("marina", "198.51.100.50");
+    await call(`/api/profiles/${perfil}/propiedad`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, ...JSON_HEADERS },
+      body: JSON.stringify({ referencia: "REF-42", propietarioNota: "Aprieta con el precio" }),
+    });
+
+    const res = await call("/api/profiles", { headers: { authorization: `Bearer ${sesion}` } });
+    const { profiles } = (await res.json()) as {
+      profiles: { id: string; referencia: string | null }[];
+    };
+    expect(profiles.find((p) => p.id === perfil)!.referencia).toBe("REF-42");
+  });
+
+  /*
+   * Y la NOTA no viaja con él. No es un descuido: ese listado se pide en cada
+   * carga del panel y alimenta un desplegable. Una nota de dos mil caracteres
+   * no pinta ahí, y repartirla en una respuesta que no la usa es repartirla sin
+   * motivo.
+   */
+  it("la nota NO viaja con el listado: ahí no se usa", async () => {
+    const { perfil } = await agente("marina");
+    const sesion = await panelSession("marina", "198.51.100.51");
+    await call(`/api/profiles/${perfil}/propiedad`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, ...JSON_HEADERS },
+      body: JSON.stringify({ propietarioNota: "Aprieta con el precio" }),
+    });
+
+    const res = await call("/api/profiles", { headers: { authorization: `Bearer ${sesion}` } });
+    expect(JSON.stringify(await res.json())).not.toContain("Aprieta con el precio");
+  });
+
+  it("la nota sí llega a la comparativa, que es donde se decide a quién llamar", async () => {
+    const { userId, perfil } = await agente("marina");
+    const sesion = await panelSession("marina", "198.51.100.52");
+    await call(`/api/profiles/${perfil}/propiedad`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, ...JSON_HEADERS },
+      body: JSON.stringify({ referencia: "REF-42", propietarioNota: "Aprieta con el precio" }),
+    });
+
+    const [fila] = (await comparativaDeLaCuenta(db, userId)).filas;
+    expect(fila.referencia).toBe("REF-42");
+    expect(fila.propietarioNota).toBe("Aprieta con el precio");
+  });
+
+  /*
+   * LA LÍNEA QUE NO SE CRUZA. El informe se ENTREGA a un tercero —el
+   * propietario del inmueble—, y la nota es lo que el agente piensa de él. Que
+   * salga ahí no es una fuga de datos de Vistta: es el agente enseñándole al
+   * propietario lo que escribió sobre el propietario.
+   */
+  it("la nota NO entra en el informe, que se entrega a un tercero", async () => {
+    const { perfil } = await agente("marina");
+    const sesion = await panelSession("marina", "198.51.100.53");
+    await call(`/api/profiles/${perfil}/propiedad`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${sesion}`, ...JSON_HEADERS },
+      body: JSON.stringify({ referencia: "REF-42", propietarioNota: "Aprieta con el precio" }),
+    });
+    await enviar(perfil, { abrir: true });
+
+    const res = await call(`/api/profiles/${perfil}/informe`, {
+      headers: { authorization: `Bearer ${sesion}` },
+    });
+    const cuerpo = JSON.stringify(await res.json());
+    // La referencia sí: va impresa en la cabecera y es del propio inmueble.
+    expect(cuerpo).toContain("REF-42");
+    expect(cuerpo).not.toContain("Aprieta con el precio");
+  });
+});
+
 describe("la ficha de propiedad", () => {
   it("se guarda y se lee por su dueño; otro no la ve", async () => {
     const { perfil } = await agente("marina");

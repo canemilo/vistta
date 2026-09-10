@@ -296,6 +296,28 @@ no se negocian:
 - Es opcional, como `display` en las galerías y por el mismo motivo: obligatorio, guardar un perfil
   anterior al campo empezaría a fallar.
 
+## La ficha del inmueble: dónde se ve cada campo
+
+Escribir un dato que no vuelve a aparecer en ninguna pantalla es pedirlo para
+nada. La ficha (`vistta.propiedad_meta`, una fila por dosier) tiene tres campos y
+cada uno sale por un sitio distinto, a propósito:
+
+- **Referencia** — es el nombre con el que el agente llama de verdad a un
+  inmueble. Sale en el **listado de perfiles** del panel (junto al nombre, en el
+  selector), en la **comparativa**, en la **cabecera del informe impreso** y en la
+  **carga de los webhooks al CRM**, que es donde sirve para casar el aviso con la
+  ficha que el agente ya tiene allí.
+- **En exclusiva desde** — solo la cabecera del informe impreso.
+- **Nota privada** — solo la **comparativa** de `/panel/actividad`, que es donde
+  se decide a quién llamar. **NO entra en el informe** —se entrega a un tercero, y
+  la nota es lo que el agente piensa de él— **ni en la carga del CRM**: mandarla a
+  un sistema de terceros no es lo mismo que enseñarla en el panel de su dueño,
+  aunque el texto sea idéntico, porque cambia quién la custodia. Hay una prueba
+  por cada una de las dos salidas.
+- La nota tampoco viaja en `GET /api/profiles`: ese listado se pide en cada carga
+  del panel y alimenta un desplegable. Repartir dos mil caracteres en una
+  respuesta que no los usa es repartirlos sin motivo.
+
 ## Producción (desde H)
 
 - **En producción no se transpila nada.** `pnpm build` empaqueta con esbuild a `dist/` y el
