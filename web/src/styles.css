@@ -60,12 +60,40 @@
   --color-texto-3: #3d5c66;
   --color-texto-4: #46646d;
 
-  /* #0a7a57 se quedaba en 4,42 sobre la superficie más profunda: lo cazó la
-     prueba de contraste, no el ojo. */
-  --color-acento: #05704c;
+  /*
+   * EL VERDE ES EL DEL LOGO, y eso es un cambio de identidad, no un retoque.
+   *
+   * Antes era #05704c, un verde azulado que no aparecía en ninguna otra parte
+   * de la marca: el logo va de un verde profundo (#14532d) a uno vivo
+   * (#4ade80), y la aplicación tiraba a turquesa. En oscuro no cantaba porque
+   * todo verde brilla sobre negro; en claro dejaba una pantalla apagada, con la
+   * única nota de color en un tono que no era el de la casa.
+   *
+   * #166534 es de esa misma rampa y pasa con holgura: 5,40 en el peor caso
+   * —contra la superficie más hundida— frente al 4,5 que exige la AA. Lo cazó
+   * la prueba: #15803d, que es el que más se parece al del logo, se quedaba en
+   * 3,80 y no vale para texto.
+   */
+  --color-acento: #166534;
   --color-acento-2: #0f5468;
-  --color-acento-tenue: #0c855e;
+  --color-acento-tenue: #15803d;
   --color-sobre-acento: #ffffff;
+
+  /*
+   * El MARCO de color: un borde que resalta sin ser texto.
+   *
+   * Existe porque el tema claro se leía plano. Los bordes grises dibujan la
+   * estructura pero no jerarquizan: todo lo enmarcado pesa igual, y en una
+   * pantalla con doce tarjetas eso es lo mismo que no enmarcar nada. Este
+   * token es para las pocas que sí importan —lo que se está editando, lo que
+   * hay que decidir—, nunca para todas: un acento que aparece en todas partes
+   * deja de significar nada.
+   *
+   * No es texto, así que el listón no es 4,5 sino el 3 de los elementos no
+   * textuales; aun así la prueba le exige 2,5 contra las cuatro superficies
+   * para que nadie lo deje en una insinuación invisible.
+   */
+  --color-borde-acento: #3f9d68;
   --color-peligro: #a3243a;
   --color-peligro-borde: #e0b3bc;
   --color-peligro-fondo: #fbeef0;
@@ -149,6 +177,8 @@
   --o-acento: #34d399;
   --o-acento-2: #6fc6dd;
   --o-acento-tenue: #7fd8bd;
+  /* El mismo marco, apagado: sobre negro, el verde del logo ya destaca solo. */
+  --o-borde-acento: #2b8257;
   --o-sobre-acento: #04140e;
   --o-peligro: #e88fa0;
   --o-peligro-borde: #3b1c22;
@@ -180,6 +210,7 @@
     --color-borde: var(--o-borde);
     --color-borde-2: var(--o-borde-2);
     --color-borde-3: var(--o-borde-3);
+    --color-borde-acento: var(--o-borde-acento);
     --color-titulo: var(--o-titulo);
     --color-texto: var(--o-texto);
     --color-texto-2: var(--o-texto-2);
@@ -209,6 +240,7 @@
   --color-borde: var(--o-borde);
   --color-borde-2: var(--o-borde-2);
   --color-borde-3: var(--o-borde-3);
+  --color-borde-acento: var(--o-borde-acento);
   --color-titulo: var(--o-titulo);
   --color-texto: var(--o-texto);
   --color-texto-2: var(--o-texto-2);
@@ -259,6 +291,7 @@
   --color-borde: var(--o-borde);
   --color-borde-2: var(--o-borde-2);
   --color-borde-3: var(--o-borde-3);
+  --color-borde-acento: var(--o-borde-acento);
   --color-titulo: var(--o-titulo);
   --color-texto: var(--o-texto);
   --color-texto-2: var(--o-texto-2);
@@ -301,10 +334,18 @@ body {
 }
 
 :root {
-  /* Con el fondo casi blanco de antes esto no se veía. Sobre el suelo nuevo sí,
-     y es lo que evita que una pantalla grande quede como una plancha lisa. */
-  --halo-1: rgba(15, 84, 104, 0.1);
-  --halo-2: rgba(5, 112, 76, 0.07);
+  /*
+   * Con el fondo casi blanco de antes esto no se veía. Sobre el suelo nuevo sí,
+   * y es lo que evita que una pantalla grande quede como una plancha lisa.
+   *
+   * Subido de 0,10 y 0,07 a 0,16 y 0,12, y con los tonos de la marca: el azul
+   * de donde sale el logo y el verde adonde llega. Sigue habiendo un techo bajo
+   * a propósito —lo que en oscuro es profundidad, en claro pasado de mano es
+   * una mancha sucia detrás del texto—, pero por debajo de este punto no se
+   * veía nada y la pantalla clara parecía papel de fotocopia.
+   */
+  --halo-1: rgba(15, 84, 104, 0.16);
+  --halo-2: rgba(22, 101, 52, 0.12);
 }
 
 ::selection {

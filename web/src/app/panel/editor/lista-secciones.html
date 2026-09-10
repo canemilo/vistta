@@ -27,7 +27,9 @@
 >
   @for (seccion of perfil.contenido().sections; track $index; let si = $index) {
     <section
-      class="rounded-xl border border-borde-2 bg-sup/60"
+      class="rounded-xl border bg-sup/60"
+      [class.border-borde-acento]="perfil.desplegado() === si"
+      [class.border-borde-2]="perfil.desplegado() !== si"
       cdkDrag
       cdkDragBoundary=".lista-apartados"
     >

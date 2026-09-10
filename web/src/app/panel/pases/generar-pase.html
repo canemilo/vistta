@@ -1,6 +1,6 @@
 <!-- Guardar y compartir -->
 <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-borde-2 pt-6">
-  <fieldset class="mb-4 w-full rounded-lg border border-borde bg-sup-2 p-4">
+  <fieldset class="mb-4 w-full rounded-lg border border-borde-acento bg-sup-2 p-4">
     <legend class="px-2 font-mono text-[11px] tracking-[0.18em] text-texto-3">
       CÓMO CADUCA EL ENLACE
     </legend>
@@ -174,7 +174,7 @@
     type="button"
     (click)="pases.generar()"
     [disabled]="nucleo.ocupado()"
-    class="rounded-lg border border-borde px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-texto-2 hover:border-acento/60 hover:text-acento disabled:opacity-40"
+    class="rounded-lg border border-acento/60 px-5 py-2.5 font-mono text-[12px] tracking-[0.18em] text-acento hover:bg-acento/10 disabled:opacity-40"
   >
     GENERAR ENLACE
   </button>
@@ -207,6 +207,26 @@
     <span class="font-mono text-[11px] text-peligro">{{ nucleo.error() }}</span>
   }
 </div>
+
+<!--
+  LO QUE SE MANDA ES LO GUARDADO, dicho donde se manda.
+
+  Generar un enlace no guarda el perfil, y eso es a propósito: guardar PUBLICA,
+  así que escribir a medias no puede cambiarle el dosier a alguien que ya está
+  mirando un pase abierto. El precio es una trampa que pasó de verdad: se elige
+  otro estilo, se genera el enlace y llega el anterior, sin que nada avise de
+  por qué. El indicador de «Sin guardar» está arriba, junto al botón de
+  guardar; aquí abajo, junto al de generar, es donde importa.
+-->
+@if (perfil.sinGuardar()) {
+  <p
+    class="mt-4 rounded-lg border border-aviso/40 bg-aviso/5 px-4 py-3 font-mono text-[11px] leading-[1.7] text-aviso"
+    role="status"
+  >
+    Tienes cambios sin guardar. El enlace enseña <strong>lo último guardado</strong>, no lo que ves
+    aquí: guarda antes de generarlo.
+  </p>
+}
 
 <!--
   AVISA, no bloquea. Lo que se manda con un «Describe aquí…» dentro son

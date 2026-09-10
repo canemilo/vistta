@@ -71,16 +71,47 @@ export interface DocProfile {
      * quien manda el enlace, no el navegador de quien lo abre. Alguien con el
      * móvil en modo oscuro que reciba un pase claro lo verá claro, que es como
      * su remitente quiso enseñar ese trabajo.
+     */
+
+    /*
+     * ====================== LAS MEDIDAS DEL DOCUMENTO ======================
      *
-     * Y trae DOS VARIABLES DE ESCALA, que es todo el estilo del documento: una
-     * multiplica la separación entre apartados y otra el cuerpo del texto que
-     * se lee. Todo lo que cambia de un estilo a otro pasa
-     * por aquí, así que añadir un cuarto estilo es escribir dos números, no
-     * repasar la plantilla entera buscando qué se quedó sin ajustar.
+     * Todas las que cambian de un estilo a otro, en un solo sitio y con valores
+     * ABSOLUTOS, no factores.
+     *
+     * La primera versión de esto eran dos factores —aire y letra— que
+     * multiplicaban un margen y un tamaño. En pantalla no se distinguía nada:
+     * 80, 116 y 52 píxeles de separación y 16, 17,9 y 15 de letra se leen como
+     * el mismo documento tres veces, y con razón. Si un ajuste se llama
+     * «editorial» y «compacto», tiene que verse desde el otro lado de la mesa.
+     *
+     * Lo que de verdad separa un dosier que se LEE de un catálogo que se HOJEA
+     * no es el tamaño de la letra: es cuántas piezas caben a la vez, cuánto
+     * aire hay alrededor y qué manda en la página, si el texto o las fotos. Por
+     * eso hay ocho medidas y no dos.
+     *
+     * Y ninguna toca el COLOR. El claro y el oscuro los decide quien manda el
+     * enlace, no quien monta el perfil: eso es el tema del pase.
      */
     :host {
-      --doc-aire: 1;
-      --doc-letra: 1;
+      /* SOBRIO: el de siempre. Equilibrado entre texto y foto. */
+      --doc-aire: 5rem;
+      --doc-cuerpo: 17px;
+      --doc-interlineado: 1.8;
+      --doc-parrafos: 1.25em;
+      --doc-medida: 58ch;
+      --doc-entradilla: clamp(1.05rem, 1.6vw, 1.2rem);
+      --doc-lado: 180px;
+      --doc-columnas: 3;
+      --doc-hueco: 0.75rem;
+      --doc-tira: 260px;
+      --doc-pie: 13px;
+      /* El título del apartado: etiqueta de maquinaria, en mono y pequeña. */
+      --doc-titulo-familia: var(--font-mono);
+      --doc-titulo-tam: 11px;
+      --doc-titulo-espaciado: 0.24em;
+      --doc-titulo-caja: uppercase;
+
       display: block;
       min-height: 100%;
       --color-fondo: #060e17;
@@ -129,35 +160,131 @@ export interface DocProfile {
       --color-texto-2: #294b56;
       --color-texto-3: #3d5c66;
       --color-texto-4: #46646d;
-      --color-acento: #05704c;
-      --color-acento-tenue: #0c855e;
+      --color-acento: #166534;
+      --color-acento-tenue: #15803d;
       --color-sobre-acento: #ffffff;
     }
 
-    /* Para dosieres que se LEEN: más aire y más cuerpo. */
+    /*
+     * EDITORIAL: para dosieres que se LEEN.
+     *
+     * El cambio que se nota no es el cuerpo de letra: es que el título del
+     * apartado deja de ser una etiqueta técnica en mayúsculas y pasa a ser un
+     * titular en serif, y que las fotos bajan a dos por fila con aire de
+     * verdad alrededor. La página deja de parecer una ficha y pasa a parecer
+     * una página.
+     */
     :host(.estilo-editorial) {
-      --doc-aire: 1.45;
-      --doc-letra: 1.12;
-    }
-
-    /* Para catálogos largos: más piezas a la vista y menos desplazamiento. */
-    :host(.estilo-compacto) {
-      --doc-aire: 0.65;
-      --doc-letra: 0.94;
+      --doc-aire: 8.5rem;
+      --doc-cuerpo: 20px;
+      --doc-interlineado: 1.95;
+      --doc-parrafos: 1.5em;
+      --doc-medida: 60ch;
+      --doc-entradilla: clamp(1.35rem, 2.8vw, 2rem);
+      --doc-lado: 230px;
+      --doc-columnas: 2;
+      --doc-hueco: 1.75rem;
+      --doc-tira: 360px;
+      --doc-pie: 14px;
+      --doc-titulo-familia: var(--font-serif);
+      --doc-titulo-tam: clamp(1.45rem, 2.4vw, 1.9rem);
+      --doc-titulo-espaciado: -0.01em;
+      --doc-titulo-caja: none;
     }
 
     /*
-     * Dónde se aplican. Dos clases y dos reglas: la separación entre apartados
-     * y el cuerpo de lo que se lee. El resto del documento —las fotos, la barra
-     * de estado, los pies— no cambia con el estilo, y eso es a propósito: lo
-     * que se está eligiendo es cómo se lee, no otro diseño.
+     * COMPACTO: para catálogos largos, que se HOJEAN.
+     *
+     * Cuatro fotos por fila, huecos mínimos y apartados casi pegados: lo que se
+     * busca es que quepan muchas piezas a la vista y que haya que desplazarse
+     * lo menos posible. El texto se aparta: la columna se ensancha para que
+     * ocupe menos alto.
      */
+    :host(.estilo-compacto) {
+      --doc-aire: 2.5rem;
+      --doc-cuerpo: 15px;
+      --doc-interlineado: 1.55;
+      --doc-parrafos: 0.9em;
+      --doc-medida: 76ch;
+      --doc-entradilla: 1rem;
+      --doc-lado: 140px;
+      --doc-columnas: 4;
+      --doc-hueco: 0.375rem;
+      --doc-tira: 190px;
+      --doc-pie: 11px;
+      --doc-titulo-familia: var(--font-mono);
+      --doc-titulo-tam: 10px;
+      --doc-titulo-espaciado: 0.18em;
+      --doc-titulo-caja: uppercase;
+    }
+
+    /*
+     * Dónde se aplican.
+     *
+     * Estas reglas sustituyen a las utilidades que antes llevaban los mismos
+     * elementos escritas a mano: el 17px del cuerpo, el hueco de la rejilla, el
+     * ancho de la columna del título. Es
+     * a propósito: con las dos cosas a la vez habría dos fuentes para la misma
+     * medida y el estilo solo cambiaría la mitad de la página, que es
+     * exactamente lo que hacía antes.
+     */
+    .doc-entradilla {
+      max-width: var(--doc-medida);
+      font-size: var(--doc-entradilla);
+      line-height: 1.55;
+    }
+
     .doc-apartado {
-      margin-top: calc(5rem * var(--doc-aire));
+      margin-top: var(--doc-aire);
+      column-gap: 2.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .doc-apartado {
+        grid-template-columns: var(--doc-lado) 1fr;
+      }
+    }
+
+    .doc-titulo-apartado {
+      font-family: var(--doc-titulo-familia);
+      font-size: var(--doc-titulo-tam);
+      letter-spacing: var(--doc-titulo-espaciado);
+      text-transform: var(--doc-titulo-caja);
+      line-height: 1.25;
     }
 
     .doc-lectura {
-      font-size: calc(1em * var(--doc-letra));
+      max-width: var(--doc-medida);
+      font-size: var(--doc-cuerpo);
+      line-height: var(--doc-interlineado);
+    }
+
+    .doc-lectura > p + p {
+      margin-top: var(--doc-parrafos);
+    }
+
+    /*
+     * Dos columnas hasta el móvil ancho pase lo que pase: cuatro fotos en una
+     * pantalla de teléfono no son un catálogo, son sellos.
+     */
+    .doc-rejilla {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--doc-hueco);
+    }
+
+    @media (min-width: 640px) {
+      .doc-rejilla {
+        grid-template-columns: repeat(var(--doc-columnas), minmax(0, 1fr));
+      }
+    }
+
+    .doc-tira {
+      gap: var(--doc-hueco);
+    }
+
+    .doc-pie {
+      font-size: var(--doc-pie);
+      line-height: 1.55;
     }
   `,
 })
@@ -179,6 +306,18 @@ export class PassDocument {
   readonly estilo = input<Estilo>('sobrio');
   /** Enlace mostrado en la barra de estado. */
   readonly enlace = input('');
+
+  /**
+   * Alto de las fotos del carrusel, en píxeles.
+   *
+   * Vive en TypeScript y no en el CSS porque el ANCHO de cada foto se calcula
+   * multiplicándolo por su proporción real, que es lo que hace que el carrusel
+   * no recorte nada. Con el alto en una variable de CSS y el ancho aquí, los
+   * dos se separarían al primer cambio y las fotos saldrían deformadas.
+   */
+  protected readonly altoDeTira = computed(
+    () => ({ sobrio: 260, editorial: 360, compacto: 190 })[this.estilo()],
+  );
 
   protected readonly totalFotos = computed(() =>
     this.secciones().reduce((n, s) => n + s.items.length, 0),

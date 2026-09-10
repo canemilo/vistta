@@ -1,6 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+/** Los archivos de `web/src/app` que contienen un texto dado. */
+function archivosQueDicen(aguja: string, dir = join(process.cwd(), "web/src/app")): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const ruta = join(dir, e.name);
+    if (e.isDirectory()) return archivosQueDicen(aguja, ruta);
+    if (!/\.(ts|html|css)$/.test(e.name)) return [];
+    return readFileSync(ruta, "utf8").includes(aguja) ? [ruta] : [];
+  });
+}
 
 /**
  * El contraste de la paleta, medido.
@@ -113,6 +123,41 @@ describe.each(["claro", "oscuro"] as const)("paleta: tema %s", (tema) => {
         escalones[i]
       );
     }
+  });
+});
+
+/*
+ * EL MARCO DE COLOR, que no es texto pero tiene que verse.
+ *
+ * Nació de una queja concreta: en claro, la pantalla se leía plana. Los bordes
+ * grises dibujan la estructura pero no jerarquizan —todo lo enmarcado pesa
+ * igual—, y con doce tarjetas eso equivale a no enmarcar nada.
+ *
+ * El listón no es el 4,5 de la AA porque no lleva texto: para elementos no
+ * textuales el mínimo es 3, y aquí se exige 2,5 contra las cuatro superficies.
+ * Es a propósito más bajo que el de un control: esto es un realce, no el borde
+ * que hace legible un campo. Lo que impide es que alguien lo "suavice" hasta
+ * dejarlo invisible, que es exactamente el estado del que se venía.
+ */
+describe.each(["claro", "oscuro"] as const)("el marco de acento: tema %s", (tema) => {
+  const tokens = tokensDe(tema);
+
+  it("existe", () => {
+    expect(tokens["borde-acento"], "falta --color-borde-acento").toBeTruthy();
+  });
+
+  it.each(FONDOS)("se distingue de la superficie %s", (fondo) => {
+    expect(contraste(tokens["borde-acento"], tokens[fondo])).toBeGreaterThanOrEqual(2.5);
+  });
+
+  /*
+   * Y NO se usa como texto. Si alguien lo intentara, el contraste sería el que
+   * es —por debajo del 4,5— así que esto deja escrito que el token existe para
+   * un borde. La comprobación que lo respalda vive en las plantillas: ninguna
+   * escribe `text-borde-acento`.
+   */
+  it("no aparece como color de texto en ninguna plantilla", () => {
+    expect(archivosQueDicen("text-borde-acento")).toEqual([]);
   });
 });
 

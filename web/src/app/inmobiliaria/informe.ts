@@ -86,8 +86,8 @@ const PERIODOS = [
         --color-texto-2: #294b56;
         --color-texto-3: #3d5c66;
         --color-texto-4: #46646d;
-        --color-acento: #05704c;
-        --color-acento-tenue: #0c855e;
+        --color-acento: #166534;
+        --color-acento-tenue: #15803d;
         --color-sobre-acento: #ffffff;
         --color-aviso: #8a5300;
         --color-aviso-borde: #dfc79a;

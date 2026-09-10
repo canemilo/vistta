@@ -67,10 +67,7 @@
   </header>
 
   @if (profile().intro) {
-    <p
-      class="doc-lectura surge mt-12 max-w-[58ch] font-serif text-[clamp(1.05rem,1.6vw,1.2rem)] leading-[1.85] text-texto"
-      style="animation-delay: 90ms"
-    >
+    <p class="doc-entradilla surge mt-12 font-serif text-texto" style="animation-delay: 90ms">
       {{ profile().intro }}
     </p>
   }
@@ -81,17 +78,13 @@
          sabe dónde empieza y acaba una sección. Sin métricas, no lo mira nadie. -->
     <section
       [attr.data-seccion]="$index"
-      class="doc-apartado surge grid gap-x-10 gap-y-6 border-t border-borde-3 pt-10 md:grid-cols-[180px_1fr]"
+      class="doc-apartado surge grid gap-y-6"
       [style.animation-delay]="120 + $index * 70 + 'ms'"
     >
       <!-- El título se queda anclado mientras se recorre el bloque -->
       <div class="md:sticky md:top-20 md:self-start">
         @if (seccion.title) {
-          <h2
-            class="font-mono text-[11px] leading-[1.7] tracking-[0.24em] text-acento-tenue uppercase"
-          >
-            {{ seccion.title }}
-          </h2>
+          <h2 class="doc-titulo-apartado text-acento-tenue">{{ seccion.title }}</h2>
         }
         @if (seccion.items.length) {
           <p class="mt-2 font-mono text-[10px] tracking-[0.18em] text-texto-3">
@@ -102,9 +95,7 @@
 
       <div class="min-w-0">
         @if (seccion.body) {
-          <div
-            class="doc-lectura max-w-[58ch] space-y-5 font-serif text-[17px] leading-[1.8] text-texto"
-          >
+          <div class="doc-lectura font-serif text-texto">
             @for (parrafo of seccion.body.split('\n\n'); track $index) {
               <p>{{ parrafo }}</p>
             }
@@ -122,7 +113,7 @@
               teclado se recorre igual porque cada foto es un botón.
             -->
             <div
-              class="mt-8 -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-3 md:mx-0 md:px-0"
+              class="doc-tira mt-8 -mx-6 flex snap-x snap-mandatory overflow-x-auto px-6 pb-3 md:mx-0 md:px-0"
               [class.mt-0]="!seccion.body"
               role="group"
               [attr.aria-label]="'Carrusel de ' + (seccion.title ?? 'fotos')"
@@ -136,8 +127,9 @@
                       'Ampliar ' +
                       (foto.caption ?? 'la imagen ' + ($index + 1) + ' de ' + seccion.title)
                     "
-                    class="relative block h-[260px] cursor-zoom-in overflow-hidden rounded-lg border border-borde-2 focus-visible:border-acento/70 focus-visible:outline-none"
-                    [style.width.px]="260 * proporcionDe(foto)"
+                    class="relative block cursor-zoom-in overflow-hidden rounded-lg border border-borde-2 focus-visible:border-acento/70 focus-visible:outline-none"
+                    [style.height.px]="altoDeTira()"
+                    [style.width.px]="altoDeTira() * proporcionDe(foto)"
                     [style.background-image]="fondo($index, foto)"
                     [style.background-size]="'cover'"
                   >
@@ -154,7 +146,8 @@
                   </button>
                   @if (foto.caption) {
                     <figcaption
-                      class="mt-2 max-w-[260px] font-serif text-[13px] leading-[1.55] text-texto-3"
+                      class="doc-pie mt-2 font-serif text-texto-3"
+                      [style.max-width.px]="altoDeTira()"
                     >
                       {{ foto.caption }}
                     </figcaption>
@@ -172,7 +165,7 @@
               quien no quiera recorte tiene el carrusel, y en cualquier caso al
               pulsar una foto se abre entera.
             -->
-            <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3" [class.mt-0]="!seccion.body">
+            <div class="doc-rejilla mt-8 grid" [class.mt-0]="!seccion.body">
               @for (foto of seccion.items; track foto.url) {
                 <figure class="group min-w-0">
                   <button
@@ -198,7 +191,7 @@
                     />
                   </button>
                   @if (foto.caption) {
-                    <figcaption class="mt-2 font-serif text-[13px] leading-[1.55] text-texto-3">
+                    <figcaption class="doc-pie mt-2 font-serif text-texto-3">
                       {{ foto.caption }}
                     </figcaption>
                   }

@@ -142,7 +142,10 @@ describe('PassDocument · cómo se presentan las fotos', () => {
     fixture.detectChanges();
   }
 
-  const cuadricula = () => fixture.nativeElement.querySelector('.grid.grid-cols-2');
+  // Por la clase del documento y no por la utilidad de Tailwind: cuántas
+  // columnas tiene la cuadrícula lo decide ahora el estilo del perfil, así que
+  // `grid-cols-2` ya no está escrito en la plantilla.
+  const cuadricula = () => fixture.nativeElement.querySelector('.doc-rejilla');
   const carrusel = () => fixture.nativeElement.querySelector('[role="group"].snap-x');
 
   beforeEach(async () => {

@@ -193,6 +193,34 @@ describe('Editor · saber si está guardado', () => {
     expect(fixture.nativeElement.textContent).toContain('Sin guardar');
   });
 
+  /*
+   * LA TRAMPA QUE PASÓ. Generar un enlace no guarda —guardar PUBLICA, y
+   * escribir a medias no puede cambiarle el dosier a alguien que ya lo está
+   * mirando—, así que se elegía otro estilo, se generaba el enlace y llegaba el
+   * anterior sin que nada dijera por qué.
+   */
+  it('junto a GENERAR ENLACE avisa de que se mandará lo último guardado', async () => {
+    expect(fixture.nativeElement.textContent).not.toContain('El enlace enseña');
+
+    TestBed.inject(EstadoPerfil).actualizar({ estilo: 'editorial' });
+    await estabiliza();
+
+    expect(fixture.nativeElement.textContent).toContain('cambios sin guardar');
+    expect(fixture.nativeElement.textContent).toContain('El enlace enseña');
+    // Avisa, no bloquea: hay casos legítimos y decidir por el cliente aquí
+    // sería peor que el descuido que evita.
+    expect(boton('GENERAR ENLACE')!.disabled).toBeFalse();
+  });
+
+  it('y al guardar el aviso desaparece', async () => {
+    TestBed.inject(EstadoPerfil).actualizar({ estilo: 'editorial' });
+    await estabiliza();
+    boton('GUARDAR CAMBIOS')!.click();
+    await estabiliza();
+    expect(fixture.nativeElement.textContent).not.toContain('El enlace enseña');
+    expect(api.guardados['p_uno'].estilo).toBe('editorial');
+  });
+
   it('y al guardar vuelve a decir Guardado', async () => {
     TestBed.inject(EstadoPerfil).actualizar({ intro: 'algo nuevo' });
     await estabiliza();

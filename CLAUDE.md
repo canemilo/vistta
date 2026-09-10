@@ -195,6 +195,16 @@ no se negocian:
   PASE lo elige quien manda el enlace (`passes.tema`, por defecto `oscuro`) y viaja con él: el
   documento redefine los tokens acotados a su propio componente, así que **quien lo abre no
   decide** cómo se ve. Comprobado con un navegador en oscuro abriendo un pase claro.
+- **El verde es el DEL LOGO.** La aplicación tiraba a turquesa (`#05704c`) mientras la marca va de
+  `#14532d` a `#4ade80`: en oscuro no cantaba —todo verde brilla sobre negro— y en claro dejaba una
+  pantalla apagada con la única nota de color en un tono que no era el de la casa. El acento claro es
+  `#166534`, de esa rampa y con 5,40 en el peor caso. `#15803d`, que es el que más se le parece, se
+  queda en 3,80 y no vale para texto: lo cazó la prueba.
+- **`--color-borde-acento` es un realce, no un borde.** Existe porque el tema claro se leía plano:
+  los bordes grises dibujan la estructura pero no jerarquizan, y con doce tarjetas eso es igual que
+  no enmarcar nada. Va solo en las pocas que importan —lo que se está editando, lo que hay que
+  decidir—, nunca en todas, y NUNCA como color de texto: hay una prueba que falla si aparece un
+  `text-borde-acento` en cualquier plantilla.
 - **El color va en tokens y nunca a mano.** `web/src/styles.css` los define por FUNCIÓN
   (`--color-texto-3`, no «gris»), y `test/contraste.spec.ts` mide la paleta entera contra las
   cuatro superficies en los dos temas: falla por debajo de 4,5 de la AA, si se cruza un token o si
@@ -247,6 +257,17 @@ no se negocian:
 - **«Guardado» / «Sin guardar», siempre a la vista, y sin guardado automático.** Guardar PUBLICA: un
   pase ya enviado enseña el perfil tal y como esté guardado, así que escribir a medias no puede
   cambiarle el dosier a alguien que lo está mirando.
+- **Un estilo que no se ve no es un estilo.** `data.estilo` empezó siendo dos factores que
+  multiplicaban un margen y un tamaño de letra: la clase se ponía, las variables resolvían y los
+  tres enlaces se veían iguales, porque 80/116/52 px de separación y 16/17,9/15 de cuerpo no se
+  distinguen en pantalla. Ahora son ocho medidas absolutas —incluidas cuántas fotos caben por fila y
+  si el título del apartado es una etiqueta o un titular—, y
+  `web/src/app/document/estilo-del-documento.spec.ts` lee los estilos CALCULADOS del navegador y
+  exige que se separen lo bastante como para verse.
+- **Generar un enlace NO guarda**, y eso se dice junto al botón de generar. Guardar publica: un pase
+  ya enviado enseña el perfil tal y como esté guardado, así que escribir a medias no puede cambiarle
+  el dosier a alguien que lo está mirando. El precio es una trampa que pasó —elegir un estilo,
+  generar el enlace y recibir el anterior—, y se paga con un aviso, no con un guardado automático.
 - **`data.estilo` (`sobrio`/`editorial`/`compacto`) NO decide claro u oscuro**, y no es un olvido:
   eso es `passes.tema`, lo elige quien manda el enlace y viaja con él. Con dos dueños para la misma
   decisión, «¿por qué se ve oscuro si lo puse claro?» dependería de cuál gana. Hay una prueba que
