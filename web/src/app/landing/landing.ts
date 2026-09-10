@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Api, type CatalogoPublico } from '../core/api';
+import { TemaApp } from '../core/tema';
 import { Marca } from '../core/marca';
 import { haySesion } from '../core/sesion';
 
@@ -27,11 +28,21 @@ import { haySesion } from '../core/sesion';
   imports: [RouterLink, Marca],
   templateUrl: './landing.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  /* Oscura por defecto, como los textos legales: es el aspecto de la casa y
-     quien llega aquí no ha elegido nada todavía. Si eligió, manda lo suyo. */
-  host: { class: 'paleta-oscura block' },
+  /*
+   * Oscura por defecto, como los textos legales: es el aspecto de la casa y
+   * quien llega aquí no ha elegido nada todavía. Si eligió, manda lo suyo.
+   *
+   * Y eso es una CONDICIÓN, no una clase fija, aunque durante un tiempo aquí
+   * pusiera `class: 'paleta-oscura block'`, que es lo contrario de lo que dice
+   * la línea de arriba. El efecto era un salto de tema entre pantallas: la
+   * portada se quedaba oscura pasara lo que pasara y `/legal` —que sí miraba la
+   * elección— se abría en blanco. Desde la portada parecía que los textos
+   * legales estuvieran rotos, cuando lo roto era la portada.
+   */
+  host: { class: 'block', '[class.paleta-oscura]': "tema.tema() === 'sistema'" },
 })
 export class Landing {
+  protected readonly tema = inject(TemaApp);
   private readonly api = inject(Api);
   private readonly router = inject(Router);
 

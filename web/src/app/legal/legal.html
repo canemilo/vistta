@@ -29,11 +29,19 @@
     </section>
   }
 
-  @if (aviso()?.contacto; as correo) {
-    <section class="mt-8 rounded-xl border border-borde bg-sup-2 p-5">
-      <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
-        Avisar de un contenido
-      </h2>
+  <!--
+    Avisar de un contenido, SIEMPRE presente y con ancla propia.
+    El pie de la portada trae aquí un enlace con ese nombre, así que esto tiene
+    que existir aunque el despliegue no tenga contacto puesto: si la sección
+    desaparecía, el enlace dejaba al visitante en mitad de una página que no
+    hablaba de lo que él venía a hacer. Y quien avisa de un contenido suele ser
+    justo quien no tiene cuenta ni paciencia.
+  -->
+  <section id="avisar" class="mt-8 scroll-mt-8 rounded-xl border border-borde bg-sup-2 p-5">
+    <h2 class="font-mono text-[11px] tracking-[0.22em] text-texto-2 uppercase">
+      Avisar de un contenido
+    </h2>
+    @if (aviso()?.contacto; as correo) {
       <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
         Si un contenido alojado aquí te perjudica, escribe a
         <a [href]="'mailto:' + correo" class="font-mono text-[14px] text-acento underline">
@@ -41,12 +49,19 @@
         </a>
         contando qué enlace es y qué infringe. Se acusa recibo en 72 horas hábiles y se decide en 7.
       </p>
-      <p class="mt-3 max-w-[62ch] font-mono text-[11px] leading-[1.7] text-texto-3">
-        Ante material de abuso sexual infantil o contenido íntimo no consentido se retira de
-        inmediato, sin plazo previo. No hace falta tener cuenta para avisar.
+    } @else {
+      <p class="mt-3 max-w-[62ch] font-serif text-[15px] leading-[1.7] text-texto">
+        Este despliegue no tiene puesta una dirección de contacto legal, así que
+        <strong>no hay dónde avisar</strong>. Quien lo administre debe configurar
+        <span class="font-mono text-[13px]">CONTACTO_LEGAL</span>. No se inventa una dirección aquí:
+        un buzón que no existe es peor que decir que falta.
       </p>
-    </section>
-  }
+    }
+    <p class="mt-3 max-w-[62ch] font-mono text-[11px] leading-[1.7] text-texto-3">
+      Ante material de abuso sexual infantil o contenido íntimo no consentido se retira de
+      inmediato, sin plazo previo. No hace falta tener cuenta para avisar.
+    </p>
+  </section>
 
   <ul class="mt-8 flex flex-col gap-3">
     @for (doc of DOCUMENTOS; track doc.archivo) {

@@ -171,4 +171,44 @@ describe('Portada pública', () => {
     ) as HTMLAnchorElement[];
     expect(enlaces.filter((a) => a.getAttribute('href')?.includes('demo'))).toEqual([]);
   });
+
+  /*
+   * EL SALTO DE TEMA, que se veía y no se explicaba.
+   *
+   * La portada llevaba `paleta-oscura` como clase FIJA, así que se quedaba
+   * oscura aunque el usuario hubiera elegido claro. `/legal` sí miraba la
+   * elección, de modo que ir de una a otra cambiaba de color a media
+   * navegación: desde la portada parecía que los textos legales estuvieran
+   * rotos. La clase es condicional, como en la administración y en legal.
+   */
+  describe('el tema de la casa no pisa la elección del usuario', () => {
+    afterEach(() => {
+      localStorage.removeItem('vistta.tema');
+      document.documentElement.removeAttribute('data-theme');
+    });
+
+    it('sin elección, la portada se pinta oscura', async () => {
+      localStorage.removeItem('vistta.tema');
+      await montar();
+      expect(fixture.nativeElement.classList.contains('paleta-oscura')).toBe(true);
+    });
+
+    it('con el tema en claro, la portada NO se fuerza a oscuro', async () => {
+      localStorage.setItem('vistta.tema', 'claro');
+      await montar();
+      expect(fixture.nativeElement.classList.contains('paleta-oscura')).toBe(false);
+    });
+
+    /*
+     * Y en oscuro tampoco: el oscuro ya lo pone `data-theme` en la raíz. La
+     * clase encima no haría daño hoy, pero es la que fija el fondo a 100vh y
+     * duplicar el camino es cómo se separan los dos.
+     */
+    it('con el tema en oscuro, manda la raíz y no la clase', async () => {
+      localStorage.setItem('vistta.tema', 'oscuro');
+      await montar();
+      expect(fixture.nativeElement.classList.contains('paleta-oscura')).toBe(false);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+  });
 });

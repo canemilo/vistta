@@ -248,7 +248,12 @@
     >
       <a routerLink="/legal" class="underline hover:text-acento">Aviso legal y privacidad</a>
       <span class="text-borde" aria-hidden="true">·</span>
-      <a routerLink="/legal" class="underline hover:text-acento">Avisar de un contenido</a>
+      <!-- Al ancla, no al principio de la página: los dos enlaces llevaban a
+           `/legal` a secas y el segundo prometía una cosa que quedaba a tres
+           pantallas de scroll. -->
+      <a routerLink="/legal" fragment="avisar" class="underline hover:text-acento">
+        Avisar de un contenido
+      </a>
     </div>
   </footer>
 </div>

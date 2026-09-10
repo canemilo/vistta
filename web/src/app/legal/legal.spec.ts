@@ -167,4 +167,29 @@ describe('Legal', () => {
     await arranca(AVISO);
     expect(texto()).not.toContain('Sin configurar');
   });
+
+  /*
+   * El pie de la portada trae aquí un enlace que se llama «Avisar de un
+   * contenido» y apunta a `#avisar`. La sección estaba envuelta en un `@if` del
+   * contacto, así que en un despliegue sin `CONTACTO_LEGAL` el enlace dejaba al
+   * visitante en una página donde eso no se mencionaba. Quien avisa de un
+   * contenido no suele ser cliente nuestro y no va a buscarlo dos veces.
+   */
+  it('la sección de avisos existe con su ancla, haya contacto o no', async () => {
+    await arranca(SIN_CONFIGURAR);
+    const seccion = fixture.nativeElement.querySelector('#avisar') as HTMLElement | null;
+    expect(seccion).not.toBeNull();
+    expect(seccion!.textContent).toContain('Avisar de un contenido');
+    // Sin dirección se DICE que falta, en vez de callar o inventar un buzón.
+    expect(seccion!.textContent).toContain('CONTACTO_LEGAL');
+    expect(seccion!.querySelector('a[href^="mailto:"]')).toBeNull();
+  });
+
+  it('con contacto, el ancla lleva al correo de verdad', async () => {
+    await arranca(AVISO);
+    const seccion = fixture.nativeElement.querySelector('#avisar') as HTMLElement;
+    expect(seccion.querySelector('a[href^="mailto:"]')?.getAttribute('href')).toBe(
+      'mailto:legal@ejemplo.test',
+    );
+  });
 });

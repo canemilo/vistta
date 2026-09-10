@@ -199,7 +199,15 @@ no se negocian:
   (`--color-texto-3`, no «gris»), y `test/contraste.spec.ts` mide la paleta entera contra las
   cuatro superficies en los dos temas: falla por debajo de 4,5 de la AA, si se cruza un token o si
   alguien vuelve a escribir un hexadecimal en una plantilla. Existe porque pasó: los grises tenues
-  se habían quedado en 4,38 y el texto de los perfiles se leía mal.
+  se habían quedado en 4,38 y el texto de los perfiles se leía mal. Y volvió a pasar en `.documento`
+  —los estilos del Markdown legal— con la paleta oscura escrita a mano: en claro, texto gris claro
+  sobre papel claro. La prueba solo medía TOKENS, así que allí no llegaba; ahora comprueba también
+  que ese bloque no tenga hexadecimales.
+- **Ninguna pantalla se queda con un tema fijo que pise la elección del usuario.** La portada
+  llevaba `paleta-oscura` como clase fija mientras `/legal` sí la miraba, y navegar de una a otra
+  cambiaba de color a media navegación: desde la portada parecía que los textos legales estuvieran
+  rotos. Donde la casa tiene aspecto propio —portada, entrada al panel, administración— la clase es
+  CONDICIONAL: manda solo mientras el usuario no haya elegido.
 - **Nada se indexa, en tres sitios**: `robots.txt`, la etiqueta `robots` del HTML y la cabecera
   `X-Robots-Tag` de la API. Por eso el SEO de Lighthouse marca 63 y **debe seguir marcándolo**: lo
   único que falla es `is-crawlable`. Un buscador que abra un pase lo consume.

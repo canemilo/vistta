@@ -347,3 +347,30 @@ describe("las plantillas ya no llevan color escrito a mano", () => {
     expect(sueltos.map((m) => m[0])).toEqual([]);
   });
 });
+
+/*
+ * PASÓ, Y POR ESO ESTO EXISTE (segunda vez, mismo error, otro sitio).
+ *
+ * Los estilos de `.documento` —el HTML que sale de los `legal/*.md`— llevaban
+ * los valores del tema oscuro escritos a mano: tinta `#b9d2ce`, fondos
+ * `#081420`, bordes `#16303a`. Con la aplicación en claro, el texto de los
+ * documentos legales salía gris claro sobre papel claro y no se leía. Las
+ * pruebas de arriba no lo veían porque solo miden TOKENS, y estos colores no
+ * eran tokens: eran hexadecimales sueltos en el único bloque del archivo que
+ * nadie estaba mirando.
+ *
+ * No se mide el contraste aquí —para eso ya están los tokens, y estos son los
+ * mismos—: se comprueba que no haya nada que medir aparte.
+ */
+describe("los documentos legales se pintan con tokens", () => {
+  const bloque = CSS.slice(CSS.indexOf(".documento {"), CSS.indexOf(".documento hr {"));
+
+  it("el bloque existe y es el de verdad", () => {
+    expect(bloque).toContain("font-family: var(--font-serif)");
+    expect(bloque.length).toBeGreaterThan(500);
+  });
+
+  it("no queda ni un hexadecimal escrito a mano", () => {
+    expect([...bloque.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0])).toEqual([]);
+  });
+});
